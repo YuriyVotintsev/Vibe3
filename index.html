@@ -88,8 +88,7 @@
             align-items: center;
             font-size: 2rem;
             user-select: none;
-            transition: top 0.3s linear,
-                        left 0.15s ease,
+            transition: left 0.15s ease,
                         transform 0.15s ease,
                         box-shadow 0.15s ease,
                         opacity 0.2s ease;
@@ -195,6 +194,7 @@
         const BOARD_SIZE = 8;
         const CELL_SIZE = 60;
         const GAP = 4;
+        const FALL_SPEED = 80; // ms per cell
         const GEM_TYPES = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
         const GEM_SYMBOLS = ['💎', '🔷', '💚', '⭐', '🔮', '🔶'];
 
@@ -238,7 +238,7 @@
                 };
             }
 
-            createGemElement(row, col, gemType, startFromTop = false) {
+            createGemElement(row, col, gemType, startOffset = 0) {
                 const cell = document.createElement('div');
                 cell.className = `cell gem-${GEM_TYPES[gemType]}`;
                 cell.textContent = GEM_SYMBOLS[gemType];
@@ -247,10 +247,9 @@
 
                 const pos = this.getPosition(row, col);
 
-                if (startFromTop) {
-                    // Start above the board for falling animation
-                    cell.classList.add('no-transition');
-                    cell.style.top = `-${CELL_SIZE + GAP}px`;
+                if (startOffset > 0) {
+                    // Start above the board - each new gem starts higher
+                    cell.style.top = `-${startOffset * (CELL_SIZE + GAP)}px`;
                     cell.style.left = `${pos.left}px`;
                 } else {
                     cell.style.top = `${pos.top}px`;
@@ -508,6 +507,7 @@
             async dropAndFill() {
                 const fallingGems = [];
                 const newGems = [];
+                let maxFallDistance = 0;
 
                 // Process each column
                 for (let col = 0; col < BOARD_SIZE; col++) {
@@ -521,6 +521,7 @@
                             // This gem needs to fall down
                             const newRow = row + emptySpaces;
                             const gem = this.gems[row][col];
+                            const fallDistance = emptySpaces;
 
                             // Update data
                             this.board[newRow][col] = this.board[row][col];
@@ -535,48 +536,63 @@
                             fallingGems.push({
                                 gem,
                                 targetRow: newRow,
-                                col
+                                col,
+                                fallDistance
                             });
+
+                            maxFallDistance = Math.max(maxFallDistance, fallDistance);
                         }
                     }
 
                     // Create new gems for empty spaces at top
+                    // They start stacked above the board
                     for (let i = 0; i < emptySpaces; i++) {
                         const row = emptySpaces - 1 - i;
                         const gemType = this.getRandomGem();
                         this.board[row][col] = gemType;
 
-                        const cell = this.createGemElement(row, col, gemType, true);
+                        // startOffset: how many cells above the board
+                        // First new gem (bottom) starts 1 cell above, next 2 cells, etc.
+                        const startOffset = emptySpaces - row;
+                        const cell = this.createGemElement(row, col, gemType, startOffset);
                         this.gems[row][col] = cell;
                         this.boardElement.appendChild(cell);
+
+                        // Total fall distance = startOffset + targetRow
+                        const fallDistance = startOffset + row;
 
                         newGems.push({
                             gem: cell,
                             targetRow: row,
                             col,
-                            startOffset: i + 1 // How many positions above the board
+                            fallDistance
                         });
+
+                        maxFallDistance = Math.max(maxFallDistance, fallDistance);
                     }
                 }
 
                 // Small delay to ensure DOM is ready
                 await this.delay(20);
 
-                // Animate existing gems falling
-                fallingGems.forEach(({gem, targetRow, col}) => {
+                // Animate existing gems falling with speed-based duration
+                fallingGems.forEach(({gem, targetRow, col, fallDistance}) => {
+                    const duration = fallDistance * FALL_SPEED;
+                    gem.style.transition = `top ${duration}ms linear`;
                     const pos = this.getPosition(targetRow, col);
                     gem.style.top = `${pos.top}px`;
                 });
 
                 // Animate new gems falling from above
-                newGems.forEach(({gem, targetRow, col}) => {
-                    gem.classList.remove('no-transition');
+                newGems.forEach(({gem, targetRow, col, fallDistance}) => {
+                    const duration = fallDistance * FALL_SPEED;
+                    gem.style.transition = `top ${duration}ms linear`;
                     const pos = this.getPosition(targetRow, col);
                     gem.style.top = `${pos.top}px`;
                 });
 
-                // Wait for falling animation to complete
-                await this.delay(400);
+                // Wait for longest animation to complete
+                await this.delay(maxFallDistance * FALL_SPEED + 50);
             }
 
             updateScore() {
