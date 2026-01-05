@@ -32,6 +32,9 @@
     <div id="game-container"></div>
 
     <script>
+        // Build ID - updated on each commit
+        const BUILD_ID = '250106-001';
+
         // Game constants
         const BOARD_SIZE = 8;
         const CELL_SIZE = 64;
@@ -177,12 +180,11 @@
 
                 this.add.text(this.cameras.main.width / 2, btnY, '🔄 Новая игра', { fontSize: '16px', color: '#ffffff' }).setOrigin(0.5);
 
-                // Build timestamp (updates on page reload)
-                const buildTime = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                // Build ID display
                 this.add.text(
                     this.cameras.main.width - 10,
                     this.cameras.main.height - 10,
-                    `build: ${buildTime}`,
+                    `build: ${BUILD_ID}`,
                     { fontSize: '10px', color: '#666666' }
                 ).setOrigin(1, 1);
             }
