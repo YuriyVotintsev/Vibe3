@@ -32,8 +32,17 @@
     <div id="game-container"></div>
 
     <script>
-        // Build ID - updated on each commit
-        const BUILD_ID = '250106-001';
+        // Auto-fetch build info from GitHub API
+        let BUILD_ID = 'loading...';
+        fetch('https://api.github.com/repos/YuriyVotintsev/Vibe3/commits/claude/match3-game-2pLam')
+            .then(r => r.json())
+            .then(data => {
+                BUILD_ID = data.sha?.substring(0, 7) || 'unknown';
+                if (window.game?.scene?.scenes[0]?.buildText) {
+                    window.game.scene.scenes[0].buildText.setText(`build: ${BUILD_ID}`);
+                }
+            })
+            .catch(() => { BUILD_ID = 'offline'; });
 
         // Game constants
         const BOARD_SIZE = 8;
@@ -181,7 +190,7 @@
                 this.add.text(this.cameras.main.width / 2, btnY, '🔄 Новая игра', { fontSize: '16px', color: '#ffffff' }).setOrigin(0.5);
 
                 // Build ID display
-                this.add.text(
+                this.buildText = this.add.text(
                     this.cameras.main.width - 10,
                     this.cameras.main.height - 10,
                     `build: ${BUILD_ID}`,
