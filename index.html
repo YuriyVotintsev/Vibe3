@@ -38,30 +38,53 @@
             .then(r => r.json())
             .then(data => {
                 BUILD_ID = data.sha?.substring(0, 7) || 'unknown';
-                if (window.game?.scene?.scenes[0]?.buildText) {
-                    window.game.scene.scenes[0].buildText.setText(`build: ${BUILD_ID}`);
+                // Update in any active scene
+                if (window.game?.scene?.scenes) {
+                    window.game.scene.scenes.forEach(s => {
+                        if (s.buildText) s.buildText.setText(`build: ${BUILD_ID}`);
+                    });
                 }
             })
             .catch(() => { BUILD_ID = 'offline'; });
 
-        // Game constants
-        const BOARD_SIZE = 8;
-        const CELL_SIZE = 64;
-        const GAP = 4;
+        // All available gem colors (20 total)
+        const ALL_GEM_COLORS = [
+            0xe74c3c, // 1. red
+            0x3498db, // 2. blue
+            0x27ae60, // 3. green
+            0xf1c40f, // 4. yellow
+            0x9b59b6, // 5. purple
+            0xe67e22, // 6. orange
+            0x1abc9c, // 7. turquoise
+            0xe91e63, // 8. pink
+            0x00bcd4, // 9. cyan
+            0x8bc34a, // 10. lime
+            0xff5722, // 11. deep orange
+            0x607d8b, // 12. blue grey
+            0x795548, // 13. brown
+            0x9c27b0, // 14. deep purple
+            0x3f51b5, // 15. indigo
+            0x009688, // 16. teal
+            0xcddc39, // 17. yellow-green
+            0xffc107, // 18. amber
+            0x03a9f4, // 19. light blue
+            0xf44336  // 20. bright red
+        ];
+
+        // Game settings (mutable)
+        const GameSettings = {
+            boardSize: 8,
+            colorCount: 6,
+            fallSpeed: 500,
+            cellSize: 64,
+            gap: 4,
+            spawnDelay: 80
+        };
+
+        // Constants
         const BOARD_OFFSET_X = 50;
         const BOARD_OFFSET_Y = 120;
-        const FALL_SPEED = 500; // pixels per second
         const SWAP_DURATION = 150;
-        const SPAWN_DELAY = 80; // ms between spawning new gems
-
-        const GEM_COLORS = [
-            0xe74c3c, // red
-            0x3498db, // blue
-            0x27ae60, // green
-            0xf1c40f, // yellow
-            0x9b59b6, // purple
-            0xe67e22  // orange
-        ];
 
         // Gem states
         const GEM_STATE = {
@@ -71,20 +94,134 @@
             MATCHED: 'matched'
         };
 
+        // ==================== SETTINGS SCENE ====================
+        class SettingsScene extends Phaser.Scene {
+            constructor() {
+                super({ key: 'SettingsScene' });
+            }
+
+            create() {
+                const cx = this.cameras.main.width / 2;
+                const cy = this.cameras.main.height / 2;
+
+                // Darken background
+                this.add.rectangle(cx, cy, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.85);
+
+                // Title
+                this.add.text(cx, 50, '⚙️ Настройки', { fontSize: '28px', color: '#e94560' }).setOrigin(0.5);
+
+                let yPos = 120;
+                const spacing = 70;
+
+                // Board size
+                this.createSlider('Размер поля', yPos, 4, 12, GameSettings.boardSize, val => {
+                    GameSettings.boardSize = val;
+                });
+                yPos += spacing;
+
+                // Color count
+                this.createSlider('Количество цветов', yPos, 3, 20, GameSettings.colorCount, val => {
+                    GameSettings.colorCount = val;
+                });
+                yPos += spacing;
+
+                // Fall speed
+                this.createSlider('Скорость падения', yPos, 200, 1000, GameSettings.fallSpeed, val => {
+                    GameSettings.fallSpeed = val;
+                }, 50);
+                yPos += spacing;
+
+                // Spawn delay
+                this.createSlider('Задержка спавна (мс)', yPos, 20, 200, GameSettings.spawnDelay, val => {
+                    GameSettings.spawnDelay = val;
+                }, 10);
+                yPos += spacing + 20;
+
+                // Apply button
+                const applyBtn = this.add.rectangle(cx, yPos, 200, 50, 0x27ae60)
+                    .setInteractive({ useHandCursor: true })
+                    .on('pointerover', () => applyBtn.setFillStyle(0x2ecc71))
+                    .on('pointerout', () => applyBtn.setFillStyle(0x27ae60))
+                    .on('pointerdown', () => this.applySettings());
+
+                this.add.text(cx, yPos, '✓ Применить', { fontSize: '18px', color: '#ffffff' }).setOrigin(0.5);
+
+                // Cancel button
+                const cancelBtn = this.add.rectangle(cx, yPos + 60, 200, 50, 0xe74c3c)
+                    .setInteractive({ useHandCursor: true })
+                    .on('pointerover', () => cancelBtn.setFillStyle(0xc0392b))
+                    .on('pointerout', () => cancelBtn.setFillStyle(0xe74c3c))
+                    .on('pointerdown', () => this.scene.stop());
+
+                this.add.text(cx, yPos + 60, '✕ Отмена', { fontSize: '18px', color: '#ffffff' }).setOrigin(0.5);
+            }
+
+            createSlider(label, y, min, max, currentValue, onChange, step = 1) {
+                const cx = this.cameras.main.width / 2;
+                const sliderWidth = 200;
+
+                this.add.text(cx, y, label, { fontSize: '16px', color: '#aaaaaa' }).setOrigin(0.5);
+
+                // Value display
+                const valueText = this.add.text(cx + 130, y + 30, currentValue.toString(), {
+                    fontSize: '20px', color: '#e94560', fontStyle: 'bold'
+                }).setOrigin(0.5);
+
+                // Minus button
+                const minusBtn = this.add.rectangle(cx - 120, y + 30, 40, 40, 0x444444)
+                    .setInteractive({ useHandCursor: true })
+                    .on('pointerover', () => minusBtn.setFillStyle(0x555555))
+                    .on('pointerout', () => minusBtn.setFillStyle(0x444444))
+                    .on('pointerdown', () => {
+                        let val = parseInt(valueText.text) - step;
+                        if (val >= min) {
+                            valueText.setText(val.toString());
+                            onChange(val);
+                        }
+                    });
+                this.add.text(cx - 120, y + 30, '−', { fontSize: '24px', color: '#ffffff' }).setOrigin(0.5);
+
+                // Plus button
+                const plusBtn = this.add.rectangle(cx + 80, y + 30, 40, 40, 0x444444)
+                    .setInteractive({ useHandCursor: true })
+                    .on('pointerover', () => plusBtn.setFillStyle(0x555555))
+                    .on('pointerout', () => plusBtn.setFillStyle(0x444444))
+                    .on('pointerdown', () => {
+                        let val = parseInt(valueText.text) + step;
+                        if (val <= max) {
+                            valueText.setText(val.toString());
+                            onChange(val);
+                        }
+                    });
+                this.add.text(cx + 80, y + 30, '+', { fontSize: '24px', color: '#ffffff' }).setOrigin(0.5);
+
+                // Current value bar
+                const barBg = this.add.rectangle(cx - 20, y + 30, sliderWidth - 100, 8, 0x333333);
+                const progress = (currentValue - min) / (max - min);
+                this.add.rectangle(cx - 20 - (sliderWidth - 100) / 2 + progress * (sliderWidth - 100) / 2, y + 30, progress * (sliderWidth - 100), 8, 0xe94560);
+            }
+
+            applySettings() {
+                this.scene.stop();
+                this.scene.get('MainScene').scene.restart();
+            }
+        }
+
+        // ==================== MAIN SCENE ====================
         class MainScene extends Phaser.Scene {
             constructor() {
                 super({ key: 'MainScene' });
             }
 
             init() {
-                this.board = [];           // Logical board [row][col] = gemType
-                this.gems = [];            // Sprite references [row][col] = sprite
+                this.board = [];
+                this.gems = [];
                 this.selectedGem = null;
                 this.score = 0;
                 this.moves = 0;
                 this.combo = 1;
-                this.lastSpawnTime = {};   // Track last spawn time per column
-                this.pendingMatches = [];  // Gems waiting to be checked after landing
+                this.lastSpawnTime = {};
+                this.pendingMatches = [];
             }
 
             preload() {
@@ -92,29 +229,42 @@
             }
 
             createGemTextures() {
-                const size = CELL_SIZE - 8;
+                const size = GameSettings.cellSize - 8;
                 const radius = 10;
 
-                for (let i = 0; i < GEM_COLORS.length; i++) {
+                // Create textures for all possible colors
+                for (let i = 0; i < ALL_GEM_COLORS.length; i++) {
+                    const key = `gem_${i}`;
+                    if (this.textures.exists(key)) {
+                        this.textures.remove(key);
+                    }
+
                     const graphics = this.make.graphics({ x: 0, y: 0, add: false });
-                    graphics.fillStyle(GEM_COLORS[i], 1);
+                    graphics.fillStyle(ALL_GEM_COLORS[i], 1);
                     graphics.fillRoundedRect(0, 0, size, size, radius);
                     graphics.fillStyle(0xffffff, 0.3);
                     graphics.fillRoundedRect(4, 4, size - 20, size - 20, radius - 2);
                     graphics.fillStyle(0x000000, 0.2);
                     graphics.fillRoundedRect(8, size - 16, size - 16, 8, 4);
-                    graphics.generateTexture(`gem_${i}`, size, size);
+                    graphics.generateTexture(key, size, size);
                     graphics.destroy();
                 }
 
+                if (this.textures.exists('selection')) {
+                    this.textures.remove('selection');
+                }
                 const selectGraphics = this.make.graphics({ x: 0, y: 0, add: false });
                 selectGraphics.lineStyle(4, 0xffffff, 1);
-                selectGraphics.strokeRoundedRect(2, 2, CELL_SIZE - 4, CELL_SIZE - 4, 12);
-                selectGraphics.generateTexture('selection', CELL_SIZE, CELL_SIZE);
+                selectGraphics.strokeRoundedRect(2, 2, GameSettings.cellSize - 4, GameSettings.cellSize - 4, 12);
+                selectGraphics.generateTexture('selection', GameSettings.cellSize, GameSettings.cellSize);
                 selectGraphics.destroy();
             }
 
             create() {
+                const boardSize = GameSettings.boardSize;
+                const cellSize = GameSettings.cellSize;
+                const gap = GameSettings.gap;
+
                 // Background
                 this.add.rectangle(
                     this.cameras.main.width / 2,
@@ -125,8 +275,8 @@
                 );
 
                 // Board background
-                const boardWidth = BOARD_SIZE * (CELL_SIZE + GAP) - GAP + 20;
-                const boardHeight = BOARD_SIZE * (CELL_SIZE + GAP) - GAP + 20;
+                const boardWidth = boardSize * (cellSize + gap) - gap + 20;
+                const boardHeight = boardSize * (cellSize + gap) - gap + 20;
                 this.add.rectangle(
                     BOARD_OFFSET_X + boardWidth / 2 - 10,
                     BOARD_OFFSET_Y + boardHeight / 2 - 10,
@@ -147,8 +297,7 @@
 
                 this.input.on('gameobjectdown', this.onGemClick, this);
 
-                // Initialize spawn timers
-                for (let col = 0; col < BOARD_SIZE; col++) {
+                for (let col = 0; col < boardSize; col++) {
                     this.lastSpawnTime[col] = 0;
                 }
             }
@@ -175,19 +324,28 @@
 
                 this.messageText = this.add.text(
                     this.cameras.main.width / 2,
-                    BOARD_OFFSET_Y + BOARD_SIZE * (CELL_SIZE + GAP) + 30,
+                    BOARD_OFFSET_Y + GameSettings.boardSize * (GameSettings.cellSize + GameSettings.gap) + 30,
                     '',
                     { fontSize: '20px', color: '#55efc4' }
                 ).setOrigin(0.5);
 
-                const btnY = BOARD_OFFSET_Y + BOARD_SIZE * (CELL_SIZE + GAP) + 70;
-                const btn = this.add.rectangle(this.cameras.main.width / 2, btnY, 160, 45, 0xe94560)
-                    .setInteractive({ useHandCursor: true })
-                    .on('pointerover', () => btn.setFillStyle(0xc0392b))
-                    .on('pointerout', () => btn.setFillStyle(0xe94560))
-                    .on('pointerdown', () => this.restartGame());
+                const btnY = BOARD_OFFSET_Y + GameSettings.boardSize * (GameSettings.cellSize + GameSettings.gap) + 70;
 
-                this.add.text(this.cameras.main.width / 2, btnY, '🔄 Новая игра', { fontSize: '16px', color: '#ffffff' }).setOrigin(0.5);
+                // New game button
+                const newGameBtn = this.add.rectangle(this.cameras.main.width / 2 - 90, btnY, 150, 45, 0xe94560)
+                    .setInteractive({ useHandCursor: true })
+                    .on('pointerover', () => newGameBtn.setFillStyle(0xc0392b))
+                    .on('pointerout', () => newGameBtn.setFillStyle(0xe94560))
+                    .on('pointerdown', () => this.restartGame());
+                this.add.text(this.cameras.main.width / 2 - 90, btnY, '🔄 Новая игра', { fontSize: '14px', color: '#ffffff' }).setOrigin(0.5);
+
+                // Settings button
+                const settingsBtn = this.add.rectangle(this.cameras.main.width / 2 + 90, btnY, 150, 45, 0x3498db)
+                    .setInteractive({ useHandCursor: true })
+                    .on('pointerover', () => settingsBtn.setFillStyle(0x2980b9))
+                    .on('pointerout', () => settingsBtn.setFillStyle(0x3498db))
+                    .on('pointerdown', () => this.scene.launch('SettingsScene'));
+                this.add.text(this.cameras.main.width / 2 + 90, btnY, '⚙️ Настройки', { fontSize: '14px', color: '#ffffff' }).setOrigin(0.5);
 
                 // Build ID display
                 this.buildText = this.add.text(
@@ -201,12 +359,13 @@
             createBoard() {
                 this.board = [];
                 this.gems = [];
+                const boardSize = GameSettings.boardSize;
 
-                for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let row = 0; row < boardSize; row++) {
                     this.board[row] = [];
                     this.gems[row] = [];
-                    for (let col = 0; col < BOARD_SIZE; col++) {
-                        const gemType = Phaser.Math.Between(0, GEM_COLORS.length - 1);
+                    for (let col = 0; col < boardSize; col++) {
+                        const gemType = Phaser.Math.Between(0, GameSettings.colorCount - 1);
                         this.board[row][col] = gemType;
                         this.gems[row][col] = this.createGem(row, col, gemType);
                     }
@@ -226,9 +385,11 @@
             }
 
             getGemPosition(row, col) {
+                const cellSize = GameSettings.cellSize;
+                const gap = GameSettings.gap;
                 return {
-                    x: BOARD_OFFSET_X + col * (CELL_SIZE + GAP) + CELL_SIZE / 2,
-                    y: BOARD_OFFSET_Y + row * (CELL_SIZE + GAP) + CELL_SIZE / 2
+                    x: BOARD_OFFSET_X + col * (cellSize + gap) + cellSize / 2,
+                    y: BOARD_OFFSET_Y + row * (cellSize + gap) + cellSize / 2
                 };
             }
 
@@ -240,7 +401,7 @@
                         hasMatches = false;
                     } else {
                         matches.forEach(({ row, col }) => {
-                            const newType = Phaser.Math.Between(0, GEM_COLORS.length - 1);
+                            const newType = Phaser.Math.Between(0, GameSettings.colorCount - 1);
                             this.board[row][col] = newType;
                             this.gems[row][col].setTexture(`gem_${newType}`);
                             this.gems[row][col].setData('type', newType);
@@ -249,7 +410,6 @@
                 }
             }
 
-            // Main game loop
             update(time, delta) {
                 this.updateFallingGems(delta);
                 this.updateGravity();
@@ -258,11 +418,12 @@
             }
 
             updateFallingGems(delta) {
-                const fallAmount = (FALL_SPEED * delta) / 1000;
+                const fallAmount = (GameSettings.fallSpeed * delta) / 1000;
+                const boardSize = GameSettings.boardSize;
 
-                for (let row = 0; row < BOARD_SIZE; row++) {
-                    for (let col = 0; col < BOARD_SIZE; col++) {
-                        const gem = this.gems[row][col];
+                for (let row = 0; row < boardSize; row++) {
+                    for (let col = 0; col < boardSize; col++) {
+                        const gem = this.gems[row]?.[col];
                         if (!gem) continue;
 
                         if (gem.getData('state') === GEM_STATE.FALLING) {
@@ -283,16 +444,15 @@
             }
 
             updateGravity() {
-                // Check each column for gaps and make gems fall
-                for (let col = 0; col < BOARD_SIZE; col++) {
-                    for (let row = BOARD_SIZE - 1; row >= 0; row--) {
+                const boardSize = GameSettings.boardSize;
+
+                for (let col = 0; col < boardSize; col++) {
+                    for (let row = boardSize - 1; row >= 0; row--) {
                         if (this.board[row][col] === null) {
-                            // Find gem above to fall
                             for (let aboveRow = row - 1; aboveRow >= 0; aboveRow--) {
                                 if (this.board[aboveRow][col] !== null) {
                                     const gem = this.gems[aboveRow][col];
                                     if (gem && gem.getData('state') === GEM_STATE.IDLE) {
-                                        // Move gem down
                                         this.board[row][col] = this.board[aboveRow][col];
                                         this.board[aboveRow][col] = null;
 
@@ -312,16 +472,16 @@
             }
 
             spawnNewGems(time) {
-                // Spawn new gems one at a time per column with delay
-                for (let col = 0; col < BOARD_SIZE; col++) {
-                    // Check if top row is empty and no gem is currently falling into it
+                const boardSize = GameSettings.boardSize;
+                const cellSize = GameSettings.cellSize;
+                const gap = GameSettings.gap;
+
+                for (let col = 0; col < boardSize; col++) {
                     if (this.board[0][col] === null) {
-                        // Check if enough time has passed since last spawn in this column
-                        if (time - this.lastSpawnTime[col] >= SPAWN_DELAY) {
-                            // Check that no gem is falling through row 0
+                        if (time - this.lastSpawnTime[col] >= GameSettings.spawnDelay) {
                             let canSpawn = true;
-                            for (let r = 0; r < BOARD_SIZE; r++) {
-                                const gem = this.gems[r][col];
+                            for (let r = 0; r < boardSize; r++) {
+                                const gem = this.gems[r]?.[col];
                                 if (gem && gem.getData('state') === GEM_STATE.FALLING) {
                                     const targetRow = gem.getData('row');
                                     if (targetRow <= 0) {
@@ -332,8 +492,8 @@
                             }
 
                             if (canSpawn) {
-                                const gemType = Phaser.Math.Between(0, GEM_COLORS.length - 1);
-                                const startY = BOARD_OFFSET_Y - CELL_SIZE / 2 - GAP;
+                                const gemType = Phaser.Math.Between(0, GameSettings.colorCount - 1);
+                                const startY = BOARD_OFFSET_Y - cellSize / 2 - gap;
                                 const gem = this.createGem(0, col, gemType, startY);
 
                                 this.board[0][col] = gemType;
@@ -350,15 +510,12 @@
             checkLandedGems() {
                 if (this.pendingMatches.length === 0) return;
 
-                // Process landed gems
                 const toCheck = [...this.pendingMatches];
                 this.pendingMatches = [];
 
-                // Find matches
                 const matches = this.findAllMatches();
 
                 if (matches.length > 0) {
-                    // Calculate score
                     const points = matches.length * 10 * this.combo;
                     this.score += points;
                     this.scoreText.setText(this.score.toString());
@@ -367,9 +524,8 @@
                         this.showMessage(`+${points}`);
                     }
 
-                    // Destroy matched gems
                     matches.forEach(({ row, col }) => {
-                        const gem = this.gems[row][col];
+                        const gem = this.gems[row]?.[col];
                         if (gem && gem.getData('state') !== GEM_STATE.MATCHED) {
                             gem.setData('state', GEM_STATE.MATCHED);
 
@@ -395,7 +551,6 @@
             }
 
             onGemClick(pointer, gem) {
-                // Can only click gems that are idle
                 if (gem.getData('state') !== GEM_STATE.IDLE) return;
 
                 const row = gem.getData('row');
@@ -418,7 +573,6 @@
                 } else {
                     const { row: prevRow, col: prevCol, gem: prevGem } = this.selectedGem;
 
-                    // Check if previous gem is still valid and idle
                     if (!prevGem || prevGem.getData('state') !== GEM_STATE.IDLE) {
                         this.clearSelection();
                         return;
@@ -462,7 +616,6 @@
                 const pos1 = this.getGemPosition(row1, col1);
                 const pos2 = this.getGemPosition(row2, col2);
 
-                // Swap in data
                 [this.board[row1][col1], this.board[row2][col2]] = [this.board[row2][col2], this.board[row1][col1]];
                 [this.gems[row1][col1], this.gems[row2][col2]] = [this.gems[row2][col2], this.gems[row1][col1]];
 
@@ -471,7 +624,6 @@
                 gem2.setData('row', row1);
                 gem2.setData('col', col1);
 
-                // Animate swap
                 this.tweens.add({
                     targets: gem1,
                     x: pos2.x,
@@ -487,13 +639,11 @@
                     duration: SWAP_DURATION,
                     ease: 'Power2',
                     onComplete: () => {
-                        // Set to IDLE first so findAllMatches can check them
                         gem1.setData('state', GEM_STATE.IDLE);
                         gem2.setData('state', GEM_STATE.IDLE);
                         gem1.setData('targetY', pos2.y);
                         gem2.setData('targetY', pos1.y);
 
-                        // Check for matches
                         const matches = this.findAllMatches();
 
                         if (matches.length > 0) {
@@ -504,7 +654,6 @@
                             this.pendingMatches.push({ row: row2, col: col2 });
                             this.pendingMatches.push({ row: row1, col: col1 });
                         } else {
-                            // Swap back
                             gem1.setData('state', GEM_STATE.SWAPPING);
                             gem2.setData('state', GEM_STATE.SWAPPING);
 
@@ -546,17 +695,17 @@
 
             findAllMatches() {
                 const matches = new Set();
+                const boardSize = GameSettings.boardSize;
 
-                for (let row = 0; row < BOARD_SIZE; row++) {
-                    for (let col = 0; col < BOARD_SIZE - 2; col++) {
-                        const type = this.board[row][col];
-                        if (type !== null &&
-                            type === this.board[row][col + 1] &&
-                            type === this.board[row][col + 2]) {
-                            // Check all gems are idle
-                            const g1 = this.gems[row][col];
-                            const g2 = this.gems[row][col + 1];
-                            const g3 = this.gems[row][col + 2];
+                for (let row = 0; row < boardSize; row++) {
+                    for (let col = 0; col < boardSize - 2; col++) {
+                        const type = this.board[row]?.[col];
+                        if (type !== null && type !== undefined &&
+                            type === this.board[row]?.[col + 1] &&
+                            type === this.board[row]?.[col + 2]) {
+                            const g1 = this.gems[row]?.[col];
+                            const g2 = this.gems[row]?.[col + 1];
+                            const g3 = this.gems[row]?.[col + 2];
                             if (g1?.getData('state') === GEM_STATE.IDLE &&
                                 g2?.getData('state') === GEM_STATE.IDLE &&
                                 g3?.getData('state') === GEM_STATE.IDLE) {
@@ -565,8 +714,8 @@
                                 matches.add(`${row},${col + 2}`);
 
                                 let k = col + 3;
-                                while (k < BOARD_SIZE && this.board[row][k] === type) {
-                                    const gk = this.gems[row][k];
+                                while (k < boardSize && this.board[row]?.[k] === type) {
+                                    const gk = this.gems[row]?.[k];
                                     if (gk?.getData('state') === GEM_STATE.IDLE) {
                                         matches.add(`${row},${k}`);
                                     }
@@ -577,15 +726,15 @@
                     }
                 }
 
-                for (let col = 0; col < BOARD_SIZE; col++) {
-                    for (let row = 0; row < BOARD_SIZE - 2; row++) {
-                        const type = this.board[row][col];
-                        if (type !== null &&
-                            type === this.board[row + 1][col] &&
-                            type === this.board[row + 2][col]) {
-                            const g1 = this.gems[row][col];
-                            const g2 = this.gems[row + 1][col];
-                            const g3 = this.gems[row + 2][col];
+                for (let col = 0; col < boardSize; col++) {
+                    for (let row = 0; row < boardSize - 2; row++) {
+                        const type = this.board[row]?.[col];
+                        if (type !== null && type !== undefined &&
+                            type === this.board[row + 1]?.[col] &&
+                            type === this.board[row + 2]?.[col]) {
+                            const g1 = this.gems[row]?.[col];
+                            const g2 = this.gems[row + 1]?.[col];
+                            const g3 = this.gems[row + 2]?.[col];
                             if (g1?.getData('state') === GEM_STATE.IDLE &&
                                 g2?.getData('state') === GEM_STATE.IDLE &&
                                 g3?.getData('state') === GEM_STATE.IDLE) {
@@ -594,8 +743,8 @@
                                 matches.add(`${row + 2},${col}`);
 
                                 let k = row + 3;
-                                while (k < BOARD_SIZE && this.board[k][col] === type) {
-                                    const gk = this.gems[k][col];
+                                while (k < boardSize && this.board[k]?.[col] === type) {
+                                    const gk = this.gems[k]?.[col];
                                     if (gk?.getData('state') === GEM_STATE.IDLE) {
                                         matches.add(`${k},${col}`);
                                     }
@@ -625,9 +774,11 @@
             }
 
             restartGame() {
-                for (let row = 0; row < BOARD_SIZE; row++) {
-                    for (let col = 0; col < BOARD_SIZE; col++) {
-                        if (this.gems[row] && this.gems[row][col]) {
+                const boardSize = GameSettings.boardSize;
+
+                for (let row = 0; row < boardSize; row++) {
+                    for (let col = 0; col < boardSize; col++) {
+                        if (this.gems[row]?.[col]) {
                             this.gems[row][col].destroy();
                         }
                     }
@@ -645,7 +796,7 @@
 
                 this.clearSelection();
 
-                for (let col = 0; col < BOARD_SIZE; col++) {
+                for (let col = 0; col < boardSize; col++) {
                     this.lastSpawnTime[col] = 0;
                 }
 
@@ -656,13 +807,17 @@
             }
         }
 
+        // Calculate initial dimensions
+        const initialWidth = GameSettings.boardSize * (GameSettings.cellSize + GameSettings.gap) - GameSettings.gap + 100;
+        const initialHeight = GameSettings.boardSize * (GameSettings.cellSize + GameSettings.gap) - GameSettings.gap + 220;
+
         const config = {
             type: Phaser.AUTO,
-            width: BOARD_SIZE * (CELL_SIZE + GAP) - GAP + 100,
-            height: BOARD_SIZE * (CELL_SIZE + GAP) - GAP + 220,
+            width: Math.max(initialWidth, 600),
+            height: Math.max(initialHeight, 700),
             parent: 'game-container',
             backgroundColor: '#1a1a2e',
-            scene: MainScene,
+            scene: [MainScene, SettingsScene],
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH
