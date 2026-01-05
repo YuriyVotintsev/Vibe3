@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match-3 Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            text-align: center;
+        }
+
+        h1 {
+            color: #e94560;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-size: 2.5rem;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .score-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 25px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .score-item span {
+            display: block;
+            font-size: 0.8rem;
+            color: #aaa;
+            text-transform: uppercase;
+        }
+
+        .score-item strong {
+            font-size: 1.5rem;
+            color: #e94560;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
+            gap: 4px;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin: 0 auto;
+        }
+
+        .cell {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            user-select: none;
+        }
+
+        .cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255,255,255,0.3);
+        }
+
+        .cell.selected {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255,255,255,0.8);
+            z-index: 10;
+        }
+
+        .cell.matched {
+            animation: matched 0.3s ease-out forwards;
+        }
+
+        @keyframes matched {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .cell.falling {
+            animation: fall 0.3s ease-in;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-60px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        .gem-red { background: linear-gradient(135deg, #ff6b6b, #c0392b); }
+        .gem-blue { background: linear-gradient(135deg, #74b9ff, #0984e3); }
+        .gem-green { background: linear-gradient(135deg, #55efc4, #00b894); }
+        .gem-yellow { background: linear-gradient(135deg, #ffeaa7, #fdcb6e); }
+        .gem-purple { background: linear-gradient(135deg, #a29bfe, #6c5ce7); }
+        .gem-orange { background: linear-gradient(135deg, #fab1a0, #e17055); }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #e94560, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            color: #55efc4;
+            font-size: 1.2rem;
+            margin-top: 15px;
+            min-height: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎮 Match-3</h1>
+
+        <div class="score-board">
+            <div class="score-item">
+                <span>Очки</span>
+                <strong id="score">0</strong>
+            </div>
+            <div class="score-item">
+                <span>Ходы</span>
+                <strong id="moves">0</strong>
+            </div>
+            <div class="score-item">
+                <span>Комбо</span>
+                <strong id="combo">x1</strong>
+            </div>
+        </div>
+
+        <div id="game-board"></div>
+
+        <div class="controls">
+            <button onclick="game.restart()">🔄 Новая игра</button>
+        </div>
+
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        const BOARD_SIZE = 8;
+        const GEM_TYPES = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+        const GEM_SYMBOLS = ['💎', '🔷', '💚', '⭐', '🔮', '🔶'];
+
+        class Match3Game {
+            constructor() {
+                this.board = [];
+                this.selectedCell = null;
+                this.score = 0;
+                this.moves = 0;
+                this.combo = 1;
+                this.isAnimating = false;
+                this.boardElement = document.getElementById('game-board');
+                this.init();
+            }
+
+            init() {
+                this.createBoard();
+                this.renderBoard();
+                this.removeInitialMatches();
+            }
+
+            createBoard() {
+                this.board = [];
+                for (let row = 0; row < BOARD_SIZE; row++) {
+                    this.board[row] = [];
+                    for (let col = 0; col < BOARD_SIZE; col++) {
+                        this.board[row][col] = this.getRandomGem();
+                    }
+                }
+            }
+
+            getRandomGem() {
+                return Math.floor(Math.random() * GEM_TYPES.length);
+            }
+
+            renderBoard() {
+                this.boardElement.innerHTML = '';
+                for (let row = 0; row < BOARD_SIZE; row++) {
+                    for (let col = 0; col < BOARD_SIZE; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = `cell gem-${GEM_TYPES[this.board[row][col]]}`;
+                        cell.textContent = GEM_SYMBOLS[this.board[row][col]];
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+                        cell.addEventListener('click', () => this.handleCellClick(row, col));
+                        this.boardElement.appendChild(cell);
+                    }
+                }
+            }
+
+            removeInitialMatches() {
+                let hasMatches = true;
+                while (hasMatches) {
+                    const matches = this.findAllMatches();
+                    if (matches.length === 0) {
+                        hasMatches = false;
+                    } else {
+                        matches.forEach(({row, col}) => {
+                            this.board[row][col] = this.getRandomGem();
+                        });
+                    }
+                }
+                this.renderBoard();
+            }
+
+            handleCellClick(row, col) {
+                if (this.isAnimating) return;
+
+                if (this.selectedCell === null) {
+                    this.selectedCell = {row, col};
+                    this.highlightCell(row, col);
+                } else {
+                    const {row: prevRow, col: prevCol} = this.selectedCell;
+
+                    if (this.areAdjacent(prevRow, prevCol, row, col)) {
+                        this.swapGems(prevRow, prevCol, row, col);
+                    } else {
+                        this.clearHighlight();
+                        this.selectedCell = {row, col};
+                        this.highlightCell(row, col);
+                    }
+                }
+            }
+
+            areAdjacent(row1, col1, row2, col2) {
+                const rowDiff = Math.abs(row1 - row2);
+                const colDiff = Math.abs(col1 - col2);
+                return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+            }
+
+            highlightCell(row, col) {
+                const cell = this.getCellElement(row, col);
+                if (cell) cell.classList.add('selected');
+            }
+
+            clearHighlight() {
+                const cells = this.boardElement.querySelectorAll('.selected');
+                cells.forEach(cell => cell.classList.remove('selected'));
+            }
+
+            getCellElement(row, col) {
+                return this.boardElement.children[row * BOARD_SIZE + col];
+            }
+
+            async swapGems(row1, col1, row2, col2) {
+                this.isAnimating = true;
+                this.clearHighlight();
+                this.selectedCell = null;
+
+                // Swap in data
+                const temp = this.board[row1][col1];
+                this.board[row1][col1] = this.board[row2][col2];
+                this.board[row2][col2] = temp;
+
+                this.renderBoard();
+
+                // Check for matches
+                const matches = this.findAllMatches();
+
+                if (matches.length > 0) {
+                    this.moves++;
+                    this.updateMoves();
+                    this.combo = 1;
+                    await this.processMatches();
+                } else {
+                    // Swap back if no matches
+                    await this.delay(200);
+                    const temp = this.board[row1][col1];
+                    this.board[row1][col1] = this.board[row2][col2];
+                    this.board[row2][col2] = temp;
+                    this.renderBoard();
+                    this.showMessage('Нет совпадений!');
+                }
+
+                this.isAnimating = false;
+            }
+
+            findAllMatches() {
+                const matches = new Set();
+
+                // Check horizontal matches
+                for (let row = 0; row < BOARD_SIZE; row++) {
+                    for (let col = 0; col < BOARD_SIZE - 2; col++) {
+                        const gem = this.board[row][col];
+                        if (gem !== null &&
+                            gem === this.board[row][col + 1] &&
+                            gem === this.board[row][col + 2]) {
+                            matches.add(`${row},${col}`);
+                            matches.add(`${row},${col + 1}`);
+                            matches.add(`${row},${col + 2}`);
+
+                            // Check for more in line
+                            let k = col + 3;
+                            while (k < BOARD_SIZE && this.board[row][k] === gem) {
+                                matches.add(`${row},${k}`);
+                                k++;
+                            }
+                        }
+                    }
+                }
+
+                // Check vertical matches
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    for (let row = 0; row < BOARD_SIZE - 2; row++) {
+                        const gem = this.board[row][col];
+                        if (gem !== null &&
+                            gem === this.board[row + 1][col] &&
+                            gem === this.board[row + 2][col]) {
+                            matches.add(`${row},${col}`);
+                            matches.add(`${row + 1},${col}`);
+                            matches.add(`${row + 2},${col}`);
+
+                            // Check for more in line
+                            let k = row + 3;
+                            while (k < BOARD_SIZE && this.board[k][col] === gem) {
+                                matches.add(`${k},${col}`);
+                                k++;
+                            }
+                        }
+                    }
+                }
+
+                return Array.from(matches).map(pos => {
+                    const [row, col] = pos.split(',').map(Number);
+                    return {row, col};
+                });
+            }
+
+            async processMatches() {
+                let matches = this.findAllMatches();
+
+                while (matches.length > 0) {
+                    // Animate matched gems
+                    matches.forEach(({row, col}) => {
+                        const cell = this.getCellElement(row, col);
+                        if (cell) cell.classList.add('matched');
+                    });
+
+                    // Calculate score
+                    const points = matches.length * 10 * this.combo;
+                    this.score += points;
+                    this.updateScore();
+
+                    if (matches.length > 3) {
+                        this.showMessage(`Отлично! +${points} очков!`);
+                    }
+
+                    await this.delay(300);
+
+                    // Remove matched gems
+                    matches.forEach(({row, col}) => {
+                        this.board[row][col] = null;
+                    });
+
+                    // Drop gems
+                    await this.dropGems();
+
+                    // Fill empty spaces
+                    await this.fillEmptySpaces();
+
+                    this.combo++;
+                    this.updateCombo();
+
+                    // Check for new matches
+                    matches = this.findAllMatches();
+
+                    if (matches.length > 0) {
+                        this.showMessage(`Комбо x${this.combo}!`);
+                    }
+                }
+            }
+
+            async dropGems() {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    let emptyRow = BOARD_SIZE - 1;
+
+                    for (let row = BOARD_SIZE - 1; row >= 0; row--) {
+                        if (this.board[row][col] !== null) {
+                            if (row !== emptyRow) {
+                                this.board[emptyRow][col] = this.board[row][col];
+                                this.board[row][col] = null;
+                            }
+                            emptyRow--;
+                        }
+                    }
+                }
+                this.renderBoard();
+            }
+
+            async fillEmptySpaces() {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    for (let row = 0; row < BOARD_SIZE; row++) {
+                        if (this.board[row][col] === null) {
+                            this.board[row][col] = this.getRandomGem();
+                            const cell = this.getCellElement(row, col);
+                            if (cell) cell.classList.add('falling');
+                        }
+                    }
+                }
+                this.renderBoard();
+
+                // Add falling animation to new gems
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    for (let row = 0; row < BOARD_SIZE; row++) {
+                        const cell = this.getCellElement(row, col);
+                        if (cell) cell.classList.add('falling');
+                    }
+                }
+
+                await this.delay(300);
+            }
+
+            updateScore() {
+                document.getElementById('score').textContent = this.score;
+            }
+
+            updateMoves() {
+                document.getElementById('moves').textContent = this.moves;
+            }
+
+            updateCombo() {
+                document.getElementById('combo').textContent = `x${this.combo}`;
+            }
+
+            showMessage(text) {
+                const messageEl = document.getElementById('message');
+                messageEl.textContent = text;
+                setTimeout(() => {
+                    if (messageEl.textContent === text) {
+                        messageEl.textContent = '';
+                    }
+                }, 2000);
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            restart() {
+                this.score = 0;
+                this.moves = 0;
+                this.combo = 1;
+                this.selectedCell = null;
+                this.isAnimating = false;
+                this.updateScore();
+                this.updateMoves();
+                this.updateCombo();
+                this.showMessage('Новая игра!');
+                this.createBoard();
+                this.renderBoard();
+                this.removeInitialMatches();
+            }
+        }
+
+        // Start the game
+        const game = new Match3Game();
+    </script>
+</body>
+</html>
