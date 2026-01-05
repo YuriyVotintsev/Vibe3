@@ -579,7 +579,11 @@
             height: BOARD_SIZE * (CELL_SIZE + GAP) - GAP + 220,
             parent: 'game-container',
             backgroundColor: '#1a1a2e',
-            scene: MainScene
+            scene: MainScene,
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            }
         };
 
         // Start game
