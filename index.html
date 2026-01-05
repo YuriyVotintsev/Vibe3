@@ -433,24 +433,24 @@
             }
 
             async fillEmptySpaces() {
+                const newGems = [];
+
                 for (let col = 0; col < BOARD_SIZE; col++) {
                     for (let row = 0; row < BOARD_SIZE; row++) {
                         if (this.board[row][col] === null) {
                             this.board[row][col] = this.getRandomGem();
-                            const cell = this.getCellElement(row, col);
-                            if (cell) cell.classList.add('falling');
+                            newGems.push({row, col});
                         }
                     }
                 }
+
                 this.renderBoard();
 
-                // Add falling animation to new gems
-                for (let col = 0; col < BOARD_SIZE; col++) {
-                    for (let row = 0; row < BOARD_SIZE; row++) {
-                        const cell = this.getCellElement(row, col);
-                        if (cell) cell.classList.add('falling');
-                    }
-                }
+                // Add falling animation only to new gems
+                newGems.forEach(({row, col}) => {
+                    const cell = this.getCellElement(row, col);
+                    if (cell) cell.classList.add('falling');
+                });
 
                 await this.delay(300);
             }
