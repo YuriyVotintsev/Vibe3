@@ -176,6 +176,15 @@
                     .on('pointerdown', () => this.restartGame());
 
                 this.add.text(this.cameras.main.width / 2, btnY, '🔄 Новая игра', { fontSize: '16px', color: '#ffffff' }).setOrigin(0.5);
+
+                // Build timestamp (updates on page reload)
+                const buildTime = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                this.add.text(
+                    this.cameras.main.width - 10,
+                    this.cameras.main.height - 10,
+                    `build: ${buildTime}`,
+                    { fontSize: '10px', color: '#666666' }
+                ).setOrigin(1, 1);
             }
 
             createBoard() {
@@ -467,6 +476,12 @@
                     duration: SWAP_DURATION,
                     ease: 'Power2',
                     onComplete: () => {
+                        // Set to IDLE first so findAllMatches can check them
+                        gem1.setData('state', GEM_STATE.IDLE);
+                        gem2.setData('state', GEM_STATE.IDLE);
+                        gem1.setData('targetY', pos2.y);
+                        gem2.setData('targetY', pos1.y);
+
                         // Check for matches
                         const matches = this.findAllMatches();
 
@@ -475,15 +490,13 @@
                             this.movesText.setText(this.moves.toString());
                             this.combo = 1;
 
-                            gem1.setData('state', GEM_STATE.IDLE);
-                            gem2.setData('state', GEM_STATE.IDLE);
-                            gem1.setData('targetY', pos2.y);
-                            gem2.setData('targetY', pos1.y);
-
                             this.pendingMatches.push({ row: row2, col: col2 });
                             this.pendingMatches.push({ row: row1, col: col1 });
                         } else {
                             // Swap back
+                            gem1.setData('state', GEM_STATE.SWAPPING);
+                            gem2.setData('state', GEM_STATE.SWAPPING);
+
                             [this.board[row1][col1], this.board[row2][col2]] = [this.board[row2][col2], this.board[row1][col1]];
                             [this.gems[row1][col1], this.gems[row2][col2]] = [this.gems[row2][col2], this.gems[row1][col1]];
 
