@@ -124,3 +124,71 @@ export function shuffleArray(array, randomFn) {
     }
     return array;
 }
+
+/**
+ * Find all match positions on the board (pure board logic, no gem state)
+ * @param {Array} board - 2D array of gem types
+ * @param {number} boardSize - Size of the board
+ * @returns {Set<string>} - Set of "row,col" strings for matched positions
+ */
+export function findAllMatchPositions(board, boardSize) {
+    const matches = new Set();
+
+    // Check horizontal matches
+    for (let row = 0; row < boardSize; row++) {
+        for (let col = 0; col < boardSize - 2; col++) {
+            const type = board[row]?.[col];
+            if (type !== null && type !== undefined &&
+                type === board[row]?.[col + 1] &&
+                type === board[row]?.[col + 2]) {
+
+                matches.add(`${row},${col}`);
+                matches.add(`${row},${col + 1}`);
+                matches.add(`${row},${col + 2}`);
+
+                // Extend match to the right
+                let k = col + 3;
+                while (k < boardSize && board[row]?.[k] === type) {
+                    matches.add(`${row},${k}`);
+                    k++;
+                }
+            }
+        }
+    }
+
+    // Check vertical matches
+    for (let col = 0; col < boardSize; col++) {
+        for (let row = 0; row < boardSize - 2; row++) {
+            const type = board[row]?.[col];
+            if (type !== null && type !== undefined &&
+                type === board[row + 1]?.[col] &&
+                type === board[row + 2]?.[col]) {
+
+                matches.add(`${row},${col}`);
+                matches.add(`${row + 1},${col}`);
+                matches.add(`${row + 2},${col}`);
+
+                // Extend match downward
+                let k = row + 3;
+                while (k < boardSize && board[k]?.[col] === type) {
+                    matches.add(`${k},${col}`);
+                    k++;
+                }
+            }
+        }
+    }
+
+    return matches;
+}
+
+/**
+ * Convert match positions set to array of {row, col} objects
+ * @param {Set<string>} matchSet - Set of "row,col" strings
+ * @returns {Array} - Array of {row, col} objects
+ */
+export function matchSetToArray(matchSet) {
+    return Array.from(matchSet).map(pos => {
+        const [row, col] = pos.split(',').map(Number);
+        return { row, col };
+    });
+}

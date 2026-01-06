@@ -1,5 +1,4 @@
 import {
-    ALL_GEM_COLORS,
     GameSettings,
     BOARD_TOTAL_SIZE,
     BOARD_OFFSET_X,
@@ -9,17 +8,17 @@ import {
     JS_VERSION,
     PlayerData,
     loadPlayerData,
-    savePlayerData,
-    getAutoMoveUpgradeCost
+    savePlayerData
 } from './config.js';
 import { getCellSize } from './utils.js';
 import {
-    checkMatchAt,
-    wouldCreateMatch,
     findValidMoves,
     getValidColors,
-    shuffleArray
+    shuffleArray,
+    findAllMatchPositions,
+    matchSetToArray
 } from './BoardLogic.js';
+import { createGemTextures } from './GemRenderer.js';
 
 export class MainScene extends Phaser.Scene {
     constructor() {
@@ -39,39 +38,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     preload() {
-        this.createGemTextures();
-    }
-
-    createGemTextures() {
-        const cellSize = getCellSize();
-        const size = cellSize - 8;
-        const radius = 10;
-
-        for (let i = 0; i < ALL_GEM_COLORS.length; i++) {
-            const key = `gem_${i}`;
-            if (this.textures.exists(key)) {
-                this.textures.remove(key);
-            }
-
-            const graphics = this.make.graphics({ x: 0, y: 0, add: false });
-            graphics.fillStyle(ALL_GEM_COLORS[i], 1);
-            graphics.fillRoundedRect(0, 0, size, size, radius);
-            graphics.fillStyle(0xffffff, 0.3);
-            graphics.fillRoundedRect(4, 4, size - 20, size - 20, radius - 2);
-            graphics.fillStyle(0x000000, 0.2);
-            graphics.fillRoundedRect(8, size - 16, size - 16, 8, 4);
-            graphics.generateTexture(key, size, size);
-            graphics.destroy();
-        }
-
-        if (this.textures.exists('selection')) {
-            this.textures.remove('selection');
-        }
-        const selectGraphics = this.make.graphics({ x: 0, y: 0, add: false });
-        selectGraphics.lineStyle(4, 0xffffff, 1);
-        selectGraphics.strokeRoundedRect(2, 2, cellSize - 4, cellSize - 4, 12);
-        selectGraphics.generateTexture('selection', cellSize, cellSize);
-        selectGraphics.destroy();
+        createGemTextures(this);
     }
 
     create() {
@@ -650,71 +617,16 @@ export class MainScene extends Phaser.Scene {
     }
 
     findAllMatches() {
-        const matches = new Set();
         const boardSize = GameSettings.boardSize;
+        const matchPositions = findAllMatchPositions(this.board, boardSize);
 
-        for (let row = 0; row < boardSize; row++) {
-            for (let col = 0; col < boardSize - 2; col++) {
-                const type = this.board[row]?.[col];
-                if (type !== null && type !== undefined &&
-                    type === this.board[row]?.[col + 1] &&
-                    type === this.board[row]?.[col + 2]) {
-                    const g1 = this.gems[row]?.[col];
-                    const g2 = this.gems[row]?.[col + 1];
-                    const g3 = this.gems[row]?.[col + 2];
-                    if (g1?.getData('state') === GEM_STATE.IDLE &&
-                        g2?.getData('state') === GEM_STATE.IDLE &&
-                        g3?.getData('state') === GEM_STATE.IDLE) {
-                        matches.add(`${row},${col}`);
-                        matches.add(`${row},${col + 1}`);
-                        matches.add(`${row},${col + 2}`);
-
-                        let k = col + 3;
-                        while (k < boardSize && this.board[row]?.[k] === type) {
-                            const gk = this.gems[row]?.[k];
-                            if (gk?.getData('state') === GEM_STATE.IDLE) {
-                                matches.add(`${row},${k}`);
-                            }
-                            k++;
-                        }
-                    }
-                }
-            }
-        }
-
-        for (let col = 0; col < boardSize; col++) {
-            for (let row = 0; row < boardSize - 2; row++) {
-                const type = this.board[row]?.[col];
-                if (type !== null && type !== undefined &&
-                    type === this.board[row + 1]?.[col] &&
-                    type === this.board[row + 2]?.[col]) {
-                    const g1 = this.gems[row]?.[col];
-                    const g2 = this.gems[row + 1]?.[col];
-                    const g3 = this.gems[row + 2]?.[col];
-                    if (g1?.getData('state') === GEM_STATE.IDLE &&
-                        g2?.getData('state') === GEM_STATE.IDLE &&
-                        g3?.getData('state') === GEM_STATE.IDLE) {
-                        matches.add(`${row},${col}`);
-                        matches.add(`${row + 1},${col}`);
-                        matches.add(`${row + 2},${col}`);
-
-                        let k = row + 3;
-                        while (k < boardSize && this.board[k]?.[col] === type) {
-                            const gk = this.gems[k]?.[col];
-                            if (gk?.getData('state') === GEM_STATE.IDLE) {
-                                matches.add(`${k},${col}`);
-                            }
-                            k++;
-                        }
-                    }
-                }
-            }
-        }
-
-        return Array.from(matches).map(pos => {
-            const [row, col] = pos.split(',').map(Number);
-            return { row, col };
+        // Filter to only include gems that are IDLE
+        const filtered = matchSetToArray(matchPositions).filter(({ row, col }) => {
+            const gem = this.gems[row]?.[col];
+            return gem?.getData('state') === GEM_STATE.IDLE;
         });
+
+        return filtered;
     }
 
     showMessage(text) {
