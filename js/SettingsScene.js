@@ -1,4 +1,4 @@
-import { GameSettings } from './config.js';
+import { GameSettings, resetPlayerData } from './config.js';
 
 export class SettingsScene extends Phaser.Scene {
     constructor() {
@@ -78,6 +78,37 @@ export class SettingsScene extends Phaser.Scene {
             });
 
         this.add.text(cx, yPos + 60, '✕ Отмена', { fontSize: '18px', color: '#ffffff' }).setOrigin(0.5);
+
+        // Reset progress button
+        this.resetConfirm = false;
+        const resetBtn = this.add.rectangle(cx, yPos + 130, 200, 50, 0x7f8c8d)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerover', () => resetBtn.setFillStyle(0x95a5a6))
+            .on('pointerout', () => {
+                resetBtn.setFillStyle(this.resetConfirm ? 0xc0392b : 0x7f8c8d);
+            })
+            .on('pointerdown', () => {
+                if (this.resetConfirm) {
+                    resetPlayerData();
+                    this.scene.stop();
+                    this.scene.stop('MainScene');
+                    this.scene.start('MainScene');
+                } else {
+                    this.resetConfirm = true;
+                    resetBtn.setFillStyle(0xc0392b);
+                    resetText.setText('⚠️ Подтвердить?');
+                    // Reset confirmation after 3 seconds
+                    this.time.delayedCall(3000, () => {
+                        if (this.resetConfirm) {
+                            this.resetConfirm = false;
+                            resetBtn.setFillStyle(0x7f8c8d);
+                            resetText.setText('🗑️ Сброс прогресса');
+                        }
+                    });
+                }
+            });
+
+        const resetText = this.add.text(cx, yPos + 130, '🗑️ Сброс прогресса', { fontSize: '16px', color: '#ffffff' }).setOrigin(0.5);
     }
 
     createSlider(label, y, min, max, currentValue, onChange, step = 1, isDecimal = false) {

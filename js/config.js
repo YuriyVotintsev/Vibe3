@@ -117,6 +117,16 @@ export function loadPlayerData() {
     initColorMultipliers();
 }
 
+export function resetPlayerData() {
+    PlayerData.currency = 0;
+    PlayerData.totalEarned = 0;
+    PlayerData.prestigeLevel = 0;
+    PlayerData.colorMultipliers = {};
+    PlayerData.autoMoveDelay = 5000;
+    initColorMultipliers();
+    savePlayerData();
+}
+
 // Game settings (mutable)
 export const GameSettings = {
     boardSize: 8,
@@ -142,4 +152,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.37-js';
+export const JS_VERSION = '0.0.38-js';
