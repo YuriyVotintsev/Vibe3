@@ -61,7 +61,7 @@ export function createSelectionTexture(scene, cellSize) {
 }
 
 /**
- * Create the bomb texture
+ * Create the bomb texture (gem-style rounded rectangle with bomb design)
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {number} cellSize - Size of a cell
  */
@@ -71,35 +71,44 @@ export function createBombTexture(scene, cellSize) {
     }
 
     const size = cellSize - 8;
+    const radius = 10;
     const graphics = scene.make.graphics({ x: 0, y: 0, add: false });
     const cx = size / 2;
     const cy = size / 2;
-    const bombRadius = size * 0.35;
 
-    // Bomb body (dark circle)
-    graphics.fillStyle(0x2c3e50, 1);
-    graphics.fillCircle(cx, cy, bombRadius);
+    // Main body - dark red/maroon like a gem
+    graphics.fillStyle(0x8b0000, 1);
+    graphics.fillRoundedRect(0, 0, size, size, radius);
 
-    // Bomb highlight
-    graphics.fillStyle(0x34495e, 1);
-    graphics.fillCircle(cx - bombRadius * 0.25, cy - bombRadius * 0.25, bombRadius * 0.5);
+    // Highlight (top-left) - same style as gems
+    graphics.fillStyle(0xff4444, 0.4);
+    graphics.fillRoundedRect(4, 4, size - 20, size - 20, radius - 2);
 
-    // Fuse (top)
-    graphics.lineStyle(3, 0x8b4513, 1);
+    // Shadow (bottom) - same style as gems
+    graphics.fillStyle(0x000000, 0.3);
+    graphics.fillRoundedRect(8, size - 16, size - 16, 8, 4);
+
+    // Bomb circle in center
+    const bombRadius = size * 0.28;
+    graphics.fillStyle(0x1a1a1a, 1);
+    graphics.fillCircle(cx, cy + 2, bombRadius);
+
+    // Bomb shine
+    graphics.fillStyle(0x444444, 1);
+    graphics.fillCircle(cx - bombRadius * 0.3, cy - bombRadius * 0.2, bombRadius * 0.35);
+
+    // Fuse
+    graphics.lineStyle(3, 0xffaa00, 1);
     graphics.beginPath();
-    graphics.moveTo(cx, cy - bombRadius);
-    graphics.lineTo(cx + 4, cy - bombRadius - 8);
+    graphics.moveTo(cx + bombRadius * 0.5, cy - bombRadius * 0.5);
+    graphics.lineTo(cx + bombRadius * 0.9, cy - bombRadius * 1.1);
     graphics.strokePath();
 
-    // Spark at fuse tip
-    graphics.fillStyle(0xff6600, 1);
-    graphics.fillCircle(cx + 4, cy - bombRadius - 10, 4);
+    // Spark/flame at fuse tip
     graphics.fillStyle(0xffff00, 1);
-    graphics.fillCircle(cx + 4, cy - bombRadius - 10, 2);
-
-    // "Danger" stripes
-    graphics.fillStyle(0xe74c3c, 1);
-    graphics.fillRect(cx - bombRadius * 0.5, cy - 2, bombRadius, 4);
+    graphics.fillCircle(cx + bombRadius * 0.9, cy - bombRadius * 1.2, 4);
+    graphics.fillStyle(0xff6600, 1);
+    graphics.fillCircle(cx + bombRadius * 0.9, cy - bombRadius * 1.2, 2.5);
 
     graphics.generateTexture('bomb', size, size);
     graphics.destroy();
