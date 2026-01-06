@@ -89,43 +89,51 @@ export class SettingsScene extends Phaser.Scene {
 
     createSlider(label, y, min, max, currentValue, onChange, step = 1, isDecimal = false) {
         const cx = this.cameras.main.width / 2;
-        const barWidth = 120;
+        const barWidth = 100;
 
-        // Label
-        this.add.text(35, y, label, {
+        // Label on top, centered
+        this.add.text(cx, y, label, {
             fontSize: '18px', color: '#ffffff'
-        }).setOrigin(0, 0.5);
+        }).setOrigin(0.5);
+
+        // Controls row below label
+        const controlY = y + 35;
+
+        // Minus button on left
+        const minusBtnGraphics = this.add.graphics();
+        this.drawRoundedButton(minusBtnGraphics, 50, controlY, 44, 44, 0x555555);
 
         // Value display
         const formatValue = (val) => isDecimal ? val.toFixed(1) : val.toString();
-        const valueText = this.add.text(cx + 100, y, formatValue(currentValue), {
-            fontSize: '22px', color: '#55efc4', fontStyle: 'bold'
+        const valueText = this.add.text(cx, controlY, formatValue(currentValue), {
+            fontSize: '24px', color: '#55efc4', fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Progress bar background
+        // Plus button on right
+        const plusBtnGraphics = this.add.graphics();
+        this.drawRoundedButton(plusBtnGraphics, this.cameras.main.width - 50, controlY, 44, 44, 0x555555);
+
+        // Progress bar at bottom
+        const barY = controlY + 30;
         const barBg = this.add.graphics();
         barBg.fillStyle(0x444444, 1);
-        barBg.fillRoundedRect(cx - 60, y + 25, barWidth, 12, 6);
+        barBg.fillRoundedRect(cx - barWidth / 2, barY, barWidth, 10, 5);
 
-        // Progress bar fill
         const progressBar = this.add.graphics();
         const updateBar = (val) => {
             const progress = (val - min) / (max - min);
-            const fillWidth = Math.max(12, barWidth * progress);
+            const fillWidth = Math.max(10, barWidth * progress);
             progressBar.clear();
             progressBar.fillStyle(0xe94560, 1);
-            progressBar.fillRoundedRect(cx - 60, y + 25, fillWidth, 12, 6);
+            progressBar.fillRoundedRect(cx - barWidth / 2, barY, fillWidth, 10, 5);
         };
         updateBar(currentValue);
 
-        // Minus button
-        const minusBtnGraphics = this.add.graphics();
-        this.drawRoundedButton(minusBtnGraphics, cx - 115, y + 18, 44, 44, 0x555555);
-
-        this.add.rectangle(cx - 115, y + 18, 44, 44, 0x000000, 0)
+        // Minus button interactivity
+        this.add.rectangle(50, controlY, 44, 44, 0x000000, 0)
             .setInteractive({ useHandCursor: true })
-            .on('pointerover', () => this.drawRoundedButton(minusBtnGraphics, cx - 115, y + 18, 44, 44, 0x666666))
-            .on('pointerout', () => this.drawRoundedButton(minusBtnGraphics, cx - 115, y + 18, 44, 44, 0x555555))
+            .on('pointerover', () => this.drawRoundedButton(minusBtnGraphics, 50, controlY, 44, 44, 0x666666))
+            .on('pointerout', () => this.drawRoundedButton(minusBtnGraphics, 50, controlY, 44, 44, 0x555555))
             .on('pointerdown', () => {
                 let val = parseFloat(valueText.text) - step;
                 val = Math.round(val * 10) / 10;
@@ -136,18 +144,15 @@ export class SettingsScene extends Phaser.Scene {
                 }
             });
 
-        this.add.text(cx - 115, y + 18, '−', {
+        this.add.text(50, controlY, '−', {
             fontSize: '28px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Plus button
-        const plusBtnGraphics = this.add.graphics();
-        this.drawRoundedButton(plusBtnGraphics, cx + 55, y + 18, 44, 44, 0x555555);
-
-        this.add.rectangle(cx + 55, y + 18, 44, 44, 0x000000, 0)
+        // Plus button interactivity
+        this.add.rectangle(this.cameras.main.width - 50, controlY, 44, 44, 0x000000, 0)
             .setInteractive({ useHandCursor: true })
-            .on('pointerover', () => this.drawRoundedButton(plusBtnGraphics, cx + 55, y + 18, 44, 44, 0x666666))
-            .on('pointerout', () => this.drawRoundedButton(plusBtnGraphics, cx + 55, y + 18, 44, 44, 0x555555))
+            .on('pointerover', () => this.drawRoundedButton(plusBtnGraphics, this.cameras.main.width - 50, controlY, 44, 44, 0x666666))
+            .on('pointerout', () => this.drawRoundedButton(plusBtnGraphics, this.cameras.main.width - 50, controlY, 44, 44, 0x555555))
             .on('pointerdown', () => {
                 let val = parseFloat(valueText.text) + step;
                 val = Math.round(val * 10) / 10;
@@ -158,7 +163,7 @@ export class SettingsScene extends Phaser.Scene {
                 }
             });
 
-        this.add.text(cx + 55, y + 18, '+', {
+        this.add.text(this.cameras.main.width - 50, controlY, '+', {
             fontSize: '28px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
     }
