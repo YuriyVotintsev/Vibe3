@@ -6,6 +6,16 @@ export class SettingsScene extends Phaser.Scene {
     }
 
     create() {
+        // Pause MainScene while settings are open
+        this.scene.pause('MainScene');
+
+        // Store original values for cancel
+        this.originalSettings = {
+            boardSize: GameSettings.boardSize,
+            colorCount: GameSettings.colorCount,
+            fallSpeed: GameSettings.fallSpeed
+        };
+
         const cx = this.cameras.main.width / 2;
         const cy = this.cameras.main.height / 2;
 
@@ -50,7 +60,14 @@ export class SettingsScene extends Phaser.Scene {
             .setInteractive({ useHandCursor: true })
             .on('pointerover', () => cancelBtn.setFillStyle(0xc0392b))
             .on('pointerout', () => cancelBtn.setFillStyle(0xe74c3c))
-            .on('pointerdown', () => this.scene.stop());
+            .on('pointerdown', () => {
+                // Restore original settings
+                GameSettings.boardSize = this.originalSettings.boardSize;
+                GameSettings.colorCount = this.originalSettings.colorCount;
+                GameSettings.fallSpeed = this.originalSettings.fallSpeed;
+                this.scene.resume('MainScene');
+                this.scene.stop();
+            });
 
         this.add.text(cx, yPos + 60, '✕ Отмена', { fontSize: '18px', color: '#ffffff' }).setOrigin(0.5);
     }
