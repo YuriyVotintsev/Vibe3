@@ -2,8 +2,13 @@
 
 ## IMPORTANT: Version Updates
 
-**Before each commit, update `BUILD_VERSION` in `js/config.js`!**
-This is how the user tracks if their browser loaded the new code.
+**Before each commit, update version in ALL these places:**
+1. `index.html` — comment, HTML div, and `?v=XXX` in all imports
+2. `js/config.js` — `BUILD_VERSION`
+3. `js/MainScene.js` — `?v=XXX` in imports
+4. `js/SettingsScene.js` — `?v=XXX` in imports
+
+Use short version like `009` for query params (no dots).
 
 ## Code Style Preferences
 

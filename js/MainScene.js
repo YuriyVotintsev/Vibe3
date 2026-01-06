@@ -7,8 +7,8 @@ import {
     SWAP_DURATION,
     GEM_STATE,
     BUILD_VERSION
-} from './config.js';
-import { getCellSize } from './utils.js';
+} from './config.js?v=009';
+import { getCellSize } from './utils.js?v=009';
 
 export class MainScene extends Phaser.Scene {
     constructor() {
