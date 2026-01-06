@@ -31,11 +31,11 @@
 <body>
     <div id="game-container"></div>
 
+    <!-- v0.0.7 -->
     <script type="module">
-        const v = '0.0.6';
-        const { BOARD_TOTAL_SIZE } = await import(`./js/config.js?v=${v}`);
-        const { MainScene } = await import(`./js/MainScene.js?v=${v}`);
-        const { SettingsScene } = await import(`./js/SettingsScene.js?v=${v}`);
+        import { BOARD_TOTAL_SIZE } from './js/config.js';
+        import { MainScene } from './js/MainScene.js';
+        import { SettingsScene } from './js/SettingsScene.js';
 
         const config = {
             type: Phaser.AUTO,
