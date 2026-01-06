@@ -76,15 +76,21 @@
             boardSize: 8,
             colorCount: 6,
             fallSpeed: 500,
-            cellSize: 64,
             gap: 4,
             spawnDelay: 80
         };
 
         // Constants
+        const BOARD_TOTAL_SIZE = 500; // Fixed total board size in pixels
         const BOARD_OFFSET_X = 50;
         const BOARD_OFFSET_Y = 120;
         const SWAP_DURATION = 150;
+
+        // Calculate cell size based on board size
+        function getCellSize() {
+            const totalGaps = (GameSettings.boardSize - 1) * GameSettings.gap;
+            return (BOARD_TOTAL_SIZE - totalGaps) / GameSettings.boardSize;
+        }
 
         // Gem states
         const GEM_STATE = {
@@ -235,7 +241,8 @@
             }
 
             createGemTextures() {
-                const size = GameSettings.cellSize - 8;
+                const cellSize = getCellSize();
+                const size = cellSize - 8;
                 const radius = 10;
 
                 // Create textures for all possible colors
@@ -261,14 +268,14 @@
                 }
                 const selectGraphics = this.make.graphics({ x: 0, y: 0, add: false });
                 selectGraphics.lineStyle(4, 0xffffff, 1);
-                selectGraphics.strokeRoundedRect(2, 2, GameSettings.cellSize - 4, GameSettings.cellSize - 4, 12);
-                selectGraphics.generateTexture('selection', GameSettings.cellSize, GameSettings.cellSize);
+                selectGraphics.strokeRoundedRect(2, 2, cellSize - 4, cellSize - 4, 12);
+                selectGraphics.generateTexture('selection', cellSize, cellSize);
                 selectGraphics.destroy();
             }
 
             create() {
                 const boardSize = GameSettings.boardSize;
-                const cellSize = GameSettings.cellSize;
+                const cellSize = getCellSize();
                 const gap = GameSettings.gap;
 
                 // Background
@@ -280,14 +287,13 @@
                     0x1a1a2e
                 );
 
-                // Board background
-                const boardWidth = boardSize * (cellSize + gap) - gap + 20;
-                const boardHeight = boardSize * (cellSize + gap) - gap + 20;
+                // Board background (fixed size)
+                const boardBgSize = BOARD_TOTAL_SIZE + 20;
                 this.add.rectangle(
-                    BOARD_OFFSET_X + boardWidth / 2 - 10,
-                    BOARD_OFFSET_Y + boardHeight / 2 - 10,
-                    boardWidth,
-                    boardHeight,
+                    BOARD_OFFSET_X + BOARD_TOTAL_SIZE / 2,
+                    BOARD_OFFSET_Y + BOARD_TOTAL_SIZE / 2,
+                    boardBgSize,
+                    boardBgSize,
                     0x000000,
                     0.3
                 ).setStrokeStyle(2, 0x333333);
@@ -337,12 +343,12 @@
 
                 this.messageText = this.add.text(
                     this.cameras.main.width / 2,
-                    BOARD_OFFSET_Y + GameSettings.boardSize * (GameSettings.cellSize + GameSettings.gap) + 30,
+                    BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 30,
                     '',
                     { fontSize: '20px', color: '#55efc4' }
                 ).setOrigin(0.5);
 
-                const btnY = BOARD_OFFSET_Y + GameSettings.boardSize * (GameSettings.cellSize + GameSettings.gap) + 70;
+                const btnY = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 70;
 
                 // New game button
                 const newGameBtn = this.add.rectangle(this.cameras.main.width / 2 - 90, btnY, 150, 45, 0xe94560)
@@ -365,7 +371,7 @@
                     this.cameras.main.width - 10,
                     this.cameras.main.height - 10,
                     `build: ${BUILD_ID}`,
-                    { fontSize: '10px', color: '#666666' }
+                    { fontSize: '14px', color: '#888888' }
                 ).setOrigin(1, 1);
             }
 
@@ -398,7 +404,7 @@
             }
 
             getGemPosition(row, col) {
-                const cellSize = GameSettings.cellSize;
+                const cellSize = getCellSize();
                 const gap = GameSettings.gap;
                 return {
                     x: BOARD_OFFSET_X + col * (cellSize + gap) + cellSize / 2,
@@ -486,7 +492,7 @@
 
             spawnNewGems(time) {
                 const boardSize = GameSettings.boardSize;
-                const cellSize = GameSettings.cellSize;
+                const cellSize = getCellSize();
                 const gap = GameSettings.gap;
 
                 for (let col = 0; col < boardSize; col++) {
@@ -820,14 +826,11 @@
             }
         }
 
-        // Calculate initial dimensions
-        const initialWidth = GameSettings.boardSize * (GameSettings.cellSize + GameSettings.gap) - GameSettings.gap + 100;
-        const initialHeight = GameSettings.boardSize * (GameSettings.cellSize + GameSettings.gap) - GameSettings.gap + 220;
-
+        // Fixed dimensions based on total board size
         const config = {
             type: Phaser.AUTO,
-            width: Math.max(initialWidth, 600),
-            height: Math.max(initialHeight, 700),
+            width: BOARD_TOTAL_SIZE + 100,
+            height: BOARD_TOTAL_SIZE + 220,
             parent: 'game-container',
             backgroundColor: '#1a1a2e',
             scene: [MainScene, SettingsScene],
