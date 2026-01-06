@@ -461,11 +461,15 @@ export class MainScene extends Phaser.Scene {
         // Collect other bombs for chain reaction
         const chainBombs = [];
 
-        // Destroy gems in radius
+        // Destroy gems in circular radius
         for (let r = row - radius; r <= row + radius; r++) {
             for (let c = col - radius; c <= col + radius; c++) {
                 if (r < 0 || r >= boardSize || c < 0 || c >= boardSize) continue;
                 if (r === row && c === col) continue; // Skip the exploding bomb itself
+
+                // Check circular distance
+                const distance = Math.sqrt((r - row) ** 2 + (c - col) ** 2);
+                if (distance > radius + 0.5) continue;
 
                 const gem = this.gems[r]?.[c];
                 if (gem && gem.getData('state') === GEM_STATE.IDLE) {
