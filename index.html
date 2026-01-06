@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Match-3 Game - Phaser</title>
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-container {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+
+    <div id="html-version" style="position:fixed;bottom:10px;left:10px;color:#666;font-size:12px;font-family:monospace;z-index:9999;">0.0.56-html</div>
+
+    <script type="module">
+        import { BOARD_TOTAL_SIZE } from './js/config.js';
+        import { MainScene } from './js/MainScene.js';
+        import { SettingsScene } from './js/SettingsScene.js';
+        import { UpgradesScene } from './js/UpgradesScene.js';
+
+        const gameConfig = {
+            type: Phaser.AUTO,
+            width: BOARD_TOTAL_SIZE + 100,
+            height: BOARD_TOTAL_SIZE + 220,
+            parent: 'game-container',
+            backgroundColor: '#1a1a2e',
+            scene: [MainScene, SettingsScene, UpgradesScene],
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            }
+        };
+
+        window.game = new Phaser.Game(gameConfig);
+    </script>
+</body>
+</html>
