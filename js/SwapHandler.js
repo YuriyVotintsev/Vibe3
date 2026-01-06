@@ -1,4 +1,4 @@
-// SwapHandler.js - Handles gem selection and swapping
+// SwapHandler.js - Handles gem selection and swapping (click and swipe)
 import { GameSettings, SWAP_DURATION, GEM_STATE } from './config.js';
 import { checkMatchAt } from './BoardLogic.js';
 
@@ -15,6 +15,12 @@ export class SwapHandler {
     constructor(context) {
         this.ctx = context;
         this.selectedGem = null;
+
+        // Swipe tracking
+        this.dragStartGem = null;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+        this.minSwipeDistance = 30; // minimum pixels to register as swipe
     }
 
     /**
@@ -76,6 +82,68 @@ export class SwapHandler {
     }
 
     /**
+     * Handle pointer down on gem - start tracking for swipe
+     * @param {Phaser.Input.Pointer} pointer
+     * @param {Phaser.GameObjects.Image} gem
+     */
+    onGemPointerDown(pointer, gem) {
+        if (gem.getData('state') !== GEM_STATE.IDLE) return;
+        if (gem.getData('isBomb')) return;
+
+        this.dragStartGem = gem;
+        this.dragStartX = pointer.x;
+        this.dragStartY = pointer.y;
+    }
+
+    /**
+     * Handle pointer up - detect swipe or fall back to click
+     * @param {Phaser.Input.Pointer} pointer
+     */
+    onPointerUp(pointer) {
+        if (!this.dragStartGem) return;
+
+        const gem = this.dragStartGem;
+        const deltaX = pointer.x - this.dragStartX;
+        const deltaY = pointer.y - this.dragStartY;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+        // Reset drag state
+        this.dragStartGem = null;
+
+        // Check if this was a swipe (moved enough distance)
+        if (distance >= this.minSwipeDistance) {
+            // Determine swipe direction
+            const row = gem.getData('row');
+            const col = gem.getData('col');
+
+            let targetRow = row;
+            let targetCol = col;
+
+            // Determine dominant direction
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // Horizontal swipe
+                targetCol = deltaX > 0 ? col + 1 : col - 1;
+            } else {
+                // Vertical swipe
+                targetRow = deltaY > 0 ? row + 1 : row - 1;
+            }
+
+            // Check bounds
+            const boardSize = GameSettings.boardSize;
+            if (targetRow >= 0 && targetRow < boardSize &&
+                targetCol >= 0 && targetCol < boardSize) {
+                // Clear any existing selection and perform swipe swap
+                this.clearSelection();
+                this.swapGems(row, col, targetRow, targetCol);
+                return;
+            }
+        }
+
+        // If not a valid swipe, treat as click
+        this.onGemClick(pointer, gem);
+    }
+
+    /**
      * Check if two positions are adjacent
      */
     areAdjacent(row1, col1, row2, col2) {
@@ -120,18 +188,24 @@ export class SwapHandler {
         const willMatch = checkMatchAt(board, row1, col1, boardSize) ||
                           checkMatchAt(board, row2, col2, boardSize);
 
-        // Animate gem1
+        // Get overlays if they exist
+        const overlay1 = gem1.getData('overlay');
+        const overlay2 = gem2.getData('overlay');
+
+        // Animate gem1 (and its overlay)
+        const targets1 = overlay1 ? [gem1, overlay1] : gem1;
         scene.tweens.add({
-            targets: gem1,
+            targets: targets1,
             x: pos2.x,
             y: pos2.y,
             duration: SWAP_DURATION,
             ease: 'Power2'
         });
 
-        // Animate gem2 and use pre-calculated match result
+        // Animate gem2 (and its overlay) and use pre-calculated match result
+        const targets2 = overlay2 ? [gem2, overlay2] : gem2;
         scene.tweens.add({
-            targets: gem2,
+            targets: targets2,
             x: pos1.x,
             y: pos1.y,
             duration: SWAP_DURATION,
@@ -175,16 +249,22 @@ export class SwapHandler {
         gem2.setData('row', row2);
         gem2.setData('col', col2);
 
+        // Get overlays if they exist
+        const overlay1 = gem1.getData('overlay');
+        const overlay2 = gem2.getData('overlay');
+
+        const targets1 = overlay1 ? [gem1, overlay1] : gem1;
         scene.tweens.add({
-            targets: gem1,
+            targets: targets1,
             x: pos1.x,
             y: pos1.y,
             duration: SWAP_DURATION,
             ease: 'Power2'
         });
 
+        const targets2 = overlay2 ? [gem2, overlay2] : gem2;
         scene.tweens.add({
-            targets: gem2,
+            targets: targets2,
             x: pos2.x,
             y: pos2.y,
             duration: SWAP_DURATION,
@@ -199,7 +279,7 @@ export class SwapHandler {
         });
 
         if (!wasAutoMove) {
-            scene.showMessage('Нет совпадений!');
+            scene.uiManager.showMessage('Нет совпадений!');
         }
         scene.isAutoMoving = false;
     }

@@ -3,13 +3,14 @@ import {
     BOARD_TOTAL_SIZE,
     BOARD_OFFSET_X,
     BOARD_OFFSET_Y,
-    SWAP_DURATION,
     GEM_STATE,
-    JS_VERSION,
     PlayerData,
     loadPlayerData,
     savePlayerData,
-    ALL_GEM_COLORS
+    ALL_GEM_COLORS,
+    ENHANCEMENT,
+    ENHANCEMENT_MULTIPLIERS,
+    rollEnhancement
 } from './config.js';
 import { getCellSize } from './utils.js';
 import {
@@ -22,6 +23,7 @@ import {
 import { createGemTextures } from './GemRenderer.js';
 import { FallManager } from './FallManager.js';
 import { SwapHandler } from './SwapHandler.js';
+import { UIManager } from './UIManager.js';
 
 export class MainScene extends Phaser.Scene {
     constructor() {
@@ -53,6 +55,9 @@ export class MainScene extends Phaser.Scene {
             pendingMatches: this.pendingMatches,
             scene: this
         });
+
+        // UIManager handles UI elements
+        this.uiManager = new UIManager(this);
     }
 
     preload() {
@@ -92,7 +97,7 @@ export class MainScene extends Phaser.Scene {
         );
         this.gemMask = maskShape.createGeometryMask();
 
-        this.createUI();
+        this.uiManager.create();
         this.createBoard();
 
         this.selectionIndicator = this.add.image(0, 0, 'selection');
@@ -101,12 +106,18 @@ export class MainScene extends Phaser.Scene {
 
         this.removeInitialMatches();
 
+        // Handle pointer down on gems (start swipe tracking)
         this.input.on('gameobjectdown', (pointer, gameObject) => {
             if (gameObject.getData('isBomb')) {
                 this.explodeBomb(gameObject);
             } else {
-                this.swapHandler.onGemClick(pointer, gameObject);
+                this.swapHandler.onGemPointerDown(pointer, gameObject);
             }
+        });
+
+        // Handle pointer up (detect swipe or click)
+        this.input.on('pointerup', (pointer) => {
+            this.swapHandler.onPointerUp(pointer);
         });
 
         this.fallManager.initSpawnTimers(boardSize);
@@ -117,86 +128,12 @@ export class MainScene extends Phaser.Scene {
 
     shutdown() {
         this.input.off('gameobjectdown');
+        this.input.off('pointerup');
     }
 
     onResume() {
         // Update currency display when returning from upgrades
-        this.currencyText.setText(`${PlayerData.currency}`);
-    }
-
-    createUI() {
-        const cx = this.cameras.main.width / 2;
-
-        // Header panel background
-        const headerBg = this.add.graphics();
-        headerBg.fillStyle(0x16213e, 0.95);
-        headerBg.fillRoundedRect(10, 8, this.cameras.main.width - 20, 100, 15);
-        headerBg.lineStyle(2, 0x3498db, 0.5);
-        headerBg.strokeRoundedRect(10, 8, this.cameras.main.width - 20, 100, 15);
-
-        // Title
-        this.add.text(cx, 35, 'MATCH-3', {
-            fontSize: '32px',
-            fontFamily: 'Arial Black',
-            color: '#ffffff'
-        }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
-
-        // Currency stat card (centered)
-        const statY = 80;
-        const statWidth = 180;
-        this.add.graphics()
-            .fillStyle(0xf39c12, 0.25)
-            .fillRoundedRect(cx - statWidth / 2, statY - 22, statWidth, 44, 10);
-        this.add.text(cx - 50, statY, '💰', { fontSize: '28px' }).setOrigin(0.5);
-        this.currencyText = this.add.text(cx + 5, statY, `${PlayerData.currency}`, {
-            fontSize: '26px', color: '#f1c40f', fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-
-        // Message text
-        this.messageText = this.add.text(cx, BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 25, '', {
-            fontSize: '18px',
-            color: '#55efc4',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-
-        // Bottom button panel - 2 buttons
-        const btnY = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 70;
-        const btnWidth = 140;
-        const btnHeight = 48;
-        const btnSpacing = 80;
-
-        // Button helper function
-        const createButton = (x, color, hoverColor, label, callback) => {
-            const bg = this.add.graphics();
-            bg.fillStyle(color, 1);
-            bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
-
-            this.add.rectangle(x, btnY, btnWidth, btnHeight, 0x000000, 0)
-                .setInteractive({ useHandCursor: true })
-                .on('pointerover', () => {
-                    bg.clear();
-                    bg.fillStyle(hoverColor, 1);
-                    bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
-                })
-                .on('pointerout', () => {
-                    bg.clear();
-                    bg.fillStyle(color, 1);
-                    bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
-                })
-                .on('pointerdown', callback);
-
-            this.add.text(x, btnY, label, {
-                fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
-            }).setOrigin(0.5);
-        };
-
-        createButton(cx - btnSpacing, 0x9b59b6, 0x8e44ad, '⬆️ Апгрейд', () => this.scene.launch('UpgradesScene'));
-        createButton(cx + btnSpacing, 0x3498db, 0x2980b9, '⚙️ Опции', () => this.scene.launch('SettingsScene'));
-
-        // Version text
-        this.add.text(10, this.cameras.main.height - 10, JS_VERSION, {
-            fontSize: '14px', color: '#888888', fontStyle: 'bold'
-        }).setOrigin(0, 1);
+        this.uiManager.updateCurrency();
     }
 
     createBoard() {
@@ -216,7 +153,7 @@ export class MainScene extends Phaser.Scene {
         }
     }
 
-    createGem(row, col, gemType, startY = null) {
+    createGem(row, col, gemType, startY = null, enhancement = null) {
         const pos = this.getGemPosition(row, col);
         const gem = this.add.image(pos.x, startY !== null ? startY : pos.y, `gem_${gemType}`);
         gem.setInteractive({ useHandCursor: true });
@@ -226,6 +163,18 @@ export class MainScene extends Phaser.Scene {
         gem.setData('state', GEM_STATE.IDLE);
         gem.setData('targetY', pos.y);
         gem.setMask(this.gemMask);
+
+        // Roll for enhancement if not specified
+        const enh = enhancement !== null ? enhancement : rollEnhancement();
+        gem.setData('enhancement', enh);
+
+        // Add overlay for enhanced gems
+        if (enh !== ENHANCEMENT.NONE) {
+            const overlay = this.add.image(gem.x, gem.y, `overlay_${enh}`);
+            overlay.setMask(this.gemMask);
+            gem.setData('overlay', overlay);
+        }
+
         return gem;
     }
 
@@ -298,7 +247,7 @@ export class MainScene extends Phaser.Scene {
                 this.lastMoveTime = time;
             } else if (validMoves.length === 0 && !this.isBoardBusy()) {
                 // No valid moves AND board is settled - shuffle
-                this.showMessage('Нет ходов! Перемешиваю...');
+                this.uiManager.showMessage('Нет ходов! Перемешиваю...');
                 this.shuffleBoard();
                 this.lastMoveTime = time;
             }
@@ -366,23 +315,23 @@ export class MainScene extends Phaser.Scene {
         const matches = this.findAllMatches();
 
         if (matches.length > 0) {
-            // Calculate currency with color multipliers and show floating text
+            // Calculate currency with enhancement multipliers and show floating text
             matches.forEach(({ row, col }) => {
                 const gem = this.gems[row]?.[col];
                 if (gem) {
-                    const colorIndex = gem.getData('type');
-                    const colorMultiplier = PlayerData.colorMultipliers[colorIndex] || 1;
-                    const gemCurrency = colorMultiplier;
+                    const enhancement = gem.getData('enhancement') || ENHANCEMENT.NONE;
+                    const enhMultiplier = ENHANCEMENT_MULTIPLIERS[enhancement] || 1;
+                    const gemCurrency = enhMultiplier;
 
                     PlayerData.currency += gemCurrency;
                     PlayerData.totalEarned += gemCurrency;
 
                     // Show floating currency at gem position
-                    this.showFloatingCurrency(gem.x, gem.y, gemCurrency);
+                    this.uiManager.showFloatingCurrency(gem.x, gem.y, gemCurrency, enhancement);
                 }
             });
 
-            this.currencyText.setText(`${PlayerData.currency}`);
+            this.uiManager.updateCurrency();
             savePlayerData();
 
             // Try to spawn bomb if match was from manual move
@@ -494,11 +443,11 @@ export class MainScene extends Phaser.Scene {
                     }
 
                     // Award currency for gems (not bombs)
-                    const colorIndex = gem.getData('type');
-                    const colorMultiplier = PlayerData.colorMultipliers[colorIndex] || 1;
-                    PlayerData.currency += colorMultiplier;
-                    PlayerData.totalEarned += colorMultiplier;
-                    this.showFloatingCurrency(gem.x, gem.y, colorMultiplier);
+                    const enhancement = gem.getData('enhancement') || ENHANCEMENT.NONE;
+                    const enhMultiplier = ENHANCEMENT_MULTIPLIERS[enhancement] || 1;
+                    PlayerData.currency += enhMultiplier;
+                    PlayerData.totalEarned += enhMultiplier;
+                    this.uiManager.showFloatingCurrency(gem.x, gem.y, enhMultiplier, enhancement);
 
                     // Destroy gem with effect
                     gem.setData('state', GEM_STATE.MATCHED);
@@ -510,7 +459,7 @@ export class MainScene extends Phaser.Scene {
             }
         }
 
-        this.currencyText.setText(`${PlayerData.currency}`);
+        this.uiManager.updateCurrency();
         savePlayerData();
 
         // Chain reaction: explode nearby bombs after a short delay
@@ -521,25 +470,7 @@ export class MainScene extends Phaser.Scene {
         });
 
         // Show explosion message
-        this.showMessage('💥 БУМ!');
-    }
-
-    showFloatingCurrency(x, y, amount) {
-        const text = this.add.text(x, y, `+${amount}💰`, {
-            fontSize: '14px',
-            color: '#ffffff',
-            fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 3
-        }).setOrigin(0.5).setDepth(200);
-
-        this.tweens.add({
-            targets: text,
-            scale: { from: 1, to: 1.5 },
-            duration: 1500,
-            ease: 'Power2',
-            onComplete: () => text.destroy()
-        });
+        this.uiManager.showMessage('💥 БУМ!');
     }
 
     destroyGemWithEffect(gem) {
@@ -547,6 +478,12 @@ export class MainScene extends Phaser.Scene {
         const y = gem.y;
         const colorIndex = gem.getData('type');
         const color = colorIndex !== 'bomb' ? ALL_GEM_COLORS[colorIndex] : 0xff6600;
+
+        // Destroy overlay if exists
+        const overlay = gem.getData('overlay');
+        if (overlay) {
+            overlay.destroy();
+        }
 
         // Pop animation: scale up then down
         this.tweens.add({
@@ -604,25 +541,17 @@ export class MainScene extends Phaser.Scene {
         return filtered;
     }
 
-    showMessage(text) {
-        this.messageText.setText(text);
-        this.messageText.setAlpha(1);
-
-        this.tweens.add({
-            targets: this.messageText,
-            alpha: 0,
-            delay: 1000,
-            duration: 500
-        });
-    }
-
     restartGame() {
         const boardSize = GameSettings.boardSize;
 
         for (let row = 0; row < boardSize; row++) {
             for (let col = 0; col < boardSize; col++) {
-                if (this.gems[row]?.[col]) {
-                    this.gems[row][col].destroy();
+                const gem = this.gems[row]?.[col];
+                if (gem) {
+                    // Destroy overlay if exists
+                    const overlay = gem.getData('overlay');
+                    if (overlay) overlay.destroy();
+                    gem.destroy();
                 }
             }
         }
@@ -637,6 +566,6 @@ export class MainScene extends Phaser.Scene {
         this.createBoard();
         this.removeInitialMatches();
 
-        this.showMessage('Новая игра!');
+        this.uiManager.showMessage('Новая игра!');
     }
 }

@@ -56,6 +56,12 @@ export class FallManager {
                     if (gem.y < targetY) {
                         gem.y = Math.min(gem.y + fallAmount, targetY);
 
+                        // Move overlay with gem
+                        const overlay = gem.getData('overlay');
+                        if (overlay) {
+                            overlay.y = gem.y;
+                        }
+
                         if (gem.y >= targetY) {
                             gem.y = targetY;
                             gem.setData('state', GEM_STATE.IDLE);
