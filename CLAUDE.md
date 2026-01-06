@@ -3,10 +3,8 @@
 ## IMPORTANT: Version Updates
 
 **Before each commit, update version in TWO places:**
-1. `index.html` — HTML div text AND `window.APP_VERSION`
+1. `index.html` — HTML div text (id="html-version")
 2. `js/config.js` — `JS_VERSION`
-
-Both should match. If user sees different versions, it means caching issue.
 
 ## Code Style Preferences
 
