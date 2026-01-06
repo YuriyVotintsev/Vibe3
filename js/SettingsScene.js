@@ -40,10 +40,10 @@ export class SettingsScene extends Phaser.Scene {
         });
         yPos += spacing;
 
-        // Fall speed
-        this.createSlider('Скорость падения', yPos, 50, 1000, GameSettings.fallSpeed, val => {
+        // Fall speed (cells per second)
+        this.createSlider('Скорость (клеток/сек)', yPos, 1, 20, GameSettings.fallSpeed, val => {
             GameSettings.fallSpeed = val;
-        }, 50);
+        }, 1);
         yPos += spacing + 30;
 
         // Apply button

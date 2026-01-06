@@ -26,7 +26,7 @@ export const ALL_GEM_COLORS = [
 export const GameSettings = {
     boardSize: 8,
     colorCount: 6,
-    fallSpeed: 500,
+    fallSpeed: 8,  // cells per second
     gap: 4,
     spawnDelay: 80
 };
@@ -46,4 +46,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.17-js';
+export const JS_VERSION = '0.0.18-js';

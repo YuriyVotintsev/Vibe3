@@ -85,6 +85,16 @@ export class MainScene extends Phaser.Scene {
             0.3
         ).setStrokeStyle(2, 0x333333);
 
+        // Create mask for gems (so they don't overlap UI when falling from above)
+        const maskShape = this.make.graphics();
+        maskShape.fillRect(
+            BOARD_OFFSET_X - 10,
+            BOARD_OFFSET_Y - 10,
+            BOARD_TOTAL_SIZE + 20,
+            BOARD_TOTAL_SIZE + 20
+        );
+        this.gemMask = maskShape.createGeometryMask();
+
         this.createUI();
         this.createBoard();
 
@@ -183,6 +193,7 @@ export class MainScene extends Phaser.Scene {
         gem.setData('type', gemType);
         gem.setData('state', GEM_STATE.IDLE);
         gem.setData('targetY', pos.y);
+        gem.setMask(this.gemMask);
         return gem;
     }
 
@@ -244,7 +255,8 @@ export class MainScene extends Phaser.Scene {
     }
 
     updateFallingGems(delta) {
-        const fallAmount = (GameSettings.fallSpeed * delta) / 1000;
+        const cellSize = getCellSize();
+        const fallAmount = (GameSettings.fallSpeed * cellSize * delta) / 1000;
         const boardSize = GameSettings.boardSize;
 
         for (let row = 0; row < boardSize; row++) {
