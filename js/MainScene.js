@@ -129,64 +129,64 @@ export class MainScene extends Phaser.Scene {
 
         // Header panel background
         const headerBg = this.add.graphics();
-        headerBg.fillStyle(0x16213e, 0.9);
+        headerBg.fillStyle(0x16213e, 0.95);
         headerBg.fillRoundedRect(10, 8, this.cameras.main.width - 20, 100, 15);
-        headerBg.lineStyle(2, 0x0f3460, 1);
+        headerBg.lineStyle(2, 0x3498db, 0.5);
         headerBg.strokeRoundedRect(10, 8, this.cameras.main.width - 20, 100, 15);
 
         // Title
-        this.add.text(cx, 32, 'MATCH-3', {
-            fontSize: '28px',
+        this.add.text(cx, 35, 'MATCH-3', {
+            fontSize: '32px',
             fontFamily: 'Arial Black',
             color: '#ffffff'
-        }).setOrigin(0.5).setShadow(2, 2, '#000000', 3);
+        }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
 
         // Currency stat card (centered)
-        const statY = 75;
-        const statWidth = 140;
+        const statY = 80;
+        const statWidth = 180;
         this.add.graphics()
-            .fillStyle(0xf39c12, 0.2)
-            .fillRoundedRect(cx - statWidth / 2, statY - 20, statWidth, 40, 8);
-        this.add.text(cx - 35, statY, '💰', { fontSize: '24px' }).setOrigin(0.5);
-        this.currencyText = this.add.text(cx + 10, statY, `${PlayerData.currency}`, {
-            fontSize: '22px', color: '#f1c40f', fontStyle: 'bold'
+            .fillStyle(0xf39c12, 0.25)
+            .fillRoundedRect(cx - statWidth / 2, statY - 22, statWidth, 44, 10);
+        this.add.text(cx - 50, statY, '💰', { fontSize: '28px' }).setOrigin(0.5);
+        this.currencyText = this.add.text(cx + 5, statY, `${PlayerData.currency}`, {
+            fontSize: '26px', color: '#f1c40f', fontStyle: 'bold'
         }).setOrigin(0, 0.5);
 
         // Message text
         this.messageText = this.add.text(cx, BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 25, '', {
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#55efc4',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
         // Bottom button panel
-        const btnY = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 65;
-        const btnWidth = 90;
-        const btnHeight = 36;
-        const btnSpacing = 100;
+        const btnY = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 70;
+        const btnWidth = 115;
+        const btnHeight = 44;
+        const btnSpacing = 125;
 
         // Button helper function
         const createButton = (x, color, hoverColor, label, callback) => {
             const bg = this.add.graphics();
             bg.fillStyle(color, 1);
-            bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 10);
+            bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
 
-            const hitArea = this.add.rectangle(x, btnY, btnWidth, btnHeight, 0x000000, 0)
+            this.add.rectangle(x, btnY, btnWidth, btnHeight, 0x000000, 0)
                 .setInteractive({ useHandCursor: true })
                 .on('pointerover', () => {
                     bg.clear();
                     bg.fillStyle(hoverColor, 1);
-                    bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 10);
+                    bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
                 })
                 .on('pointerout', () => {
                     bg.clear();
                     bg.fillStyle(color, 1);
-                    bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 10);
+                    bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
                 })
                 .on('pointerdown', callback);
 
             this.add.text(x, btnY, label, {
-                fontSize: '13px', color: '#ffffff', fontStyle: 'bold'
+                fontSize: '16px', color: '#ffffff', fontStyle: 'bold'
             }).setOrigin(0.5);
         };
 
@@ -194,9 +194,9 @@ export class MainScene extends Phaser.Scene {
         createButton(cx, 0x9b59b6, 0x8e44ad, '⬆️ Апгрейд', () => this.scene.launch('UpgradesScene'));
         createButton(cx + btnSpacing, 0x3498db, 0x2980b9, '⚙️ Опции', () => this.scene.launch('SettingsScene'));
 
-        // Version text (subtle)
+        // Version text
         this.add.text(8, this.cameras.main.height - 8, JS_VERSION, {
-            fontSize: '10px', color: '#444444'
+            fontSize: '11px', color: '#555555'
         }).setOrigin(0, 1);
     }
 
