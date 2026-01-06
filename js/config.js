@@ -52,7 +52,7 @@ export function initColorMultipliers() {
 export function getUpgradeCost(colorIndex) {
     const currentMultiplier = PlayerData.colorMultipliers[colorIndex] || 1;
     const level = currentMultiplier - 1; // level 0 = 1x, level 1 = 2x, etc.
-    return Math.floor(100 * Math.pow(1.5, level));
+    return Math.floor(100 * Math.pow(1.5, level) * GameSettings.priceMultiplier);
 }
 
 // Apply upgrade to a color
@@ -74,7 +74,7 @@ export function getAutoMoveLevel() {
 
 export function getAutoMoveUpgradeCost() {
     const level = getAutoMoveLevel();
-    return Math.floor(200 * Math.pow(1.8, level));
+    return Math.floor(200 * Math.pow(1.8, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeAutoMove() {
@@ -112,7 +112,8 @@ export const GameSettings = {
     colorCount: 6,
     fallSpeed: 8,  // cells per second
     gap: 4,
-    spawnDelay: 80
+    spawnDelay: 80,
+    priceMultiplier: 1  // 0.1 to 1, affects upgrade costs
 };
 
 // Constants
@@ -130,4 +131,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.25-js';
+export const JS_VERSION = '0.0.26-js';

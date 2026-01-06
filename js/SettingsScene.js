@@ -13,7 +13,8 @@ export class SettingsScene extends Phaser.Scene {
         this.originalSettings = {
             boardSize: GameSettings.boardSize,
             colorCount: GameSettings.colorCount,
-            fallSpeed: GameSettings.fallSpeed
+            fallSpeed: GameSettings.fallSpeed,
+            priceMultiplier: GameSettings.priceMultiplier
         };
 
         const cx = this.cameras.main.width / 2;
@@ -44,6 +45,12 @@ export class SettingsScene extends Phaser.Scene {
         this.createSlider('Скорость (клеток/сек)', yPos, 1, 20, GameSettings.fallSpeed, val => {
             GameSettings.fallSpeed = val;
         }, 1);
+        yPos += spacing;
+
+        // Price multiplier
+        this.createSlider('Множитель цен', yPos, 0.1, 1, GameSettings.priceMultiplier, val => {
+            GameSettings.priceMultiplier = val;
+        }, 0.1, true);
         yPos += spacing + 30;
 
         // Apply button
@@ -65,6 +72,7 @@ export class SettingsScene extends Phaser.Scene {
                 GameSettings.boardSize = this.originalSettings.boardSize;
                 GameSettings.colorCount = this.originalSettings.colorCount;
                 GameSettings.fallSpeed = this.originalSettings.fallSpeed;
+                GameSettings.priceMultiplier = this.originalSettings.priceMultiplier;
                 this.scene.resume('MainScene');
                 this.scene.stop();
             });
@@ -72,14 +80,15 @@ export class SettingsScene extends Phaser.Scene {
         this.add.text(cx, yPos + 60, '✕ Отмена', { fontSize: '18px', color: '#ffffff' }).setOrigin(0.5);
     }
 
-    createSlider(label, y, min, max, currentValue, onChange, step = 1) {
+    createSlider(label, y, min, max, currentValue, onChange, step = 1, isDecimal = false) {
         const cx = this.cameras.main.width / 2;
         const barWidth = 100;
 
         this.add.text(cx, y, label, { fontSize: '16px', color: '#aaaaaa' }).setOrigin(0.5);
 
         // Value display
-        const valueText = this.add.text(cx + 130, y + 30, currentValue.toString(), {
+        const formatValue = (val) => isDecimal ? val.toFixed(1) : val.toString();
+        const valueText = this.add.text(cx + 130, y + 30, formatValue(currentValue), {
             fontSize: '20px', color: '#e94560', fontStyle: 'bold'
         }).setOrigin(0.5);
 
@@ -102,9 +111,10 @@ export class SettingsScene extends Phaser.Scene {
             .on('pointerover', () => minusBtn.setFillStyle(0x555555))
             .on('pointerout', () => minusBtn.setFillStyle(0x444444))
             .on('pointerdown', () => {
-                let val = parseInt(valueText.text) - step;
-                if (val >= min) {
-                    valueText.setText(val.toString());
+                let val = parseFloat(valueText.text) - step;
+                val = Math.round(val * 10) / 10; // Fix floating point
+                if (val >= min - 0.001) {
+                    valueText.setText(formatValue(val));
                     onChange(val);
                     updateBar(val);
                 }
@@ -117,9 +127,10 @@ export class SettingsScene extends Phaser.Scene {
             .on('pointerover', () => plusBtn.setFillStyle(0x555555))
             .on('pointerout', () => plusBtn.setFillStyle(0x444444))
             .on('pointerdown', () => {
-                let val = parseInt(valueText.text) + step;
-                if (val <= max) {
-                    valueText.setText(val.toString());
+                let val = parseFloat(valueText.text) + step;
+                val = Math.round(val * 10) / 10; // Fix floating point
+                if (val <= max + 0.001) {
+                    valueText.setText(formatValue(val));
                     onChange(val);
                     updateBar(val);
                 }
