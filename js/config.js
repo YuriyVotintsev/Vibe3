@@ -46,4 +46,4 @@ export const GEM_STATE = {
 };
 
 // Build version (update manually with each commit)
-export const BUILD_VERSION = '0.0.5';
+export const BUILD_VERSION = '0.0.6';
