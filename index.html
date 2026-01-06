@@ -110,8 +110,8 @@
                 // Title
                 this.add.text(cx, 50, '⚙️ Настройки', { fontSize: '28px', color: '#e94560' }).setOrigin(0.5);
 
-                let yPos = 120;
-                const spacing = 70;
+                let yPos = 130;
+                const spacing = 80;
 
                 // Board size
                 this.createSlider('Размер поля', yPos, 4, 12, GameSettings.boardSize, val => {
@@ -126,16 +126,10 @@
                 yPos += spacing;
 
                 // Fall speed
-                this.createSlider('Скорость падения', yPos, 200, 1000, GameSettings.fallSpeed, val => {
+                this.createSlider('Скорость падения', yPos, 50, 1000, GameSettings.fallSpeed, val => {
                     GameSettings.fallSpeed = val;
                 }, 50);
-                yPos += spacing;
-
-                // Spawn delay
-                this.createSlider('Задержка спавна (мс)', yPos, 20, 200, GameSettings.spawnDelay, val => {
-                    GameSettings.spawnDelay = val;
-                }, 10);
-                yPos += spacing + 20;
+                yPos += spacing + 30;
 
                 // Apply button
                 const applyBtn = this.add.rectangle(cx, yPos, 200, 50, 0x27ae60)
@@ -158,7 +152,7 @@
 
             createSlider(label, y, min, max, currentValue, onChange, step = 1) {
                 const cx = this.cameras.main.width / 2;
-                const sliderWidth = 200;
+                const barWidth = 100;
 
                 this.add.text(cx, y, label, { fontSize: '16px', color: '#aaaaaa' }).setOrigin(0.5);
 
@@ -166,6 +160,19 @@
                 const valueText = this.add.text(cx + 130, y + 30, currentValue.toString(), {
                     fontSize: '20px', color: '#e94560', fontStyle: 'bold'
                 }).setOrigin(0.5);
+
+                // Progress bar background
+                this.add.rectangle(cx - 20, y + 30, barWidth, 8, 0x333333);
+
+                // Progress bar fill (dynamic)
+                const progressBar = this.add.rectangle(cx - 20, y + 30, barWidth, 8, 0xe94560);
+                progressBar.setOrigin(0.5);
+
+                const updateBar = (val) => {
+                    const progress = (val - min) / (max - min);
+                    progressBar.setScale(progress, 1);
+                };
+                updateBar(currentValue);
 
                 // Minus button
                 const minusBtn = this.add.rectangle(cx - 120, y + 30, 40, 40, 0x444444)
@@ -177,6 +184,7 @@
                         if (val >= min) {
                             valueText.setText(val.toString());
                             onChange(val);
+                            updateBar(val);
                         }
                     });
                 this.add.text(cx - 120, y + 30, '−', { fontSize: '24px', color: '#ffffff' }).setOrigin(0.5);
@@ -191,19 +199,17 @@
                         if (val <= max) {
                             valueText.setText(val.toString());
                             onChange(val);
+                            updateBar(val);
                         }
                     });
                 this.add.text(cx + 80, y + 30, '+', { fontSize: '24px', color: '#ffffff' }).setOrigin(0.5);
-
-                // Current value bar
-                const barBg = this.add.rectangle(cx - 20, y + 30, sliderWidth - 100, 8, 0x333333);
-                const progress = (currentValue - min) / (max - min);
-                this.add.rectangle(cx - 20 - (sliderWidth - 100) / 2 + progress * (sliderWidth - 100) / 2, y + 30, progress * (sliderWidth - 100), 8, 0xe94560);
             }
 
             applySettings() {
                 this.scene.stop();
-                this.scene.get('MainScene').scene.restart();
+                // Full scene restart to recreate everything
+                this.scene.stop('MainScene');
+                this.scene.start('MainScene');
             }
         }
 
@@ -300,6 +306,13 @@
                 for (let col = 0; col < boardSize; col++) {
                     this.lastSpawnTime[col] = 0;
                 }
+
+                // Clean up on shutdown
+                this.events.on('shutdown', this.shutdown, this);
+            }
+
+            shutdown() {
+                this.input.off('gameobjectdown', this.onGemClick, this);
             }
 
             createUI() {
