@@ -38,6 +38,12 @@ export function checkMatchAt(board, row, col, boardSize) {
  * @returns {boolean} - True if swap would create a match
  */
 export function wouldCreateMatch(board, row1, col1, row2, col2, boardSize) {
+    // Can't swap with empty cells
+    if (board[row1][col1] === null || board[row1][col1] === undefined ||
+        board[row2][col2] === null || board[row2][col2] === undefined) {
+        return false;
+    }
+
     // Temporarily swap
     [board[row1][col1], board[row2][col2]] = [board[row2][col2], board[row1][col1]];
 
