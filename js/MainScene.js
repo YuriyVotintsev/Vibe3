@@ -159,11 +159,11 @@ export class MainScene extends Phaser.Scene {
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Bottom button panel
+        // Bottom button panel - 2 buttons
         const btnY = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 70;
-        const btnWidth = 115;
-        const btnHeight = 44;
-        const btnSpacing = 125;
+        const btnWidth = 140;
+        const btnHeight = 48;
+        const btnSpacing = 80;
 
         // Button helper function
         const createButton = (x, color, hoverColor, label, callback) => {
@@ -186,12 +186,11 @@ export class MainScene extends Phaser.Scene {
                 .on('pointerdown', callback);
 
             this.add.text(x, btnY, label, {
-                fontSize: '16px', color: '#ffffff', fontStyle: 'bold'
+                fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
             }).setOrigin(0.5);
         };
 
-        createButton(cx - btnSpacing, 0xe74c3c, 0xc0392b, '🔄 Новая', () => this.restartGame());
-        createButton(cx, 0x9b59b6, 0x8e44ad, '⬆️ Апгрейд', () => this.scene.launch('UpgradesScene'));
+        createButton(cx - btnSpacing, 0x9b59b6, 0x8e44ad, '⬆️ Апгрейд', () => this.scene.launch('UpgradesScene'));
         createButton(cx + btnSpacing, 0x3498db, 0x2980b9, '⚙️ Опции', () => this.scene.launch('SettingsScene'));
 
         // Version text
