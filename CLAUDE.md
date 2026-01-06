@@ -1,5 +1,10 @@
 # Claude Code Instructions for Vibe3
 
+## IMPORTANT: Version Updates
+
+**Before each commit, update `BUILD_VERSION` in `js/config.js`!**
+This is how the user tracks if their browser loaded the new code.
+
 ## Code Style Preferences
 
 - Split files when they exceed 400-500 lines

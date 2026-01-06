@@ -45,9 +45,5 @@ export const GEM_STATE = {
     MATCHED: 'matched'
 };
 
-// Build ID (fetched from GitHub)
-export let BUILD_ID = 'loading...';
-
-export function setBuildId(id) {
-    BUILD_ID = id;
-}
+// Build version (update manually with each commit)
+export const BUILD_VERSION = '0.0.5';

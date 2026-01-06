@@ -32,26 +32,10 @@
     <div id="game-container"></div>
 
     <script type="module">
-        import { BOARD_TOTAL_SIZE, setBuildId } from './js/config.js';
+        import { BOARD_TOTAL_SIZE } from './js/config.js';
         import { MainScene } from './js/MainScene.js';
         import { SettingsScene } from './js/SettingsScene.js';
 
-        // Auto-fetch build info from GitHub API
-        fetch('https://api.github.com/repos/YuriyVotintsev/Vibe3/commits/claude/match3-game-2pLam')
-            .then(r => r.json())
-            .then(data => {
-                const buildId = data.sha?.substring(0, 7) || 'unknown';
-                setBuildId(buildId);
-                // Update in any active scene
-                if (window.game?.scene?.scenes) {
-                    window.game.scene.scenes.forEach(s => {
-                        if (s.buildText) s.buildText.setText(`build: ${buildId}`);
-                    });
-                }
-            })
-            .catch(() => { setBuildId('offline'); });
-
-        // Fixed dimensions based on total board size
         const config = {
             type: Phaser.AUTO,
             width: BOARD_TOTAL_SIZE + 100,
