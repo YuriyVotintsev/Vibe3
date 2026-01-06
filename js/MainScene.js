@@ -115,10 +115,16 @@ export class MainScene extends Phaser.Scene {
         }
 
         this.events.on('shutdown', this.shutdown, this);
+        this.events.on('resume', this.onResume, this);
     }
 
     shutdown() {
         this.input.off('gameobjectdown', this.onGemClick, this);
+    }
+
+    onResume() {
+        // Update currency display when returning from upgrades
+        this.currencyText.setText(`${PlayerData.currency}`);
     }
 
     createUI() {
@@ -371,14 +377,18 @@ export class MainScene extends Phaser.Scene {
         const matches = this.findAllMatches();
 
         if (matches.length > 0) {
-            // Calculate points with color multipliers
+            // Calculate points with color multipliers and show floating text
             let totalPoints = 0;
             matches.forEach(({ row, col }) => {
                 const gem = this.gems[row]?.[col];
                 if (gem) {
                     const colorIndex = gem.getData('type');
                     const colorMultiplier = PlayerData.colorMultipliers[colorIndex] || 1;
-                    totalPoints += 10 * colorMultiplier * this.combo;
+                    const gemPoints = 10 * colorMultiplier * this.combo;
+                    totalPoints += gemPoints;
+
+                    // Show floating points at gem position
+                    this.showFloatingPoints(gem.x, gem.y, gemPoints);
                 }
             });
 
@@ -391,10 +401,6 @@ export class MainScene extends Phaser.Scene {
             PlayerData.totalEarned += currencyEarned;
             this.currencyText.setText(`${PlayerData.currency}`);
             savePlayerData();
-
-            if (matches.length > 3) {
-                this.showMessage(`+${totalPoints}`);
-            }
 
             matches.forEach(({ row, col }) => {
                 const gem = this.gems[row]?.[col];
@@ -418,6 +424,25 @@ export class MainScene extends Phaser.Scene {
             this.combo++;
             this.comboText.setText(`x${this.combo}`);
         }
+    }
+
+    showFloatingPoints(x, y, points) {
+        const text = this.add.text(x, y, `+${points}`, {
+            fontSize: '16px',
+            color: '#ffffff',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5).setDepth(200);
+
+        this.tweens.add({
+            targets: text,
+            y: y - 40,
+            alpha: 0,
+            duration: 600,
+            ease: 'Power2',
+            onComplete: () => text.destroy()
+        });
     }
 
     onGemClick(pointer, gem) {
