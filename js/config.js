@@ -36,7 +36,9 @@ export const PlayerData = {
     totalEarned: 0,       // lifetime currency earned
     prestigeLevel: 0,     // future use
     colorMultipliers: {}, // { colorIndex: multiplier }
-    autoMoveDelay: 5000   // ms between auto-moves (starts at 5 seconds)
+    autoMoveDelay: 5000,  // ms between auto-moves (starts at 5 seconds)
+    bombChance: 10,       // % chance to spawn bomb on manual match (starts at 10%)
+    bombRadius: 1         // explosion radius (starts at 1)
 };
 
 // Initialize color multipliers (all start at 1x)
@@ -99,6 +101,48 @@ export function upgradeAutoMove() {
     return false;
 }
 
+// Bomb chance upgrade (10% -> 15% -> 20% ... up to 50%)
+export function getBombChanceLevel() {
+    return (PlayerData.bombChance - 10) / 5;
+}
+
+export function getBombChanceUpgradeCost() {
+    const level = getBombChanceLevel();
+    return Math.floor(300 * Math.pow(1.6, level) * GameSettings.priceMultiplier);
+}
+
+export function upgradeBombChance() {
+    const cost = getBombChanceUpgradeCost();
+    if (PlayerData.currency >= cost && PlayerData.bombChance < 50) {
+        PlayerData.currency -= cost;
+        PlayerData.bombChance += 5;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Bomb radius upgrade (1 -> 2 -> 3, max 3)
+export function getBombRadiusLevel() {
+    return PlayerData.bombRadius - 1;
+}
+
+export function getBombRadiusUpgradeCost() {
+    const level = getBombRadiusLevel();
+    return Math.floor(500 * Math.pow(2.5, level) * GameSettings.priceMultiplier);
+}
+
+export function upgradeBombRadius() {
+    const cost = getBombRadiusUpgradeCost();
+    if (PlayerData.currency >= cost && PlayerData.bombRadius < 3) {
+        PlayerData.currency -= cost;
+        PlayerData.bombRadius += 1;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
 // Save/Load player data to localStorage
 export function savePlayerData() {
     localStorage.setItem('match3_player', JSON.stringify(PlayerData));
@@ -114,6 +158,9 @@ export function loadPlayerData() {
     if (!PlayerData.autoMoveDelay || PlayerData.autoMoveDelay < 100) {
         PlayerData.autoMoveDelay = 5000;
     }
+    // Ensure bomb properties have valid values
+    if (!PlayerData.bombChance) PlayerData.bombChance = 10;
+    if (!PlayerData.bombRadius) PlayerData.bombRadius = 1;
     initColorMultipliers();
 }
 
@@ -123,6 +170,8 @@ export function resetPlayerData() {
     PlayerData.prestigeLevel = 0;
     PlayerData.colorMultipliers = {};
     PlayerData.autoMoveDelay = 5000;
+    PlayerData.bombChance = 10;
+    PlayerData.bombRadius = 1;
     initColorMultipliers();
     savePlayerData();
 }
@@ -152,4 +201,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.38-js';
+export const JS_VERSION = '0.0.39-js';

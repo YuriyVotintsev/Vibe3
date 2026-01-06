@@ -143,6 +143,9 @@ export class SwapHandler {
                     scene.movesText.setText(scene.moves.toString());
                     scene.isAutoMoving = false;
 
+                    // Mark if this was a manual move (for bomb spawning)
+                    scene.lastMatchWasManual = !wasAutoMove;
+
                     pendingMatches.push({ row: row2, col: col2 });
                     pendingMatches.push({ row: row1, col: col1 });
                 } else {

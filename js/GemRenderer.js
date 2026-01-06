@@ -38,6 +38,9 @@ export function createGemTextures(scene) {
 
     // Create selection indicator texture
     createSelectionTexture(scene, cellSize);
+
+    // Create bomb texture
+    createBombTexture(scene, cellSize);
 }
 
 /**
@@ -54,5 +57,50 @@ export function createSelectionTexture(scene, cellSize) {
     graphics.lineStyle(4, 0xffffff, 1);
     graphics.strokeRoundedRect(2, 2, cellSize - 4, cellSize - 4, 12);
     graphics.generateTexture('selection', cellSize, cellSize);
+    graphics.destroy();
+}
+
+/**
+ * Create the bomb texture
+ * @param {Phaser.Scene} scene - The Phaser scene
+ * @param {number} cellSize - Size of a cell
+ */
+export function createBombTexture(scene, cellSize) {
+    if (scene.textures.exists('bomb')) {
+        scene.textures.remove('bomb');
+    }
+
+    const size = cellSize - 8;
+    const graphics = scene.make.graphics({ x: 0, y: 0, add: false });
+    const cx = size / 2;
+    const cy = size / 2;
+    const bombRadius = size * 0.35;
+
+    // Bomb body (dark circle)
+    graphics.fillStyle(0x2c3e50, 1);
+    graphics.fillCircle(cx, cy, bombRadius);
+
+    // Bomb highlight
+    graphics.fillStyle(0x34495e, 1);
+    graphics.fillCircle(cx - bombRadius * 0.25, cy - bombRadius * 0.25, bombRadius * 0.5);
+
+    // Fuse (top)
+    graphics.lineStyle(3, 0x8b4513, 1);
+    graphics.beginPath();
+    graphics.moveTo(cx, cy - bombRadius);
+    graphics.lineTo(cx + 4, cy - bombRadius - 8);
+    graphics.strokePath();
+
+    // Spark at fuse tip
+    graphics.fillStyle(0xff6600, 1);
+    graphics.fillCircle(cx + 4, cy - bombRadius - 10, 4);
+    graphics.fillStyle(0xffff00, 1);
+    graphics.fillCircle(cx + 4, cy - bombRadius - 10, 2);
+
+    // "Danger" stripes
+    graphics.fillStyle(0xe74c3c, 1);
+    graphics.fillRect(cx - bombRadius * 0.5, cy - 2, bombRadius, 4);
+
+    graphics.generateTexture('bomb', size, size);
     graphics.destroy();
 }

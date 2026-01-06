@@ -31,10 +31,12 @@ export class MainScene extends Phaser.Scene {
         loadPlayerData();
         this.board = [];
         this.gems = [];
+        this.bombs = [];  // 2D array tracking bomb positions
         this.moves = 0;
         this.pendingMatches = [];
         this.lastMoveTime = 0;
         this.isAutoMoving = false;
+        this.lastMatchWasManual = false;  // Track if last match came from manual move
 
         // FallManager handles falling, gravity, spawning
         this.fallManager = new FallManager({
@@ -99,7 +101,13 @@ export class MainScene extends Phaser.Scene {
 
         this.removeInitialMatches();
 
-        this.input.on('gameobjectdown', (pointer, gem) => this.swapHandler.onGemClick(pointer, gem));
+        this.input.on('gameobjectdown', (pointer, gameObject) => {
+            if (gameObject.getData('isBomb')) {
+                this.explodeBomb(gameObject);
+            } else {
+                this.swapHandler.onGemClick(pointer, gameObject);
+            }
+        });
 
         this.fallManager.initSpawnTimers(boardSize);
 
@@ -180,15 +188,18 @@ export class MainScene extends Phaser.Scene {
         // Clear arrays without reassigning (keep references for managers)
         this.board.length = 0;
         this.gems.length = 0;
+        this.bombs.length = 0;
         const boardSize = GameSettings.boardSize;
 
         for (let row = 0; row < boardSize; row++) {
             this.board[row] = [];
             this.gems[row] = [];
+            this.bombs[row] = [];
             for (let col = 0; col < boardSize; col++) {
                 const gemType = Phaser.Math.Between(0, GameSettings.colorCount - 1);
                 this.board[row][col] = gemType;
                 this.gems[row][col] = this.createGem(row, col, gemType);
+                this.bombs[row][col] = null;
             }
         }
     }
@@ -298,12 +309,17 @@ export class MainScene extends Phaser.Scene {
     shuffleBoard() {
         const boardSize = GameSettings.boardSize;
 
-        // Collect all gem types
+        // Collect all gem types (skip bomb positions)
         const types = [];
+        const shufflePositions = [];
         for (let row = 0; row < boardSize; row++) {
             for (let col = 0; col < boardSize; col++) {
+                // Skip if there's a bomb at this position
+                if (this.bombs[row]?.[col]) continue;
+
                 if (this.board[row][col] !== null) {
                     types.push(this.board[row][col]);
+                    shufflePositions.push({ row, col });
                 }
             }
         }
@@ -311,19 +327,14 @@ export class MainScene extends Phaser.Scene {
         // Fisher-Yates shuffle using BoardLogic
         shuffleArray(types, (i) => Phaser.Math.Between(0, i));
 
-        // Reassign
-        let idx = 0;
-        for (let row = 0; row < boardSize; row++) {
-            for (let col = 0; col < boardSize; col++) {
-                if (this.board[row][col] !== null && idx < types.length) {
-                    this.board[row][col] = types[idx];
-                    const gem = this.gems[row][col];
-                    if (gem) {
-                        gem.setTexture(`gem_${types[idx]}`);
-                        gem.setData('type', types[idx]);
-                    }
-                    idx++;
-                }
+        // Reassign only non-bomb positions
+        for (let i = 0; i < shufflePositions.length && i < types.length; i++) {
+            const { row, col } = shufflePositions[i];
+            this.board[row][col] = types[i];
+            const gem = this.gems[row][col];
+            if (gem) {
+                gem.setTexture(`gem_${types[i]}`);
+                gem.setData('type', types[i]);
             }
         }
 
@@ -362,6 +373,12 @@ export class MainScene extends Phaser.Scene {
             this.currencyText.setText(`${PlayerData.currency}`);
             savePlayerData();
 
+            // Try to spawn bomb if match was from manual move
+            if (this.lastMatchWasManual && matches.length >= 3) {
+                this.trySpawnBomb(matches);
+            }
+            this.lastMatchWasManual = false;
+
             matches.forEach(({ row, col }) => {
                 const gem = this.gems[row]?.[col];
                 if (gem && gem.getData('state') !== GEM_STATE.MATCHED) {
@@ -381,6 +398,97 @@ export class MainScene extends Phaser.Scene {
                 }
             });
         }
+    }
+
+    trySpawnBomb(matches) {
+        // Roll for bomb spawn chance
+        if (Phaser.Math.Between(1, 100) > PlayerData.bombChance) return;
+
+        // Find center of match (approximate)
+        const centerIdx = Math.floor(matches.length / 2);
+        const { row, col } = matches[centerIdx];
+
+        // Don't spawn if there's already a bomb there
+        if (this.bombs[row]?.[col]) return;
+
+        // Create bomb at center position
+        this.spawnBomb(row, col);
+    }
+
+    spawnBomb(row, col) {
+        const pos = this.getGemPosition(row, col);
+        const bomb = this.add.image(pos.x, pos.y, 'bomb');
+        bomb.setInteractive({ useHandCursor: true });
+        bomb.setData('row', row);
+        bomb.setData('col', col);
+        bomb.setData('isBomb', true);
+        bomb.setMask(this.gemMask);
+        bomb.setDepth(50);
+
+        // Spawn animation
+        bomb.setScale(0);
+        this.tweens.add({
+            targets: bomb,
+            scale: 1,
+            duration: 300,
+            ease: 'Back.easeOut'
+        });
+
+        this.bombs[row][col] = bomb;
+    }
+
+    explodeBomb(bomb) {
+        const row = bomb.getData('row');
+        const col = bomb.getData('col');
+        const radius = PlayerData.bombRadius;
+        const boardSize = GameSettings.boardSize;
+
+        // Remove the bomb
+        this.bombs[row][col] = null;
+        bomb.destroy();
+
+        // Destroy gems in radius
+        for (let r = row - radius; r <= row + radius; r++) {
+            for (let c = col - radius; c <= col + radius; c++) {
+                if (r < 0 || r >= boardSize || c < 0 || c >= boardSize) continue;
+
+                const gem = this.gems[r]?.[c];
+                if (gem && gem.getData('state') === GEM_STATE.IDLE) {
+                    // Award currency
+                    const colorIndex = gem.getData('type');
+                    const colorMultiplier = PlayerData.colorMultipliers[colorIndex] || 1;
+                    PlayerData.currency += colorMultiplier;
+                    PlayerData.totalEarned += colorMultiplier;
+                    this.showFloatingCurrency(gem.x, gem.y, colorMultiplier);
+
+                    // Destroy gem with explosion effect
+                    gem.setData('state', GEM_STATE.MATCHED);
+                    this.tweens.add({
+                        targets: gem,
+                        scale: 1.5,
+                        alpha: 0,
+                        duration: 200,
+                        ease: 'Power2',
+                        onComplete: () => gem.destroy()
+                    });
+
+                    this.board[r][c] = null;
+                    this.gems[r][c] = null;
+                }
+
+                // Also destroy any other bombs in radius (chain reaction)
+                const otherBomb = this.bombs[r]?.[c];
+                if (otherBomb && (r !== row || c !== col)) {
+                    this.time.delayedCall(100, () => this.explodeBomb(otherBomb));
+                }
+            }
+        }
+
+        this.currencyText.setText(`${PlayerData.currency}`);
+        savePlayerData();
+
+        // Show explosion message
+        this.showMessage('💥 БУМ!');
     }
 
     showFloatingCurrency(x, y, amount) {
@@ -434,11 +542,15 @@ export class MainScene extends Phaser.Scene {
                 if (this.gems[row]?.[col]) {
                     this.gems[row][col].destroy();
                 }
+                if (this.bombs[row]?.[col]) {
+                    this.bombs[row][col].destroy();
+                }
             }
         }
 
         this.moves = 0;
         this.pendingMatches.length = 0;
+        this.lastMatchWasManual = false;
 
         this.movesText.setText('0');
 
