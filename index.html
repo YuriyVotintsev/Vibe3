@@ -34,25 +34,20 @@
 <body>
     <div id="game-container"></div>
 
-    <div id="html-version" style="position:fixed;bottom:10px;left:10px;color:#666;font-size:12px;font-family:monospace;z-index:9999;">0.0.14-html</div>
-
-    <script>
-        window.APP_VERSION = '0.0.14'; // for cache-busting imports
-    </script>
+    <div id="html-version" style="position:fixed;bottom:10px;left:10px;color:#666;font-size:12px;font-family:monospace;z-index:9999;">0.0.15-html</div>
 
     <script type="module">
-        const v = window.APP_VERSION;
-        const config = await import(`./js/config.js?v=${v}`);
-        const main = await import(`./js/MainScene.js?v=${v}`);
-        const settings = await import(`./js/SettingsScene.js?v=${v}`);
+        import { BOARD_TOTAL_SIZE } from './js/config.js';
+        import { MainScene } from './js/MainScene.js';
+        import { SettingsScene } from './js/SettingsScene.js';
 
         const gameConfig = {
             type: Phaser.AUTO,
-            width: config.BOARD_TOTAL_SIZE + 100,
-            height: config.BOARD_TOTAL_SIZE + 220,
+            width: BOARD_TOTAL_SIZE + 100,
+            height: BOARD_TOTAL_SIZE + 220,
             parent: 'game-container',
             backgroundColor: '#1a1a2e',
-            scene: [main.MainScene, settings.SettingsScene],
+            scene: [MainScene, SettingsScene],
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH
