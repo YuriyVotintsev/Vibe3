@@ -151,11 +151,11 @@ export class MainScene extends Phaser.Scene {
         this.add.text(this.cameras.main.width / 2 + 90, btnY, '⚙️ Настройки', { fontSize: '14px', color: '#ffffff' }).setOrigin(0.5);
 
         this.buildText = this.add.text(
-            this.cameras.main.width - 10,
+            10,
             this.cameras.main.height - 10,
-            `v${BUILD_VERSION}`,
+            `JS: ${BUILD_VERSION}`,
             { fontSize: '14px', color: '#888888' }
-        ).setOrigin(1, 1);
+        ).setOrigin(0, 1);
     }
 
     createBoard() {
