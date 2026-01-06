@@ -35,34 +35,108 @@ export const PlayerData = {
     currency: 0,          // earned from matches, spent on upgrades
     totalEarned: 0,       // lifetime currency earned
     prestigeLevel: 0,     // future use
-    colorMultipliers: {}, // { colorIndex: multiplier }
     autoMoveDelay: 5000,  // ms between auto-moves (starts at 5 seconds)
     bombChance: 10,       // % chance to spawn bomb on manual match (starts at 10%)
-    bombRadius: 1         // explosion radius (starts at 1)
+    bombRadius: 1,        // explosion radius (starts at 1)
+    // Enhanced gem spawn chances (in %)
+    silverChance: 5,      // chance for silver gem (x5)
+    goldChance: 1,        // chance for gold gem (x25)
+    crystalChance: 0      // chance for crystal gem (x125), starts at 0
 };
 
-// Initialize color multipliers (all start at 1x)
-export function initColorMultipliers() {
-    for (let i = 0; i < ALL_GEM_COLORS.length; i++) {
-        if (PlayerData.colorMultipliers[i] === undefined) {
-            PlayerData.colorMultipliers[i] = 1;
-        }
+// Enhanced gem types and multipliers
+export const ENHANCEMENT = {
+    NONE: 'none',
+    SILVER: 'silver',
+    GOLD: 'gold',
+    CRYSTAL: 'crystal'
+};
+
+export const ENHANCEMENT_MULTIPLIERS = {
+    [ENHANCEMENT.NONE]: 1,
+    [ENHANCEMENT.SILVER]: 5,
+    [ENHANCEMENT.GOLD]: 25,
+    [ENHANCEMENT.CRYSTAL]: 125
+};
+
+export const ENHANCEMENT_NAMES = {
+    [ENHANCEMENT.SILVER]: 'Серебряный',
+    [ENHANCEMENT.GOLD]: 'Золотой',
+    [ENHANCEMENT.CRYSTAL]: 'Кристальный'
+};
+
+// Roll for gem enhancement when spawning
+export function rollEnhancement() {
+    const roll = Phaser.Math.Between(1, 100);
+    if (PlayerData.crystalChance > 0 && roll <= PlayerData.crystalChance) {
+        return ENHANCEMENT.CRYSTAL;
     }
+    if (roll <= PlayerData.crystalChance + PlayerData.goldChance) {
+        return ENHANCEMENT.GOLD;
+    }
+    if (roll <= PlayerData.crystalChance + PlayerData.goldChance + PlayerData.silverChance) {
+        return ENHANCEMENT.SILVER;
+    }
+    return ENHANCEMENT.NONE;
 }
 
-// Get upgrade cost for a color (increases with level)
-export function getUpgradeCost(colorIndex) {
-    const currentMultiplier = PlayerData.colorMultipliers[colorIndex] || 1;
-    const level = currentMultiplier - 1; // level 0 = 1x, level 1 = 2x, etc.
-    return Math.floor(100 * Math.pow(1.5, level) * GameSettings.priceMultiplier);
+// Silver chance upgrade (5% -> 10% -> 15% ... up to 30%)
+export function getSilverLevel() {
+    return (PlayerData.silverChance - 5) / 5;
 }
 
-// Apply upgrade to a color
-export function upgradeColor(colorIndex) {
-    const cost = getUpgradeCost(colorIndex);
-    if (PlayerData.currency >= cost) {
+export function getSilverUpgradeCost() {
+    const level = getSilverLevel();
+    return Math.floor(150 * Math.pow(1.6, level) * GameSettings.priceMultiplier);
+}
+
+export function upgradeSilver() {
+    const cost = getSilverUpgradeCost();
+    if (PlayerData.currency >= cost && PlayerData.silverChance < 30) {
         PlayerData.currency -= cost;
-        PlayerData.colorMultipliers[colorIndex] = (PlayerData.colorMultipliers[colorIndex] || 1) + 1;
+        PlayerData.silverChance += 5;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Gold chance upgrade (1% -> 2% -> 3% ... up to 10%)
+export function getGoldLevel() {
+    return PlayerData.goldChance - 1;
+}
+
+export function getGoldUpgradeCost() {
+    const level = getGoldLevel();
+    return Math.floor(500 * Math.pow(1.8, level) * GameSettings.priceMultiplier);
+}
+
+export function upgradeGold() {
+    const cost = getGoldUpgradeCost();
+    if (PlayerData.currency >= cost && PlayerData.goldChance < 10) {
+        PlayerData.currency -= cost;
+        PlayerData.goldChance += 1;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Crystal chance upgrade (0% -> 0.5% -> 1% ... up to 3%)
+export function getCrystalLevel() {
+    return PlayerData.crystalChance * 2; // 0, 1, 2, 3, 4, 5, 6
+}
+
+export function getCrystalUpgradeCost() {
+    const level = getCrystalLevel();
+    return Math.floor(2000 * Math.pow(2, level) * GameSettings.priceMultiplier);
+}
+
+export function upgradeCrystal() {
+    const cost = getCrystalUpgradeCost();
+    if (PlayerData.currency >= cost && PlayerData.crystalChance < 3) {
+        PlayerData.currency -= cost;
+        PlayerData.crystalChance += 0.5;
         savePlayerData();
         return true;
     }
@@ -161,18 +235,22 @@ export function loadPlayerData() {
     // Ensure bomb properties have valid values
     if (!PlayerData.bombChance) PlayerData.bombChance = 10;
     if (!PlayerData.bombRadius) PlayerData.bombRadius = 1;
-    initColorMultipliers();
+    // Ensure enhanced gem properties have valid values
+    if (PlayerData.silverChance === undefined) PlayerData.silverChance = 5;
+    if (PlayerData.goldChance === undefined) PlayerData.goldChance = 1;
+    if (PlayerData.crystalChance === undefined) PlayerData.crystalChance = 0;
 }
 
 export function resetPlayerData() {
     PlayerData.currency = 0;
     PlayerData.totalEarned = 0;
     PlayerData.prestigeLevel = 0;
-    PlayerData.colorMultipliers = {};
     PlayerData.autoMoveDelay = 5000;
     PlayerData.bombChance = 10;
     PlayerData.bombRadius = 1;
-    initColorMultipliers();
+    PlayerData.silverChance = 5;
+    PlayerData.goldChance = 1;
+    PlayerData.crystalChance = 0;
     savePlayerData();
 }
 
@@ -201,4 +279,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.57-js';
+export const JS_VERSION = '0.0.58-js';

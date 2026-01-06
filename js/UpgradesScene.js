@@ -1,17 +1,18 @@
 import {
-    GameSettings,
-    ALL_GEM_COLORS,
-    COLOR_NAMES,
     PlayerData,
-    getUpgradeCost,
-    upgradeColor,
     getAutoMoveUpgradeCost,
     getAutoMoveStep,
     upgradeAutoMove,
     getBombChanceUpgradeCost,
     upgradeBombChance,
     getBombRadiusUpgradeCost,
-    upgradeBombRadius
+    upgradeBombRadius,
+    getSilverUpgradeCost,
+    upgradeSilver,
+    getGoldUpgradeCost,
+    upgradeGold,
+    getCrystalUpgradeCost,
+    upgradeCrystal
 } from './config.js';
 
 export class UpgradesScene extends Phaser.Scene {
@@ -140,19 +141,46 @@ export class UpgradesScene extends Phaser.Scene {
             return !atMax && PlayerData.currency >= getBombRadiusUpgradeCost();
         }, () => upgradeBombRadius());
 
-        // Separator
+        // Separator - Enhanced gems
         y += 15;
-        const separator = this.add.text(cx, y, '— МНОЖИТЕЛИ —', {
+        const separator = this.add.text(cx, y, '— УСИЛЕННЫЕ ГЕМЫ —', {
             fontSize: '14px', color: '#9b59b6', fontStyle: 'bold'
         }).setOrigin(0.5);
         this.scrollContainer.add(separator);
         y += 25;
 
-        // Color upgrades
-        const colorCount = GameSettings.colorCount;
-        for (let i = 0; i < colorCount; i++) {
-            y = this.createColorUpgradeRow(y, i);
-        }
+        // Silver gem upgrade (x5)
+        y = this.createUpgradeRow(y, '🥈', 'Серебряный', () => {
+            return `${PlayerData.silverChance}%`;
+        }, () => {
+            const atMax = PlayerData.silverChance >= 30;
+            return atMax ? 'MAX' : `${getSilverUpgradeCost()}💰`;
+        }, () => '+5%', () => {
+            const atMax = PlayerData.silverChance >= 30;
+            return !atMax && PlayerData.currency >= getSilverUpgradeCost();
+        }, () => upgradeSilver());
+
+        // Gold gem upgrade (x25)
+        y = this.createUpgradeRow(y, '🥇', 'Золотой', () => {
+            return `${PlayerData.goldChance}%`;
+        }, () => {
+            const atMax = PlayerData.goldChance >= 10;
+            return atMax ? 'MAX' : `${getGoldUpgradeCost()}💰`;
+        }, () => '+1%', () => {
+            const atMax = PlayerData.goldChance >= 10;
+            return !atMax && PlayerData.currency >= getGoldUpgradeCost();
+        }, () => upgradeGold());
+
+        // Crystal gem upgrade (x125)
+        y = this.createUpgradeRow(y, '💎', 'Кристальный', () => {
+            return `${PlayerData.crystalChance}%`;
+        }, () => {
+            const atMax = PlayerData.crystalChance >= 3;
+            return atMax ? 'MAX' : `${getCrystalUpgradeCost()}💰`;
+        }, () => '+0.5%', () => {
+            const atMax = PlayerData.crystalChance >= 3;
+            return !atMax && PlayerData.currency >= getCrystalUpgradeCost();
+        }, () => upgradeCrystal());
 
         return y - this.scrollTop + 20;
     }
@@ -222,84 +250,6 @@ export class UpgradesScene extends Phaser.Scene {
         this.upgradeRows.push({ valueText, costText, btn, hitArea, btnX, y, btnSize, getValue, getCost, canAfford });
 
         return y + 62;
-    }
-
-    createColorUpgradeRow(y, colorIndex) {
-        const W = this.cameras.main.width;
-
-        // Row background
-        const rowBg = this.add.graphics();
-        rowBg.fillStyle(0x2a2a3e, 0.3);
-        rowBg.fillRoundedRect(25, y, W - 50, 44, 8);
-        this.scrollContainer.add(rowBg);
-
-        // Color preview
-        const preview = this.add.graphics();
-        preview.fillStyle(ALL_GEM_COLORS[colorIndex], 1);
-        preview.fillRoundedRect(35, y + 8, 28, 28, 5);
-        preview.lineStyle(1, 0xffffff, 0.3);
-        preview.strokeRoundedRect(35, y + 8, 28, 28, 5);
-        this.scrollContainer.add(preview);
-
-        // Name
-        const nameText = this.add.text(72, y + 22, COLOR_NAMES[colorIndex], {
-            fontSize: '14px', color: '#e0e0e0'
-        }).setOrigin(0, 0.5);
-        this.scrollContainer.add(nameText);
-
-        // Value
-        const getValue = () => `x${PlayerData.colorMultipliers[colorIndex] || 1}`;
-        const valueText = this.add.text(175, y + 22, getValue(), {
-            fontSize: '16px', color: '#55efc4', fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-        this.scrollContainer.add(valueText);
-
-        // Cost
-        const getCost = () => `${getUpgradeCost(colorIndex)}💰`;
-        const costText = this.add.text(230, y + 22, getCost(), {
-            fontSize: '12px', color: '#f1c40f'
-        }).setOrigin(0, 0.5);
-        this.scrollContainer.add(costText);
-
-        // Button
-        const btnX = W - 60;
-        const btnW = 44;
-        const btnH = 32;
-        const canAfford = () => PlayerData.currency >= getUpgradeCost(colorIndex);
-
-        const btn = this.add.graphics();
-        btn.fillStyle(canAfford() ? 0x27ae60 : 0x555555, 1);
-        btn.fillRoundedRect(btnX - btnW / 2, y + 22 - btnH / 2, btnW, btnH, 6);
-        this.scrollContainer.add(btn);
-
-        const btnLabel = this.add.text(btnX, y + 22, '+1', {
-            fontSize: '12px', color: '#ffffff', fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.scrollContainer.add(btnLabel);
-
-        const hitArea = this.add.rectangle(btnX, y + 22, btnW, btnH, 0x000000, 0)
-            .setInteractive({ useHandCursor: canAfford() })
-            .on('pointerover', () => {
-                if (canAfford()) btn.clear().fillStyle(0x2ecc71, 1).fillRoundedRect(btnX - btnW / 2, y + 22 - btnH / 2, btnW, btnH, 6);
-            })
-            .on('pointerout', () => {
-                btn.clear().fillStyle(canAfford() ? 0x27ae60 : 0x555555, 1).fillRoundedRect(btnX - btnW / 2, y + 22 - btnH / 2, btnW, btnH, 6);
-            })
-            .on('pointerdown', () => {
-                if (canAfford() && upgradeColor(colorIndex)) {
-                    this.currencyText.setText(`${PlayerData.currency}`);
-                    this.refreshAllRows();
-                }
-            });
-        this.scrollContainer.add(hitArea);
-
-        this.upgradeRows.push({
-            valueText, costText, btn, hitArea,
-            btnX, y, btnSize: btnH, btnW,
-            getValue, getCost, canAfford, isColor: true
-        });
-
-        return y + 50;
     }
 
     setupScrollInput() {
@@ -380,14 +330,7 @@ export class UpgradesScene extends Phaser.Scene {
             row.costText.setText(row.getCost());
             const affordable = row.canAfford();
             const col = affordable ? 0x27ae60 : 0x555555;
-
-            if (row.isColor) {
-                const btnW = row.btnW || 44;
-                const btnH = row.btnSize;
-                row.btn.clear().fillStyle(col, 1).fillRoundedRect(row.btnX - btnW / 2, row.y + 22 - btnH / 2, btnW, btnH, 6);
-            } else {
-                row.btn.clear().fillStyle(col, 1).fillRoundedRect(row.btnX - row.btnSize / 2, row.y + 28 - row.btnSize / 2, row.btnSize, row.btnSize, 8);
-            }
+            row.btn.clear().fillStyle(col, 1).fillRoundedRect(row.btnX - row.btnSize / 2, row.y + 28 - row.btnSize / 2, row.btnSize, row.btnSize, 8);
             row.hitArea.setInteractive({ useHandCursor: affordable });
         }
     }

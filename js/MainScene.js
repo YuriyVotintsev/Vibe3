@@ -9,7 +9,10 @@ import {
     PlayerData,
     loadPlayerData,
     savePlayerData,
-    ALL_GEM_COLORS
+    ALL_GEM_COLORS,
+    ENHANCEMENT,
+    ENHANCEMENT_MULTIPLIERS,
+    rollEnhancement
 } from './config.js';
 import { getCellSize } from './utils.js';
 import {
@@ -223,7 +226,7 @@ export class MainScene extends Phaser.Scene {
         }
     }
 
-    createGem(row, col, gemType, startY = null) {
+    createGem(row, col, gemType, startY = null, enhancement = null) {
         const pos = this.getGemPosition(row, col);
         const gem = this.add.image(pos.x, startY !== null ? startY : pos.y, `gem_${gemType}`);
         gem.setInteractive({ useHandCursor: true });
@@ -233,6 +236,18 @@ export class MainScene extends Phaser.Scene {
         gem.setData('state', GEM_STATE.IDLE);
         gem.setData('targetY', pos.y);
         gem.setMask(this.gemMask);
+
+        // Roll for enhancement if not specified
+        const enh = enhancement !== null ? enhancement : rollEnhancement();
+        gem.setData('enhancement', enh);
+
+        // Add overlay for enhanced gems
+        if (enh !== ENHANCEMENT.NONE) {
+            const overlay = this.add.image(gem.x, gem.y, `overlay_${enh}`);
+            overlay.setMask(this.gemMask);
+            gem.setData('overlay', overlay);
+        }
+
         return gem;
     }
 
@@ -373,19 +388,19 @@ export class MainScene extends Phaser.Scene {
         const matches = this.findAllMatches();
 
         if (matches.length > 0) {
-            // Calculate currency with color multipliers and show floating text
+            // Calculate currency with enhancement multipliers and show floating text
             matches.forEach(({ row, col }) => {
                 const gem = this.gems[row]?.[col];
                 if (gem) {
-                    const colorIndex = gem.getData('type');
-                    const colorMultiplier = PlayerData.colorMultipliers[colorIndex] || 1;
-                    const gemCurrency = colorMultiplier;
+                    const enhancement = gem.getData('enhancement') || ENHANCEMENT.NONE;
+                    const enhMultiplier = ENHANCEMENT_MULTIPLIERS[enhancement] || 1;
+                    const gemCurrency = enhMultiplier;
 
                     PlayerData.currency += gemCurrency;
                     PlayerData.totalEarned += gemCurrency;
 
                     // Show floating currency at gem position
-                    this.showFloatingCurrency(gem.x, gem.y, gemCurrency);
+                    this.showFloatingCurrency(gem.x, gem.y, gemCurrency, enhancement);
                 }
             });
 
@@ -501,11 +516,11 @@ export class MainScene extends Phaser.Scene {
                     }
 
                     // Award currency for gems (not bombs)
-                    const colorIndex = gem.getData('type');
-                    const colorMultiplier = PlayerData.colorMultipliers[colorIndex] || 1;
-                    PlayerData.currency += colorMultiplier;
-                    PlayerData.totalEarned += colorMultiplier;
-                    this.showFloatingCurrency(gem.x, gem.y, colorMultiplier);
+                    const enhancement = gem.getData('enhancement') || ENHANCEMENT.NONE;
+                    const enhMultiplier = ENHANCEMENT_MULTIPLIERS[enhancement] || 1;
+                    PlayerData.currency += enhMultiplier;
+                    PlayerData.totalEarned += enhMultiplier;
+                    this.showFloatingCurrency(gem.x, gem.y, enhMultiplier, enhancement);
 
                     // Destroy gem with effect
                     gem.setData('state', GEM_STATE.MATCHED);
@@ -531,10 +546,24 @@ export class MainScene extends Phaser.Scene {
         this.showMessage('💥 БУМ!');
     }
 
-    showFloatingCurrency(x, y, amount) {
+    showFloatingCurrency(x, y, amount, enhancement = ENHANCEMENT.NONE) {
+        // Color based on enhancement
+        let color = '#ffffff';
+        let fontSize = '14px';
+        if (enhancement === ENHANCEMENT.SILVER) {
+            color = '#c0c0c0';
+            fontSize = '16px';
+        } else if (enhancement === ENHANCEMENT.GOLD) {
+            color = '#ffd700';
+            fontSize = '18px';
+        } else if (enhancement === ENHANCEMENT.CRYSTAL) {
+            color = '#88ffff';
+            fontSize = '22px';
+        }
+
         const text = this.add.text(x, y, `+${amount}💰`, {
-            fontSize: '14px',
-            color: '#ffffff',
+            fontSize: fontSize,
+            color: color,
             fontStyle: 'bold',
             stroke: '#000000',
             strokeThickness: 3
@@ -554,6 +583,12 @@ export class MainScene extends Phaser.Scene {
         const y = gem.y;
         const colorIndex = gem.getData('type');
         const color = colorIndex !== 'bomb' ? ALL_GEM_COLORS[colorIndex] : 0xff6600;
+
+        // Destroy overlay if exists
+        const overlay = gem.getData('overlay');
+        if (overlay) {
+            overlay.destroy();
+        }
 
         // Pop animation: scale up then down
         this.tweens.add({
@@ -628,8 +663,12 @@ export class MainScene extends Phaser.Scene {
 
         for (let row = 0; row < boardSize; row++) {
             for (let col = 0; col < boardSize; col++) {
-                if (this.gems[row]?.[col]) {
-                    this.gems[row][col].destroy();
+                const gem = this.gems[row]?.[col];
+                if (gem) {
+                    // Destroy overlay if exists
+                    const overlay = gem.getData('overlay');
+                    if (overlay) overlay.destroy();
+                    gem.destroy();
                 }
             }
         }
