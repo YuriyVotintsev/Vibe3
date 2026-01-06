@@ -303,12 +303,28 @@ export class UpgradesScene extends Phaser.Scene {
     }
 
     setupScrollInput() {
+        // Track drag state
+        this.isDragging = false;
+        this.lastPointerY = 0;
+
+        // Start drag
+        this.input.on('pointerdown', (pointer) => {
+            this.isDragging = true;
+            this.lastPointerY = pointer.y;
+        });
+
         // Drag to scroll
         this.input.on('pointermove', (pointer) => {
-            if (pointer.isDown && this.maxScroll > 0) {
-                const dy = pointer.velocity.y * -0.3;
+            if (this.isDragging && pointer.isDown && this.maxScroll > 0) {
+                const dy = this.lastPointerY - pointer.y;
+                this.lastPointerY = pointer.y;
                 this.scrollBy(dy);
             }
+        });
+
+        // End drag
+        this.input.on('pointerup', () => {
+            this.isDragging = false;
         });
 
         // Mouse wheel
