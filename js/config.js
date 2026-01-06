@@ -69,7 +69,12 @@ export function upgradeColor(colorIndex) {
 
 // Auto-move timer upgrade
 export function getAutoMoveLevel() {
-    return Math.round((5000 - PlayerData.autoMoveDelay) / 500); // level 0 = 5s, level 1 = 4.5s, etc.
+    if (PlayerData.autoMoveDelay >= 500) {
+        return Math.round((5000 - PlayerData.autoMoveDelay) / 500);
+    } else {
+        // After 0.5s, levels continue with 0.1s steps
+        return 9 + Math.round((500 - PlayerData.autoMoveDelay) / 100);
+    }
 }
 
 export function getAutoMoveUpgradeCost() {
@@ -77,11 +82,17 @@ export function getAutoMoveUpgradeCost() {
     return Math.floor(200 * Math.pow(1.8, level) * GameSettings.priceMultiplier);
 }
 
+export function getAutoMoveStep() {
+    // 0.5s steps until 0.5s, then 0.1s steps
+    return PlayerData.autoMoveDelay > 500 ? 500 : 100;
+}
+
 export function upgradeAutoMove() {
     const cost = getAutoMoveUpgradeCost();
-    if (PlayerData.currency >= cost && PlayerData.autoMoveDelay > 1000) {
+    const step = getAutoMoveStep();
+    if (PlayerData.currency >= cost && PlayerData.autoMoveDelay > 100) {
         PlayerData.currency -= cost;
-        PlayerData.autoMoveDelay -= 500; // reduce by 0.5s each upgrade
+        PlayerData.autoMoveDelay -= step;
         savePlayerData();
         return true;
     }
@@ -100,7 +111,7 @@ export function loadPlayerData() {
         Object.assign(PlayerData, data);
     }
     // Ensure autoMoveDelay has a valid value
-    if (!PlayerData.autoMoveDelay || PlayerData.autoMoveDelay < 1000) {
+    if (!PlayerData.autoMoveDelay || PlayerData.autoMoveDelay < 100) {
         PlayerData.autoMoveDelay = 5000;
     }
     initColorMultipliers();
@@ -131,4 +142,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.27-js';
+export const JS_VERSION = '0.0.28-js';

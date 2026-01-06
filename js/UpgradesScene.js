@@ -7,6 +7,7 @@ import {
     upgradeColor,
     savePlayerData,
     getAutoMoveUpgradeCost,
+    getAutoMoveStep,
     upgradeAutoMove
 } from './config.js';
 
@@ -68,7 +69,7 @@ export class UpgradesScene extends Phaser.Scene {
         }).setOrigin(0, 0.5);
 
         // Cost (or max if at minimum)
-        const atMin = PlayerData.autoMoveDelay <= 1000;
+        const atMin = PlayerData.autoMoveDelay <= 100;
         const cost = getAutoMoveUpgradeCost();
         this.autoMoveCostText = this.add.text(220, y, atMin ? 'MAX' : `${cost}💰`, {
             fontSize: '14px', color: atMin ? '#55efc4' : '#f1c40f'
@@ -81,16 +82,17 @@ export class UpgradesScene extends Phaser.Scene {
         this.autoMoveBtn = this.add.rectangle(340, y, 70, 32, btnColor)
             .setInteractive({ useHandCursor: canAfford })
             .on('pointerover', () => {
-                const affordable = PlayerData.currency >= getAutoMoveUpgradeCost() && PlayerData.autoMoveDelay > 1000;
+                const affordable = PlayerData.currency >= getAutoMoveUpgradeCost() && PlayerData.autoMoveDelay > 100;
                 if (affordable) this.autoMoveBtn.setFillStyle(0x2ecc71);
             })
             .on('pointerout', () => {
-                const affordable = PlayerData.currency >= getAutoMoveUpgradeCost() && PlayerData.autoMoveDelay > 1000;
+                const affordable = PlayerData.currency >= getAutoMoveUpgradeCost() && PlayerData.autoMoveDelay > 100;
                 this.autoMoveBtn.setFillStyle(affordable ? 0x27ae60 : 0x555555);
             })
             .on('pointerdown', () => this.buyAutoMoveUpgrade());
 
-        this.add.text(340, y, '-0.5с', {
+        const step = getAutoMoveStep();
+        this.autoMoveBtnText = this.add.text(340, y, `-${step / 1000}с`, {
             fontSize: '14px', color: '#ffffff'
         }).setOrigin(0.5);
     }
@@ -175,15 +177,17 @@ export class UpgradesScene extends Phaser.Scene {
 
         // Update auto-move upgrade
         const seconds = (PlayerData.autoMoveDelay / 1000).toFixed(1);
-        const atMin = PlayerData.autoMoveDelay <= 1000;
+        const atMin = PlayerData.autoMoveDelay <= 100;
         const autoMoveCost = getAutoMoveUpgradeCost();
         const autoMoveAfford = PlayerData.currency >= autoMoveCost && !atMin;
+        const step = getAutoMoveStep();
 
         this.autoMoveText.setText(`${seconds}с`);
         this.autoMoveCostText.setText(atMin ? 'MAX' : `${autoMoveCost}💰`);
         this.autoMoveCostText.setColor(atMin ? '#55efc4' : '#f1c40f');
         this.autoMoveBtn.setFillStyle(autoMoveAfford ? 0x27ae60 : 0x555555);
         this.autoMoveBtn.setInteractive({ useHandCursor: autoMoveAfford });
+        this.autoMoveBtnText.setText(`-${step / 1000}с`);
 
         // Update each color upgrade item
         for (const item of this.upgradeItems) {
