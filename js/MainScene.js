@@ -32,7 +32,6 @@ export class MainScene extends Phaser.Scene {
         loadPlayerData();
         this.board = [];
         this.gems = [];
-        this.moves = 0;
         this.pendingMatches = [];
         this.lastMoveTime = 0;
         this.isAutoMoving = false;
@@ -142,27 +141,15 @@ export class MainScene extends Phaser.Scene {
             color: '#ffffff'
         }).setOrigin(0.5).setShadow(2, 2, '#000000', 3);
 
-        // Stats panels
+        // Currency stat card (centered)
         const statY = 75;
-        const statWidth = 130;
-        const statSpacing = 150;
-
-        // Currency stat card
+        const statWidth = 140;
         this.add.graphics()
             .fillStyle(0xf39c12, 0.2)
-            .fillRoundedRect(cx - statSpacing - statWidth / 2, statY - 20, statWidth, 40, 8);
-        this.add.text(cx - statSpacing - 40, statY, '💰', { fontSize: '24px' }).setOrigin(0.5);
-        this.currencyText = this.add.text(cx - statSpacing + 15, statY, `${PlayerData.currency}`, {
+            .fillRoundedRect(cx - statWidth / 2, statY - 20, statWidth, 40, 8);
+        this.add.text(cx - 35, statY, '💰', { fontSize: '24px' }).setOrigin(0.5);
+        this.currencyText = this.add.text(cx + 10, statY, `${PlayerData.currency}`, {
             fontSize: '22px', color: '#f1c40f', fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-
-        // Moves stat card
-        this.add.graphics()
-            .fillStyle(0xe74c3c, 0.2)
-            .fillRoundedRect(cx + statSpacing - statWidth / 2 + 20, statY - 20, statWidth, 40, 8);
-        this.add.text(cx + statSpacing - 20, statY, '👆', { fontSize: '24px' }).setOrigin(0.5);
-        this.movesText = this.add.text(cx + statSpacing + 35, statY, '0', {
-            fontSize: '22px', color: '#e74c3c', fontStyle: 'bold'
         }).setOrigin(0, 0.5);
 
         // Message text
@@ -641,11 +628,8 @@ export class MainScene extends Phaser.Scene {
             }
         }
 
-        this.moves = 0;
         this.pendingMatches.length = 0;
         this.lastMatchWasManual = false;
-
-        this.movesText.setText('0');
 
         this.swapHandler.clearSelection();
 
