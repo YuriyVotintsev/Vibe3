@@ -45,4 +45,5 @@ export const GEM_STATE = {
     MATCHED: 'matched'
 };
 
-// Version is now in index.html (window.APP_VERSION)
+// JS version (update with each commit)
+export const JS_VERSION = '0.0.13';

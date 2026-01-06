@@ -5,7 +5,8 @@ import {
     BOARD_OFFSET_X,
     BOARD_OFFSET_Y,
     SWAP_DURATION,
-    GEM_STATE
+    GEM_STATE,
+    JS_VERSION
 } from './config.js';
 import { getCellSize } from './utils.js';
 
@@ -152,7 +153,7 @@ export class MainScene extends Phaser.Scene {
         this.buildText = this.add.text(
             10,
             this.cameras.main.height - 10,
-            `JS: ${window.APP_VERSION}`,
+            `JS: ${JS_VERSION}`,
             { fontSize: '14px', color: '#888888' }
         ).setOrigin(0, 1);
     }

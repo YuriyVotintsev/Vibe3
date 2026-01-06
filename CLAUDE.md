@@ -2,11 +2,11 @@
 
 ## IMPORTANT: Version Updates
 
-**Before each commit, update `window.APP_VERSION` in `index.html`!**
-This is the ONLY place where version is defined. It automatically:
-- Shows in HTML div
-- Gets used for cache-busting all JS imports
-- Shows on canvas via `window.APP_VERSION`
+**Before each commit, update version in TWO places:**
+1. `index.html` — HTML div text AND `window.APP_VERSION`
+2. `js/config.js` — `JS_VERSION`
+
+Both should match. If user sees different versions, it means caching issue.
 
 ## Code Style Preferences
 

@@ -34,11 +34,11 @@
 <body>
     <div id="game-container"></div>
 
+    <div id="html-version" style="position:fixed;bottom:10px;left:10px;color:#666;font-size:12px;font-family:monospace;z-index:9999;">HTML: 0.0.13</div>
+
     <script>
-        // === SINGLE VERSION SOURCE ===
-        window.APP_VERSION = '0.0.12';
+        window.APP_VERSION = '0.0.13'; // for cache-busting imports
     </script>
-    <div id="html-version" style="position:fixed;bottom:10px;left:10px;color:#666;font-size:12px;font-family:monospace;z-index:9999;">HTML: <script>document.write(window.APP_VERSION)</script></div>
 
     <script type="module">
         const v = window.APP_VERSION;
