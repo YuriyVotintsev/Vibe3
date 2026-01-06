@@ -45,5 +45,4 @@ export const GEM_STATE = {
     MATCHED: 'matched'
 };
 
-// Build version (update manually with each commit)
-export const BUILD_VERSION = '0.0.9';
+// Version is now in index.html (window.APP_VERSION)

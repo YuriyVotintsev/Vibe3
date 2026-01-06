@@ -31,27 +31,32 @@
 <body>
     <div id="game-container"></div>
 
-    <!-- v0.0.9 -->
-    <div id="html-version" style="position:fixed;bottom:10px;left:10px;color:#666;font-size:12px;font-family:monospace;z-index:9999;">HTML: 0.0.9</div>
-    <script type="module">
-        import { BOARD_TOTAL_SIZE } from './js/config.js?v=009';
-        import { MainScene } from './js/MainScene.js?v=009';
-        import { SettingsScene } from './js/SettingsScene.js?v=009';
+    <script>
+        // === SINGLE VERSION SOURCE ===
+        window.APP_VERSION = '010';
+    </script>
+    <div id="html-version" style="position:fixed;bottom:10px;left:10px;color:#666;font-size:12px;font-family:monospace;z-index:9999;">HTML: <script>document.write(window.APP_VERSION)</script></div>
 
-        const config = {
+    <script type="module">
+        const v = window.APP_VERSION;
+        const config = await import(`./js/config.js?v=${v}`);
+        const main = await import(`./js/MainScene.js?v=${v}`);
+        const settings = await import(`./js/SettingsScene.js?v=${v}`);
+
+        const gameConfig = {
             type: Phaser.AUTO,
-            width: BOARD_TOTAL_SIZE + 100,
-            height: BOARD_TOTAL_SIZE + 220,
+            width: config.BOARD_TOTAL_SIZE + 100,
+            height: config.BOARD_TOTAL_SIZE + 220,
             parent: 'game-container',
             backgroundColor: '#1a1a2e',
-            scene: [MainScene, SettingsScene],
+            scene: [main.MainScene, settings.SettingsScene],
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH
             }
         };
 
-        window.game = new Phaser.Game(config);
+        window.game = new Phaser.Game(gameConfig);
     </script>
 </body>
 </html>

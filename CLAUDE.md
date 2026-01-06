@@ -2,13 +2,11 @@
 
 ## IMPORTANT: Version Updates
 
-**Before each commit, update version in ALL these places:**
-1. `index.html` — comment, HTML div, and `?v=XXX` in all imports
-2. `js/config.js` — `BUILD_VERSION`
-3. `js/MainScene.js` — `?v=XXX` in imports
-4. `js/SettingsScene.js` — `?v=XXX` in imports
-
-Use short version like `009` for query params (no dots).
+**Before each commit, update `window.APP_VERSION` in `index.html`!**
+This is the ONLY place where version is defined. It automatically:
+- Shows in HTML div
+- Gets used for cache-busting all JS imports
+- Shows on canvas via `window.APP_VERSION`
 
 ## Code Style Preferences
 

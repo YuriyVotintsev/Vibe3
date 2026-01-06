@@ -1,4 +1,4 @@
-import { GameSettings } from './config.js?v=009';
+import { GameSettings } from './config.js';
 
 export class SettingsScene extends Phaser.Scene {
     constructor() {
