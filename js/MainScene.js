@@ -195,8 +195,8 @@ export class MainScene extends Phaser.Scene {
         createButton(cx + btnSpacing, 0x3498db, 0x2980b9, '⚙️ Опции', () => this.scene.launch('SettingsScene'));
 
         // Version text
-        this.add.text(8, this.cameras.main.height - 8, JS_VERSION, {
-            fontSize: '11px', color: '#555555'
+        this.add.text(10, this.cameras.main.height - 10, JS_VERSION, {
+            fontSize: '14px', color: '#888888', fontStyle: 'bold'
         }).setOrigin(0, 1);
     }
 
