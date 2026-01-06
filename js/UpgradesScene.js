@@ -23,241 +23,260 @@ export class UpgradesScene extends Phaser.Scene {
     create() {
         const cx = this.cameras.main.width / 2;
         const cy = this.cameras.main.height / 2;
+        const panelWidth = this.cameras.main.width - 40;
+        const panelHeight = this.cameras.main.height - 60;
 
-        // Dark background
-        this.add.rectangle(cx, cy, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.9);
+        // Dark overlay
+        this.add.rectangle(cx, cy, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.85);
 
-        // Title
-        this.add.text(cx, 30, '⬆️ Апгрейды', { fontSize: '24px', color: '#e94560' }).setOrigin(0.5);
+        // Main panel
+        const panel = this.add.graphics();
+        panel.fillStyle(0x1a1a2e, 1);
+        panel.fillRoundedRect(20, 30, panelWidth, panelHeight, 20);
+        panel.lineStyle(3, 0x9b59b6, 1);
+        panel.strokeRoundedRect(20, 30, panelWidth, panelHeight, 20);
+
+        // Title bar
+        const titleBar = this.add.graphics();
+        titleBar.fillStyle(0x9b59b6, 0.3);
+        titleBar.fillRoundedRect(20, 30, panelWidth, 50, { tl: 20, tr: 20, bl: 0, br: 0 });
+
+        this.add.text(cx, 55, 'АПГРЕЙДЫ', {
+            fontSize: '22px', fontFamily: 'Arial Black', color: '#ffffff'
+        }).setOrigin(0.5).setShadow(1, 1, '#000000', 2);
 
         // Currency display
-        this.currencyText = this.add.text(cx, 60, `💰 ${PlayerData.currency}`, {
-            fontSize: '20px', color: '#f1c40f'
-        }).setOrigin(0.5);
-
-        // Auto-move timer upgrade
-        this.createAutoMoveUpgrade();
-
-        // Bomb upgrades
-        this.createBombUpgrades();
-
-        // Scrollable area for color upgrades
-        this.createColorUpgrades();
-
-        // Close button
-        const closeBtn = this.add.rectangle(cx, this.cameras.main.height - 40, 150, 40, 0xe74c3c)
-            .setInteractive({ useHandCursor: true })
-            .on('pointerover', () => closeBtn.setFillStyle(0xc0392b))
-            .on('pointerout', () => closeBtn.setFillStyle(0xe74c3c))
-            .on('pointerdown', () => this.scene.stop());
-        this.add.text(cx, this.cameras.main.height - 40, '✕ Закрыть', {
-            fontSize: '16px', color: '#ffffff'
-        }).setOrigin(0.5);
-    }
-
-    createAutoMoveUpgrade() {
-        const y = 95;
-        const cx = this.cameras.main.width / 2;
-
-        // Label
-        this.add.text(60, y, '⏱️ Авто-ход', {
-            fontSize: '14px', color: '#ffffff'
+        const currencyBg = this.add.graphics();
+        currencyBg.fillStyle(0xf39c12, 0.2);
+        currencyBg.fillRoundedRect(cx - 80, 85, 160, 35, 8);
+        this.add.text(cx - 50, 102, '💰', { fontSize: '20px' }).setOrigin(0.5);
+        this.currencyText = this.add.text(cx + 10, 102, `${PlayerData.currency}`, {
+            fontSize: '20px', color: '#f1c40f', fontStyle: 'bold'
         }).setOrigin(0, 0.5);
 
-        // Current value
+        // Upgrades section
+        this.createUpgradeRows();
+
+        // Close button
+        this.createCloseButton(cx, this.cameras.main.height - 55);
+    }
+
+    createUpgradeRows() {
+        const startY = 135;
+        const rowHeight = 42;
+        let currentY = startY;
+
+        // Section: General
+        currentY = this.createSectionHeader('Общие', currentY);
+        currentY = this.createAutoMoveRow(currentY);
+        currentY += 5;
+
+        // Section: Bombs
+        currentY = this.createSectionHeader('Бомбы', currentY);
+        currentY = this.createBombChanceRow(currentY);
+        currentY = this.createBombRadiusRow(currentY);
+        currentY += 5;
+
+        // Section: Colors
+        currentY = this.createSectionHeader('Множители', currentY);
+        this.createColorUpgrades(currentY);
+    }
+
+    createSectionHeader(title, y) {
+        const cx = this.cameras.main.width / 2;
+        this.add.text(35, y + 12, title.toUpperCase(), {
+            fontSize: '11px', color: '#888888', fontStyle: 'bold'
+        });
+        this.add.graphics().lineStyle(1, 0x333333).lineBetween(35, y + 28, this.cameras.main.width - 35, y + 28);
+        return y + 35;
+    }
+
+    createUpgradeButton(x, y, canAfford, onBuy) {
+        const btn = this.add.graphics();
+        const color = canAfford ? 0x27ae60 : 0x444444;
+        btn.fillStyle(color, 1);
+        btn.fillRoundedRect(x - 32, y - 14, 64, 28, 6);
+
+        const hitArea = this.add.rectangle(x, y, 64, 28, 0x000000, 0)
+            .setInteractive({ useHandCursor: canAfford })
+            .on('pointerover', () => {
+                if (canAfford) {
+                    btn.clear().fillStyle(0x2ecc71, 1).fillRoundedRect(x - 32, y - 14, 64, 28, 6);
+                }
+            })
+            .on('pointerout', () => {
+                const col = canAfford ? 0x27ae60 : 0x444444;
+                btn.clear().fillStyle(col, 1).fillRoundedRect(x - 32, y - 14, 64, 28, 6);
+            })
+            .on('pointerdown', onBuy);
+
+        return { btn, hitArea };
+    }
+
+    createAutoMoveRow(y) {
         const seconds = (PlayerData.autoMoveDelay / 1000).toFixed(1);
-        this.autoMoveText = this.add.text(160, y, `${seconds}с`, {
+        const atMin = PlayerData.autoMoveDelay <= 100;
+        const cost = getAutoMoveUpgradeCost();
+        const canAfford = PlayerData.currency >= cost && !atMin;
+        const step = getAutoMoveStep();
+
+        this.add.text(45, y, '⏱️', { fontSize: '18px' }).setOrigin(0, 0.5);
+        this.add.text(75, y, 'Авто-ход', { fontSize: '14px', color: '#cccccc' }).setOrigin(0, 0.5);
+
+        this.autoMoveText = this.add.text(180, y, `${seconds}с`, {
             fontSize: '16px', color: '#55efc4', fontStyle: 'bold'
         }).setOrigin(0, 0.5);
 
-        // Cost (or max if at minimum)
-        const atMin = PlayerData.autoMoveDelay <= 100;
-        const cost = getAutoMoveUpgradeCost();
-        this.autoMoveCostText = this.add.text(220, y, atMin ? 'MAX' : `${cost}💰`, {
-            fontSize: '14px', color: atMin ? '#55efc4' : '#f1c40f'
+        this.autoMoveCostText = this.add.text(250, y, atMin ? 'MAX' : `${cost}💰`, {
+            fontSize: '13px', color: atMin ? '#55efc4' : '#f1c40f'
         }).setOrigin(0, 0.5);
 
-        // Upgrade button
-        const canAfford = PlayerData.currency >= cost && !atMin;
-        const btnColor = canAfford ? 0x27ae60 : 0x555555;
+        const { btn, hitArea } = this.createUpgradeButton(355, y, canAfford, () => this.buyAutoMoveUpgrade());
+        this.autoMoveBtn = btn;
+        this.autoMoveBtnHit = hitArea;
 
-        this.autoMoveBtn = this.add.rectangle(340, y, 70, 32, btnColor)
-            .setInteractive({ useHandCursor: canAfford })
+        this.autoMoveBtnText = this.add.text(355, y, `-${step / 1000}с`, {
+            fontSize: '12px', color: '#ffffff', fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        return y + 38;
+    }
+
+    createBombChanceRow(y) {
+        const atMax = PlayerData.bombChance >= 50;
+        const cost = getBombChanceUpgradeCost();
+        const canAfford = PlayerData.currency >= cost && !atMax;
+
+        this.add.text(45, y, '💣', { fontSize: '18px' }).setOrigin(0, 0.5);
+        this.add.text(75, y, 'Шанс бомбы', { fontSize: '14px', color: '#cccccc' }).setOrigin(0, 0.5);
+
+        this.bombChanceText = this.add.text(195, y, `${PlayerData.bombChance}%`, {
+            fontSize: '16px', color: '#55efc4', fontStyle: 'bold'
+        }).setOrigin(0, 0.5);
+
+        this.bombChanceCostText = this.add.text(250, y, atMax ? 'MAX' : `${cost}💰`, {
+            fontSize: '13px', color: atMax ? '#55efc4' : '#f1c40f'
+        }).setOrigin(0, 0.5);
+
+        const { btn, hitArea } = this.createUpgradeButton(355, y, canAfford, () => this.buyBombChanceUpgrade());
+        this.bombChanceBtn = btn;
+        this.bombChanceBtnHit = hitArea;
+
+        this.add.text(355, y, '+5%', { fontSize: '12px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+
+        return y + 38;
+    }
+
+    createBombRadiusRow(y) {
+        const atMax = PlayerData.bombRadius >= 3;
+        const cost = getBombRadiusUpgradeCost();
+        const canAfford = PlayerData.currency >= cost && !atMax;
+
+        this.add.text(45, y, '💥', { fontSize: '18px' }).setOrigin(0, 0.5);
+        this.add.text(75, y, 'Радиус бомбы', { fontSize: '14px', color: '#cccccc' }).setOrigin(0, 0.5);
+
+        this.bombRadiusText = this.add.text(200, y, `${PlayerData.bombRadius}`, {
+            fontSize: '16px', color: '#55efc4', fontStyle: 'bold'
+        }).setOrigin(0, 0.5);
+
+        this.bombRadiusCostText = this.add.text(250, y, atMax ? 'MAX' : `${cost}💰`, {
+            fontSize: '13px', color: atMax ? '#55efc4' : '#f1c40f'
+        }).setOrigin(0, 0.5);
+
+        const { btn, hitArea } = this.createUpgradeButton(355, y, canAfford, () => this.buyBombRadiusUpgrade());
+        this.bombRadiusBtn = btn;
+        this.bombRadiusBtnHit = hitArea;
+
+        this.add.text(355, y, '+1', { fontSize: '12px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+
+        return y + 38;
+    }
+
+    createColorUpgrades(startY) {
+        const colorCount = GameSettings.colorCount;
+        const rowHeight = 38;
+        this.upgradeItems = [];
+
+        for (let i = 0; i < colorCount; i++) {
+            const y = startY + i * rowHeight;
+            const multiplier = PlayerData.colorMultipliers[i] || 1;
+            const cost = getUpgradeCost(i);
+            const canAfford = PlayerData.currency >= cost;
+
+            // Color gem preview
+            const preview = this.add.graphics();
+            preview.fillStyle(ALL_GEM_COLORS[i], 1);
+            preview.fillRoundedRect(40, y - 12, 24, 24, 5);
+            preview.lineStyle(1, 0xffffff, 0.3);
+            preview.strokeRoundedRect(40, y - 12, 24, 24, 5);
+
+            // Color name
+            this.add.text(75, y, COLOR_NAMES[i], {
+                fontSize: '13px', color: '#aaaaaa'
+            }).setOrigin(0, 0.5);
+
+            // Multiplier
+            const multText = this.add.text(180, y, `x${multiplier}`, {
+                fontSize: '15px', color: '#55efc4', fontStyle: 'bold'
+            }).setOrigin(0, 0.5);
+
+            // Cost
+            const costText = this.add.text(230, y, `${cost}💰`, {
+                fontSize: '12px', color: '#f1c40f'
+            }).setOrigin(0, 0.5);
+
+            // Button
+            const colorIndex = i;
+            const { btn, hitArea } = this.createUpgradeButton(355, y, canAfford, () => this.buyUpgrade(colorIndex));
+
+            this.add.text(355, y, '+1', {
+                fontSize: '12px', color: '#ffffff', fontStyle: 'bold'
+            }).setOrigin(0.5);
+
+            this.upgradeItems.push({ colorIndex: i, multText, costText, btn, hitArea });
+        }
+    }
+
+    createCloseButton(x, y) {
+        const btn = this.add.graphics();
+        btn.fillStyle(0xe74c3c, 1);
+        btn.fillRoundedRect(x - 70, y - 18, 140, 36, 10);
+
+        this.add.rectangle(x, y, 140, 36, 0x000000, 0)
+            .setInteractive({ useHandCursor: true })
             .on('pointerover', () => {
-                const affordable = PlayerData.currency >= getAutoMoveUpgradeCost() && PlayerData.autoMoveDelay > 100;
-                if (affordable) this.autoMoveBtn.setFillStyle(0x2ecc71);
+                btn.clear().fillStyle(0xc0392b, 1).fillRoundedRect(x - 70, y - 18, 140, 36, 10);
             })
             .on('pointerout', () => {
-                const affordable = PlayerData.currency >= getAutoMoveUpgradeCost() && PlayerData.autoMoveDelay > 100;
-                this.autoMoveBtn.setFillStyle(affordable ? 0x27ae60 : 0x555555);
+                btn.clear().fillStyle(0xe74c3c, 1).fillRoundedRect(x - 70, y - 18, 140, 36, 10);
             })
-            .on('pointerdown', () => this.buyAutoMoveUpgrade());
+            .on('pointerdown', () => this.scene.stop());
 
-        const step = getAutoMoveStep();
-        this.autoMoveBtnText = this.add.text(340, y, `-${step / 1000}с`, {
-            fontSize: '14px', color: '#ffffff'
+        this.add.text(x, y, '✕ ЗАКРЫТЬ', {
+            fontSize: '14px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
     }
 
     buyAutoMoveUpgrade() {
-        if (upgradeAutoMove()) {
-            this.refreshUI();
-        }
-    }
-
-    createBombUpgrades() {
-        // Bomb Chance upgrade
-        const y1 = 130;
-        this.add.text(60, y1, '💣 Шанс бомбы', {
-            fontSize: '14px', color: '#ffffff'
-        }).setOrigin(0, 0.5);
-
-        this.bombChanceText = this.add.text(185, y1, `${PlayerData.bombChance}%`, {
-            fontSize: '16px', color: '#55efc4', fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-
-        const atMaxChance = PlayerData.bombChance >= 50;
-        const chanceCost = getBombChanceUpgradeCost();
-        this.bombChanceCostText = this.add.text(240, y1, atMaxChance ? 'MAX' : `${chanceCost}💰`, {
-            fontSize: '14px', color: atMaxChance ? '#55efc4' : '#f1c40f'
-        }).setOrigin(0, 0.5);
-
-        const canAffordChance = PlayerData.currency >= chanceCost && !atMaxChance;
-        this.bombChanceBtn = this.add.rectangle(340, y1, 70, 32, canAffordChance ? 0x27ae60 : 0x555555)
-            .setInteractive({ useHandCursor: canAffordChance })
-            .on('pointerover', () => {
-                const affordable = PlayerData.currency >= getBombChanceUpgradeCost() && PlayerData.bombChance < 50;
-                if (affordable) this.bombChanceBtn.setFillStyle(0x2ecc71);
-            })
-            .on('pointerout', () => {
-                const affordable = PlayerData.currency >= getBombChanceUpgradeCost() && PlayerData.bombChance < 50;
-                this.bombChanceBtn.setFillStyle(affordable ? 0x27ae60 : 0x555555);
-            })
-            .on('pointerdown', () => this.buyBombChanceUpgrade());
-
-        this.bombChanceBtnText = this.add.text(340, y1, '+5%', {
-            fontSize: '14px', color: '#ffffff'
-        }).setOrigin(0.5);
-
-        // Bomb Radius upgrade
-        const y2 = 165;
-        this.add.text(60, y2, '💥 Радиус бомбы', {
-            fontSize: '14px', color: '#ffffff'
-        }).setOrigin(0, 0.5);
-
-        this.bombRadiusText = this.add.text(195, y2, `${PlayerData.bombRadius}`, {
-            fontSize: '16px', color: '#55efc4', fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-
-        const atMaxRadius = PlayerData.bombRadius >= 3;
-        const radiusCost = getBombRadiusUpgradeCost();
-        this.bombRadiusCostText = this.add.text(240, y2, atMaxRadius ? 'MAX' : `${radiusCost}💰`, {
-            fontSize: '14px', color: atMaxRadius ? '#55efc4' : '#f1c40f'
-        }).setOrigin(0, 0.5);
-
-        const canAffordRadius = PlayerData.currency >= radiusCost && !atMaxRadius;
-        this.bombRadiusBtn = this.add.rectangle(340, y2, 70, 32, canAffordRadius ? 0x27ae60 : 0x555555)
-            .setInteractive({ useHandCursor: canAffordRadius })
-            .on('pointerover', () => {
-                const affordable = PlayerData.currency >= getBombRadiusUpgradeCost() && PlayerData.bombRadius < 3;
-                if (affordable) this.bombRadiusBtn.setFillStyle(0x2ecc71);
-            })
-            .on('pointerout', () => {
-                const affordable = PlayerData.currency >= getBombRadiusUpgradeCost() && PlayerData.bombRadius < 3;
-                this.bombRadiusBtn.setFillStyle(affordable ? 0x27ae60 : 0x555555);
-            })
-            .on('pointerdown', () => this.buyBombRadiusUpgrade());
-
-        this.bombRadiusBtnText = this.add.text(340, y2, '+1', {
-            fontSize: '14px', color: '#ffffff'
-        }).setOrigin(0.5);
+        if (upgradeAutoMove()) this.refreshUI();
     }
 
     buyBombChanceUpgrade() {
-        if (upgradeBombChance()) {
-            this.refreshUI();
-        }
+        if (upgradeBombChance()) this.refreshUI();
     }
 
     buyBombRadiusUpgrade() {
-        if (upgradeBombRadius()) {
-            this.refreshUI();
-        }
-    }
-
-    createColorUpgrades() {
-        const startY = 205;
-        const itemHeight = 50;
-        const colorCount = GameSettings.colorCount;
-
-        this.upgradeItems = [];
-
-        for (let i = 0; i < colorCount; i++) {
-            const y = startY + i * itemHeight;
-
-            // Color preview (small square)
-            const colorPreview = this.add.rectangle(60, y, 30, 30, ALL_GEM_COLORS[i])
-                .setStrokeStyle(2, 0xffffff);
-
-            // Color name
-            const nameText = this.add.text(85, y, COLOR_NAMES[i], {
-                fontSize: '14px', color: '#ffffff'
-            }).setOrigin(0, 0.5);
-
-            // Current multiplier
-            const multiplier = PlayerData.colorMultipliers[i] || 1;
-            const multText = this.add.text(200, y, `x${multiplier}`, {
-                fontSize: '16px', color: '#55efc4', fontStyle: 'bold'
-            }).setOrigin(0, 0.5);
-
-            // Upgrade cost
-            const cost = getUpgradeCost(i);
-            const costText = this.add.text(260, y, `${cost}💰`, {
-                fontSize: '14px', color: '#f1c40f'
-            }).setOrigin(0, 0.5);
-
-            // Upgrade button
-            const canAfford = PlayerData.currency >= cost;
-            const btnColor = canAfford ? 0x27ae60 : 0x555555;
-
-            const btn = this.add.rectangle(360, y, 70, 32, btnColor)
-                .setInteractive({ useHandCursor: canAfford })
-                .on('pointerover', () => {
-                    if (PlayerData.currency >= getUpgradeCost(i)) {
-                        btn.setFillStyle(0x2ecc71);
-                    }
-                })
-                .on('pointerout', () => {
-                    const affordable = PlayerData.currency >= getUpgradeCost(i);
-                    btn.setFillStyle(affordable ? 0x27ae60 : 0x555555);
-                })
-                .on('pointerdown', () => this.buyUpgrade(i));
-
-            const btnText = this.add.text(360, y, '+1', {
-                fontSize: '14px', color: '#ffffff'
-            }).setOrigin(0.5);
-
-            this.upgradeItems.push({
-                colorIndex: i,
-                multText,
-                costText,
-                btn,
-                btnText
-            });
-        }
+        if (upgradeBombRadius()) this.refreshUI();
     }
 
     buyUpgrade(colorIndex) {
-        if (upgradeColor(colorIndex)) {
-            this.refreshUI();
-        }
+        if (upgradeColor(colorIndex)) this.refreshUI();
     }
 
     refreshUI() {
-        // Update currency
-        this.currencyText.setText(`💰 ${PlayerData.currency}`);
+        this.currencyText.setText(`${PlayerData.currency}`);
 
-        // Update auto-move upgrade
+        // Auto-move
         const seconds = (PlayerData.autoMoveDelay / 1000).toFixed(1);
         const atMin = PlayerData.autoMoveDelay <= 100;
         const autoMoveCost = getAutoMoveUpgradeCost();
@@ -267,11 +286,10 @@ export class UpgradesScene extends Phaser.Scene {
         this.autoMoveText.setText(`${seconds}с`);
         this.autoMoveCostText.setText(atMin ? 'MAX' : `${autoMoveCost}💰`);
         this.autoMoveCostText.setColor(atMin ? '#55efc4' : '#f1c40f');
-        this.autoMoveBtn.setFillStyle(autoMoveAfford ? 0x27ae60 : 0x555555);
-        this.autoMoveBtn.setInteractive({ useHandCursor: autoMoveAfford });
+        this.updateButtonState(this.autoMoveBtn, this.autoMoveBtnHit, autoMoveAfford, 355, this.autoMoveText.y);
         this.autoMoveBtnText.setText(`-${step / 1000}с`);
 
-        // Update bomb chance upgrade
+        // Bomb chance
         const atMaxChance = PlayerData.bombChance >= 50;
         const chanceCost = getBombChanceUpgradeCost();
         const canAffordChance = PlayerData.currency >= chanceCost && !atMaxChance;
@@ -279,10 +297,9 @@ export class UpgradesScene extends Phaser.Scene {
         this.bombChanceText.setText(`${PlayerData.bombChance}%`);
         this.bombChanceCostText.setText(atMaxChance ? 'MAX' : `${chanceCost}💰`);
         this.bombChanceCostText.setColor(atMaxChance ? '#55efc4' : '#f1c40f');
-        this.bombChanceBtn.setFillStyle(canAffordChance ? 0x27ae60 : 0x555555);
-        this.bombChanceBtn.setInteractive({ useHandCursor: canAffordChance });
+        this.updateButtonState(this.bombChanceBtn, this.bombChanceBtnHit, canAffordChance, 355, this.bombChanceText.y);
 
-        // Update bomb radius upgrade
+        // Bomb radius
         const atMaxRadius = PlayerData.bombRadius >= 3;
         const radiusCost = getBombRadiusUpgradeCost();
         const canAffordRadius = PlayerData.currency >= radiusCost && !atMaxRadius;
@@ -290,20 +307,23 @@ export class UpgradesScene extends Phaser.Scene {
         this.bombRadiusText.setText(`${PlayerData.bombRadius}`);
         this.bombRadiusCostText.setText(atMaxRadius ? 'MAX' : `${radiusCost}💰`);
         this.bombRadiusCostText.setColor(atMaxRadius ? '#55efc4' : '#f1c40f');
-        this.bombRadiusBtn.setFillStyle(canAffordRadius ? 0x27ae60 : 0x555555);
-        this.bombRadiusBtn.setInteractive({ useHandCursor: canAffordRadius });
+        this.updateButtonState(this.bombRadiusBtn, this.bombRadiusBtnHit, canAffordRadius, 355, this.bombRadiusText.y);
 
-        // Update each color upgrade item
+        // Color upgrades
         for (const item of this.upgradeItems) {
-            const i = item.colorIndex;
-            const multiplier = PlayerData.colorMultipliers[i] || 1;
-            const cost = getUpgradeCost(i);
+            const multiplier = PlayerData.colorMultipliers[item.colorIndex] || 1;
+            const cost = getUpgradeCost(item.colorIndex);
             const canAfford = PlayerData.currency >= cost;
 
             item.multText.setText(`x${multiplier}`);
             item.costText.setText(`${cost}💰`);
-            item.btn.setFillStyle(canAfford ? 0x27ae60 : 0x555555);
-            item.btn.setInteractive({ useHandCursor: canAfford });
+            this.updateButtonState(item.btn, item.hitArea, canAfford, 355, item.multText.y);
         }
+    }
+
+    updateButtonState(btn, hitArea, canAfford, x, y) {
+        const color = canAfford ? 0x27ae60 : 0x444444;
+        btn.clear().fillStyle(color, 1).fillRoundedRect(x - 32, y - 14, 64, 28, 6);
+        hitArea.setInteractive({ useHandCursor: canAfford });
     }
 }

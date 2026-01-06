@@ -126,63 +126,91 @@ export class MainScene extends Phaser.Scene {
     }
 
     createUI() {
-        this.add.text(
-            this.cameras.main.width / 2, 30,
-            '🎮 Match-3',
-            { fontSize: '32px', fontFamily: 'Segoe UI', color: '#e94560' }
-        ).setOrigin(0.5);
+        const cx = this.cameras.main.width / 2;
 
-        const panelY = 75;
-        const panelSpacing = 150;
-        const startX = this.cameras.main.width / 2 - panelSpacing / 2;
+        // Header panel background
+        const headerBg = this.add.graphics();
+        headerBg.fillStyle(0x16213e, 0.9);
+        headerBg.fillRoundedRect(10, 8, this.cameras.main.width - 20, 100, 15);
+        headerBg.lineStyle(2, 0x0f3460, 1);
+        headerBg.strokeRoundedRect(10, 8, this.cameras.main.width - 20, 100, 15);
 
-        this.add.text(startX, panelY, '💰 ДЕНЬГИ', { fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
-        this.currencyText = this.add.text(startX, panelY + 20, `${PlayerData.currency}`, { fontSize: '24px', color: '#f1c40f', fontStyle: 'bold' }).setOrigin(0.5);
+        // Title
+        this.add.text(cx, 32, 'MATCH-3', {
+            fontSize: '28px',
+            fontFamily: 'Arial Black',
+            color: '#ffffff'
+        }).setOrigin(0.5).setShadow(2, 2, '#000000', 3);
 
-        this.add.text(startX + panelSpacing, panelY, '👆 ХОДЫ', { fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
-        this.movesText = this.add.text(startX + panelSpacing, panelY + 20, '0', { fontSize: '24px', color: '#e94560', fontStyle: 'bold' }).setOrigin(0.5);
+        // Stats panels
+        const statY = 75;
+        const statWidth = 130;
+        const statSpacing = 150;
 
-        this.messageText = this.add.text(
-            this.cameras.main.width / 2,
-            BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 25,
-            '',
-            { fontSize: '18px', color: '#55efc4' }
-        ).setOrigin(0.5);
+        // Currency stat card
+        this.add.graphics()
+            .fillStyle(0xf39c12, 0.2)
+            .fillRoundedRect(cx - statSpacing - statWidth / 2, statY - 20, statWidth, 40, 8);
+        this.add.text(cx - statSpacing - 40, statY, '💰', { fontSize: '24px' }).setOrigin(0.5);
+        this.currencyText = this.add.text(cx - statSpacing + 15, statY, `${PlayerData.currency}`, {
+            fontSize: '22px', color: '#f1c40f', fontStyle: 'bold'
+        }).setOrigin(0, 0.5);
 
-        const btnY = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 60;
-        const btnWidth = 95;
+        // Moves stat card
+        this.add.graphics()
+            .fillStyle(0xe74c3c, 0.2)
+            .fillRoundedRect(cx + statSpacing - statWidth / 2 + 20, statY - 20, statWidth, 40, 8);
+        this.add.text(cx + statSpacing - 20, statY, '👆', { fontSize: '24px' }).setOrigin(0.5);
+        this.movesText = this.add.text(cx + statSpacing + 35, statY, '0', {
+            fontSize: '22px', color: '#e74c3c', fontStyle: 'bold'
+        }).setOrigin(0, 0.5);
+
+        // Message text
+        this.messageText = this.add.text(cx, BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 25, '', {
+            fontSize: '16px',
+            color: '#55efc4',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        // Bottom button panel
+        const btnY = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 65;
+        const btnWidth = 90;
+        const btnHeight = 36;
         const btnSpacing = 100;
 
-        // New game button
-        const newGameBtn = this.add.rectangle(this.cameras.main.width / 2 - btnSpacing, btnY, btnWidth, 40, 0xe94560)
-            .setInteractive({ useHandCursor: true })
-            .on('pointerover', () => newGameBtn.setFillStyle(0xc0392b))
-            .on('pointerout', () => newGameBtn.setFillStyle(0xe94560))
-            .on('pointerdown', () => this.restartGame());
-        this.add.text(this.cameras.main.width / 2 - btnSpacing, btnY, '🔄 Новая', { fontSize: '12px', color: '#ffffff' }).setOrigin(0.5);
+        // Button helper function
+        const createButton = (x, color, hoverColor, label, callback) => {
+            const bg = this.add.graphics();
+            bg.fillStyle(color, 1);
+            bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 10);
 
-        // Upgrades button
-        const upgradesBtn = this.add.rectangle(this.cameras.main.width / 2, btnY, btnWidth, 40, 0x9b59b6)
-            .setInteractive({ useHandCursor: true })
-            .on('pointerover', () => upgradesBtn.setFillStyle(0x8e44ad))
-            .on('pointerout', () => upgradesBtn.setFillStyle(0x9b59b6))
-            .on('pointerdown', () => this.scene.launch('UpgradesScene'));
-        this.add.text(this.cameras.main.width / 2, btnY, '⬆️ Апгрейд', { fontSize: '12px', color: '#ffffff' }).setOrigin(0.5);
+            const hitArea = this.add.rectangle(x, btnY, btnWidth, btnHeight, 0x000000, 0)
+                .setInteractive({ useHandCursor: true })
+                .on('pointerover', () => {
+                    bg.clear();
+                    bg.fillStyle(hoverColor, 1);
+                    bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 10);
+                })
+                .on('pointerout', () => {
+                    bg.clear();
+                    bg.fillStyle(color, 1);
+                    bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 10);
+                })
+                .on('pointerdown', callback);
 
-        // Settings button
-        const settingsBtn = this.add.rectangle(this.cameras.main.width / 2 + btnSpacing, btnY, btnWidth, 40, 0x3498db)
-            .setInteractive({ useHandCursor: true })
-            .on('pointerover', () => settingsBtn.setFillStyle(0x2980b9))
-            .on('pointerout', () => settingsBtn.setFillStyle(0x3498db))
-            .on('pointerdown', () => this.scene.launch('SettingsScene'));
-        this.add.text(this.cameras.main.width / 2 + btnSpacing, btnY, '⚙️ Опции', { fontSize: '12px', color: '#ffffff' }).setOrigin(0.5);
+            this.add.text(x, btnY, label, {
+                fontSize: '13px', color: '#ffffff', fontStyle: 'bold'
+            }).setOrigin(0.5);
+        };
 
-        this.buildText = this.add.text(
-            10,
-            this.cameras.main.height - 10,
-            `JS: ${JS_VERSION}`,
-            { fontSize: '14px', color: '#888888' }
-        ).setOrigin(0, 1);
+        createButton(cx - btnSpacing, 0xe74c3c, 0xc0392b, '🔄 Новая', () => this.restartGame());
+        createButton(cx, 0x9b59b6, 0x8e44ad, '⬆️ Апгрейд', () => this.scene.launch('UpgradesScene'));
+        createButton(cx + btnSpacing, 0x3498db, 0x2980b9, '⚙️ Опции', () => this.scene.launch('SettingsScene'));
+
+        // Version text (subtle)
+        this.add.text(8, this.cameras.main.height - 8, JS_VERSION, {
+            fontSize: '10px', color: '#444444'
+        }).setOrigin(0, 1);
     }
 
     createBoard() {
