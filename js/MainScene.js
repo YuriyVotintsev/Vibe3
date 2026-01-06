@@ -6,7 +6,10 @@ import {
     BOARD_OFFSET_Y,
     SWAP_DURATION,
     GEM_STATE,
-    JS_VERSION
+    JS_VERSION,
+    PlayerData,
+    loadPlayerData,
+    savePlayerData
 } from './config.js';
 import { getCellSize } from './utils.js';
 
@@ -16,6 +19,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     init() {
+        loadPlayerData();
         this.board = [];
         this.gems = [];
         this.selectedGem = null;
@@ -125,40 +129,55 @@ export class MainScene extends Phaser.Scene {
         ).setOrigin(0.5);
 
         const panelY = 75;
-        const panelSpacing = 150;
-        const startX = this.cameras.main.width / 2 - panelSpacing;
+        const panelSpacing = 120;
+        const startX = this.cameras.main.width / 2 - panelSpacing * 1.5;
 
-        this.add.text(startX, panelY, 'ОЧКИ', { fontSize: '14px', color: '#aaaaaa' }).setOrigin(0.5);
-        this.scoreText = this.add.text(startX, panelY + 22, '0', { fontSize: '24px', color: '#e94560', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(startX, panelY, 'ОЧКИ', { fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
+        this.scoreText = this.add.text(startX, panelY + 20, '0', { fontSize: '20px', color: '#e94560', fontStyle: 'bold' }).setOrigin(0.5);
 
-        this.add.text(startX + panelSpacing, panelY, 'ХОДЫ', { fontSize: '14px', color: '#aaaaaa' }).setOrigin(0.5);
-        this.movesText = this.add.text(startX + panelSpacing, panelY + 22, '0', { fontSize: '24px', color: '#e94560', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(startX + panelSpacing, panelY, 'ВАЛЮТА', { fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
+        this.currencyText = this.add.text(startX + panelSpacing, panelY + 20, `${PlayerData.currency}`, { fontSize: '20px', color: '#f1c40f', fontStyle: 'bold' }).setOrigin(0.5);
 
-        this.add.text(startX + panelSpacing * 2, panelY, 'КОМБО', { fontSize: '14px', color: '#aaaaaa' }).setOrigin(0.5);
-        this.comboText = this.add.text(startX + panelSpacing * 2, panelY + 22, 'x1', { fontSize: '24px', color: '#e94560', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(startX + panelSpacing * 2, panelY, 'ХОДЫ', { fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
+        this.movesText = this.add.text(startX + panelSpacing * 2, panelY + 20, '0', { fontSize: '20px', color: '#e94560', fontStyle: 'bold' }).setOrigin(0.5);
+
+        this.add.text(startX + panelSpacing * 3, panelY, 'КОМБО', { fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
+        this.comboText = this.add.text(startX + panelSpacing * 3, panelY + 20, 'x1', { fontSize: '20px', color: '#e94560', fontStyle: 'bold' }).setOrigin(0.5);
 
         this.messageText = this.add.text(
             this.cameras.main.width / 2,
-            BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 30,
+            BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 25,
             '',
-            { fontSize: '20px', color: '#55efc4' }
+            { fontSize: '18px', color: '#55efc4' }
         ).setOrigin(0.5);
 
-        const btnY = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 70;
+        const btnY = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 60;
+        const btnWidth = 95;
+        const btnSpacing = 100;
 
-        const newGameBtn = this.add.rectangle(this.cameras.main.width / 2 - 90, btnY, 150, 45, 0xe94560)
+        // New game button
+        const newGameBtn = this.add.rectangle(this.cameras.main.width / 2 - btnSpacing, btnY, btnWidth, 40, 0xe94560)
             .setInteractive({ useHandCursor: true })
             .on('pointerover', () => newGameBtn.setFillStyle(0xc0392b))
             .on('pointerout', () => newGameBtn.setFillStyle(0xe94560))
             .on('pointerdown', () => this.restartGame());
-        this.add.text(this.cameras.main.width / 2 - 90, btnY, '🔄 Новая игра', { fontSize: '14px', color: '#ffffff' }).setOrigin(0.5);
+        this.add.text(this.cameras.main.width / 2 - btnSpacing, btnY, '🔄 Новая', { fontSize: '12px', color: '#ffffff' }).setOrigin(0.5);
 
-        const settingsBtn = this.add.rectangle(this.cameras.main.width / 2 + 90, btnY, 150, 45, 0x3498db)
+        // Upgrades button
+        const upgradesBtn = this.add.rectangle(this.cameras.main.width / 2, btnY, btnWidth, 40, 0x9b59b6)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerover', () => upgradesBtn.setFillStyle(0x8e44ad))
+            .on('pointerout', () => upgradesBtn.setFillStyle(0x9b59b6))
+            .on('pointerdown', () => this.scene.launch('UpgradesScene'));
+        this.add.text(this.cameras.main.width / 2, btnY, '⬆️ Апгрейд', { fontSize: '12px', color: '#ffffff' }).setOrigin(0.5);
+
+        // Settings button
+        const settingsBtn = this.add.rectangle(this.cameras.main.width / 2 + btnSpacing, btnY, btnWidth, 40, 0x3498db)
             .setInteractive({ useHandCursor: true })
             .on('pointerover', () => settingsBtn.setFillStyle(0x2980b9))
             .on('pointerout', () => settingsBtn.setFillStyle(0x3498db))
             .on('pointerdown', () => this.scene.launch('SettingsScene'));
-        this.add.text(this.cameras.main.width / 2 + 90, btnY, '⚙️ Настройки', { fontSize: '14px', color: '#ffffff' }).setOrigin(0.5);
+        this.add.text(this.cameras.main.width / 2 + btnSpacing, btnY, '⚙️ Опции', { fontSize: '12px', color: '#ffffff' }).setOrigin(0.5);
 
         this.buildText = this.add.text(
             10,
@@ -352,12 +371,29 @@ export class MainScene extends Phaser.Scene {
         const matches = this.findAllMatches();
 
         if (matches.length > 0) {
-            const points = matches.length * 10 * this.combo;
-            this.score += points;
+            // Calculate points with color multipliers
+            let totalPoints = 0;
+            matches.forEach(({ row, col }) => {
+                const gem = this.gems[row]?.[col];
+                if (gem) {
+                    const colorIndex = gem.getData('type');
+                    const colorMultiplier = PlayerData.colorMultipliers[colorIndex] || 1;
+                    totalPoints += 10 * colorMultiplier * this.combo;
+                }
+            });
+
+            this.score += totalPoints;
             this.scoreText.setText(this.score.toString());
 
+            // Add currency (1 currency per 10 points)
+            const currencyEarned = Math.floor(totalPoints / 10);
+            PlayerData.currency += currencyEarned;
+            PlayerData.totalEarned += currencyEarned;
+            this.currencyText.setText(`${PlayerData.currency}`);
+            savePlayerData();
+
             if (matches.length > 3) {
-                this.showMessage(`+${points}`);
+                this.showMessage(`+${totalPoints}`);
             }
 
             matches.forEach(({ row, col }) => {

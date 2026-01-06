@@ -36,12 +36,13 @@
 <body>
     <div id="game-container"></div>
 
-    <div id="html-version" style="position:fixed;bottom:10px;left:10px;color:#666;font-size:12px;font-family:monospace;z-index:9999;">0.0.18-html</div>
+    <div id="html-version" style="position:fixed;bottom:10px;left:10px;color:#666;font-size:12px;font-family:monospace;z-index:9999;">0.0.19-html</div>
 
     <script type="module">
-        import { BOARD_TOTAL_SIZE } from './js/config.js?v=18';
-        import { MainScene } from './js/MainScene.js?v=18';
-        import { SettingsScene } from './js/SettingsScene.js?v=18';
+        import { BOARD_TOTAL_SIZE } from './js/config.js?v=19';
+        import { MainScene } from './js/MainScene.js?v=19';
+        import { SettingsScene } from './js/SettingsScene.js?v=19';
+        import { UpgradesScene } from './js/UpgradesScene.js?v=19';
 
         const gameConfig = {
             type: Phaser.AUTO,
@@ -49,7 +50,7 @@
             height: BOARD_TOTAL_SIZE + 220,
             parent: 'game-container',
             backgroundColor: '#1a1a2e',
-            scene: [MainScene, SettingsScene],
+            scene: [MainScene, SettingsScene, UpgradesScene],
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH

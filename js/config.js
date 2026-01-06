@@ -22,6 +22,64 @@ export const ALL_GEM_COLORS = [
     0xf44336  // 20. bright red
 ];
 
+// Color names for UI
+export const COLOR_NAMES = [
+    'Красный', 'Синий', 'Зелёный', 'Жёлтый', 'Фиолетовый', 'Оранжевый',
+    'Бирюзовый', 'Розовый', 'Голубой', 'Лаймовый', 'Рыжий', 'Серый',
+    'Коричневый', 'Пурпурный', 'Индиго', 'Тиловый', 'Салатовый', 'Янтарный',
+    'Небесный', 'Алый'
+];
+
+// Player persistent data
+export const PlayerData = {
+    currency: 0,          // earned from matches, spent on upgrades
+    totalEarned: 0,       // lifetime currency earned
+    prestigeLevel: 0,     // future use
+    colorMultipliers: {}  // { colorIndex: multiplier }
+};
+
+// Initialize color multipliers (all start at 1x)
+export function initColorMultipliers() {
+    for (let i = 0; i < ALL_GEM_COLORS.length; i++) {
+        if (PlayerData.colorMultipliers[i] === undefined) {
+            PlayerData.colorMultipliers[i] = 1;
+        }
+    }
+}
+
+// Get upgrade cost for a color (increases with level)
+export function getUpgradeCost(colorIndex) {
+    const currentMultiplier = PlayerData.colorMultipliers[colorIndex] || 1;
+    const level = currentMultiplier - 1; // level 0 = 1x, level 1 = 2x, etc.
+    return Math.floor(100 * Math.pow(1.5, level));
+}
+
+// Apply upgrade to a color
+export function upgradeColor(colorIndex) {
+    const cost = getUpgradeCost(colorIndex);
+    if (PlayerData.currency >= cost) {
+        PlayerData.currency -= cost;
+        PlayerData.colorMultipliers[colorIndex] = (PlayerData.colorMultipliers[colorIndex] || 1) + 1;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Save/Load player data to localStorage
+export function savePlayerData() {
+    localStorage.setItem('match3_player', JSON.stringify(PlayerData));
+}
+
+export function loadPlayerData() {
+    const saved = localStorage.getItem('match3_player');
+    if (saved) {
+        const data = JSON.parse(saved);
+        Object.assign(PlayerData, data);
+    }
+    initColorMultipliers();
+}
+
 // Game settings (mutable)
 export const GameSettings = {
     boardSize: 8,
@@ -46,4 +104,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.18-js';
+export const JS_VERSION = '0.0.19-js';
