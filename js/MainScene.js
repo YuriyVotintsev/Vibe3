@@ -177,8 +177,9 @@ export class MainScene extends Phaser.Scene {
     }
 
     createBoard() {
-        this.board = [];
-        this.gems = [];
+        // Clear arrays without reassigning (keep references for managers)
+        this.board.length = 0;
+        this.gems.length = 0;
         const boardSize = GameSettings.boardSize;
 
         for (let row = 0; row < boardSize; row++) {
@@ -338,7 +339,7 @@ export class MainScene extends Phaser.Scene {
     checkLandedGems() {
         if (this.pendingMatches.length === 0) return;
 
-        this.pendingMatches = [];
+        this.pendingMatches.length = 0;
         const matches = this.findAllMatches();
 
         if (matches.length > 0) {
@@ -437,7 +438,7 @@ export class MainScene extends Phaser.Scene {
         }
 
         this.moves = 0;
-        this.pendingMatches = [];
+        this.pendingMatches.length = 0;
 
         this.movesText.setText('0');
 
