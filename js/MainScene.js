@@ -101,12 +101,18 @@ export class MainScene extends Phaser.Scene {
 
         this.removeInitialMatches();
 
+        // Handle pointer down on gems (start swipe tracking)
         this.input.on('gameobjectdown', (pointer, gameObject) => {
             if (gameObject.getData('isBomb')) {
                 this.explodeBomb(gameObject);
             } else {
-                this.swapHandler.onGemClick(pointer, gameObject);
+                this.swapHandler.onGemPointerDown(pointer, gameObject);
             }
+        });
+
+        // Handle pointer up (detect swipe or click)
+        this.input.on('pointerup', (pointer) => {
+            this.swapHandler.onPointerUp(pointer);
         });
 
         this.fallManager.initSpawnTimers(boardSize);
@@ -117,6 +123,7 @@ export class MainScene extends Phaser.Scene {
 
     shutdown() {
         this.input.off('gameobjectdown');
+        this.input.off('pointerup');
     }
 
     onResume() {

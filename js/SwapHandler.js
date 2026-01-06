@@ -1,4 +1,4 @@
-// SwapHandler.js - Handles gem selection and swapping
+// SwapHandler.js - Handles gem selection and swapping (click and swipe)
 import { GameSettings, SWAP_DURATION, GEM_STATE } from './config.js';
 import { checkMatchAt } from './BoardLogic.js';
 
@@ -15,6 +15,12 @@ export class SwapHandler {
     constructor(context) {
         this.ctx = context;
         this.selectedGem = null;
+
+        // Swipe tracking
+        this.dragStartGem = null;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+        this.minSwipeDistance = 30; // minimum pixels to register as swipe
     }
 
     /**
@@ -73,6 +79,68 @@ export class SwapHandler {
         scene.selectionIndicator.setVisible(false);
         scene.tweens.killTweensOf(scene.selectionIndicator);
         scene.selectionIndicator.setScale(1);
+    }
+
+    /**
+     * Handle pointer down on gem - start tracking for swipe
+     * @param {Phaser.Input.Pointer} pointer
+     * @param {Phaser.GameObjects.Image} gem
+     */
+    onGemPointerDown(pointer, gem) {
+        if (gem.getData('state') !== GEM_STATE.IDLE) return;
+        if (gem.getData('isBomb')) return;
+
+        this.dragStartGem = gem;
+        this.dragStartX = pointer.x;
+        this.dragStartY = pointer.y;
+    }
+
+    /**
+     * Handle pointer up - detect swipe or fall back to click
+     * @param {Phaser.Input.Pointer} pointer
+     */
+    onPointerUp(pointer) {
+        if (!this.dragStartGem) return;
+
+        const gem = this.dragStartGem;
+        const deltaX = pointer.x - this.dragStartX;
+        const deltaY = pointer.y - this.dragStartY;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+        // Reset drag state
+        this.dragStartGem = null;
+
+        // Check if this was a swipe (moved enough distance)
+        if (distance >= this.minSwipeDistance) {
+            // Determine swipe direction
+            const row = gem.getData('row');
+            const col = gem.getData('col');
+
+            let targetRow = row;
+            let targetCol = col;
+
+            // Determine dominant direction
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // Horizontal swipe
+                targetCol = deltaX > 0 ? col + 1 : col - 1;
+            } else {
+                // Vertical swipe
+                targetRow = deltaY > 0 ? row + 1 : row - 1;
+            }
+
+            // Check bounds
+            const boardSize = GameSettings.boardSize;
+            if (targetRow >= 0 && targetRow < boardSize &&
+                targetCol >= 0 && targetCol < boardSize) {
+                // Clear any existing selection and perform swipe swap
+                this.clearSelection();
+                this.swapGems(row, col, targetRow, targetCol);
+                return;
+            }
+        }
+
+        // If not a valid swipe, treat as click
+        this.onGemClick(pointer, gem);
     }
 
     /**
