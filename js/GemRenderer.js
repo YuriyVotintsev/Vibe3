@@ -136,7 +136,7 @@ export function createEnhancementTextures(scene, cellSize) {
 }
 
 /**
- * Create silver overlay - simple white rounded square in center
+ * Create silver overlay - white rounded square with border and shadow
  */
 function createSilverOverlay(scene, key, size) {
     if (scene.textures.exists(key)) {
@@ -147,15 +147,24 @@ function createSilverOverlay(scene, key, size) {
     const squareSize = size * 0.4;
     const offset = (size - squareSize) / 2;
 
-    graphics.fillStyle(0xffffff, 0.9);
+    // Shadow
+    graphics.fillStyle(0x000000, 0.4);
+    graphics.fillRoundedRect(offset + 2, offset + 2, squareSize, squareSize, 6);
+
+    // Main square
+    graphics.fillStyle(0xffffff, 0.95);
     graphics.fillRoundedRect(offset, offset, squareSize, squareSize, 6);
+
+    // Border
+    graphics.lineStyle(2, 0x888888, 1);
+    graphics.strokeRoundedRect(offset, offset, squareSize, squareSize, 6);
 
     graphics.generateTexture(key, size, size);
     graphics.destroy();
 }
 
 /**
- * Create gold overlay - simple yellow rounded square in center
+ * Create gold overlay - yellow rounded square with border and shadow
  */
 function createGoldOverlay(scene, key, size) {
     if (scene.textures.exists(key)) {
@@ -166,15 +175,24 @@ function createGoldOverlay(scene, key, size) {
     const squareSize = size * 0.4;
     const offset = (size - squareSize) / 2;
 
-    graphics.fillStyle(0xffd700, 0.95);
+    // Shadow
+    graphics.fillStyle(0x000000, 0.4);
+    graphics.fillRoundedRect(offset + 2, offset + 2, squareSize, squareSize, 6);
+
+    // Main square
+    graphics.fillStyle(0xffd700, 1);
     graphics.fillRoundedRect(offset, offset, squareSize, squareSize, 6);
+
+    // Border
+    graphics.lineStyle(2, 0xb8860b, 1);
+    graphics.strokeRoundedRect(offset, offset, squareSize, squareSize, 6);
 
     graphics.generateTexture(key, size, size);
     graphics.destroy();
 }
 
 /**
- * Create crystal overlay - simple cyan rounded square in center
+ * Create crystal overlay - cyan rounded square with border and shadow
  */
 function createCrystalOverlay(scene, key, size) {
     if (scene.textures.exists(key)) {
@@ -185,8 +203,17 @@ function createCrystalOverlay(scene, key, size) {
     const squareSize = size * 0.4;
     const offset = (size - squareSize) / 2;
 
-    graphics.fillStyle(0x00ffff, 0.95);
+    // Shadow
+    graphics.fillStyle(0x000000, 0.4);
+    graphics.fillRoundedRect(offset + 2, offset + 2, squareSize, squareSize, 6);
+
+    // Main square
+    graphics.fillStyle(0x00ffff, 1);
     graphics.fillRoundedRect(offset, offset, squareSize, squareSize, 6);
+
+    // Border
+    graphics.lineStyle(2, 0x008888, 1);
+    graphics.strokeRoundedRect(offset, offset, squareSize, squareSize, 6);
 
     graphics.generateTexture(key, size, size);
     graphics.destroy();
