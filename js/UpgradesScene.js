@@ -24,24 +24,29 @@ export class UpgradesScene extends Phaser.Scene {
         const H = this.cameras.main.height;
         const cx = W / 2;
 
+        // Scroll area bounds
+        this.scrollTop = 150;
+        this.scrollBottom = H - 80;
+        this.scrollHeight = this.scrollBottom - this.scrollTop;
+
         // Dark overlay
         this.add.rectangle(cx, H / 2, W, H, 0x000000, 0.92);
 
-        // Panel
+        // Panel background
         const panel = this.add.graphics();
         panel.fillStyle(0x1e1e2e, 1);
         panel.fillRoundedRect(15, 20, W - 30, H - 40, 16);
         panel.lineStyle(3, 0x9b59b6, 1);
         panel.strokeRoundedRect(15, 20, W - 30, H - 40, 16);
 
-        // Title
+        // Title (fixed)
         this.add.text(cx, 55, 'АПГРЕЙДЫ', {
             fontSize: '28px',
             fontFamily: 'Arial Black',
             color: '#ffffff'
         }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
 
-        // Currency display
+        // Currency display (fixed)
         const currencyBg = this.add.graphics();
         currencyBg.fillStyle(0xf39c12, 0.3);
         currencyBg.fillRoundedRect(cx - 100, 85, 200, 50, 12);
@@ -50,18 +55,34 @@ export class UpgradesScene extends Phaser.Scene {
             fontSize: '28px', color: '#f1c40f', fontStyle: 'bold'
         }).setOrigin(0, 0.5);
 
-        // Create scrollable upgrade list
-        this.createUpgradeList();
+        // Create scrollable container
+        this.scrollContainer = this.add.container(0, 0);
 
-        // Close button at bottom
+        // Create mask for scroll area
+        const maskShape = this.make.graphics();
+        maskShape.fillRect(20, this.scrollTop, W - 40, this.scrollHeight);
+        const mask = maskShape.createGeometryMask();
+        this.scrollContainer.setMask(mask);
+
+        // Build upgrade list inside container
+        this.contentHeight = this.createUpgradeList();
+        this.scrollY = 0;
+        this.maxScroll = Math.max(0, this.contentHeight - this.scrollHeight);
+
+        // Setup scroll input
+        this.setupScrollInput();
+
+        // Close button (fixed, on top)
         this.createCloseButton();
+
+        // Scroll indicator
+        this.createScrollIndicator();
     }
 
     createUpgradeList() {
         const W = this.cameras.main.width;
         const cx = W / 2;
-        const ROW_HEIGHT = 70;
-        let y = 155;
+        let y = this.scrollTop;
 
         this.upgradeRows = [];
 
@@ -103,170 +124,221 @@ export class UpgradesScene extends Phaser.Scene {
         }, () => upgradeBombRadius());
 
         // Separator
-        y += 10;
-        this.add.text(cx, y, '— МНОЖИТЕЛИ ЦВЕТОВ —', {
+        y += 15;
+        const separator = this.add.text(cx, y, '— МНОЖИТЕЛИ —', {
             fontSize: '14px', color: '#9b59b6', fontStyle: 'bold'
         }).setOrigin(0.5);
-        y += 30;
+        this.scrollContainer.add(separator);
+        y += 25;
 
         // Color upgrades
         const colorCount = GameSettings.colorCount;
         for (let i = 0; i < colorCount; i++) {
-            const colorIndex = i;
-            y = this.createColorUpgradeRow(y, colorIndex);
+            y = this.createColorUpgradeRow(y, i);
         }
+
+        return y - this.scrollTop + 20;
     }
 
     createUpgradeRow(y, icon, name, getValue, getCost, getAction, canAfford, onBuy) {
         const W = this.cameras.main.width;
-        const cx = W / 2;
 
         // Row background
         const rowBg = this.add.graphics();
         rowBg.fillStyle(0x2a2a3e, 0.5);
-        rowBg.fillRoundedRect(25, y, W - 50, 60, 10);
+        rowBg.fillRoundedRect(25, y, W - 50, 55, 10);
+        this.scrollContainer.add(rowBg);
 
-        // Icon and name on left
-        this.add.text(40, y + 30, icon, { fontSize: '24px' }).setOrigin(0, 0.5);
-        this.add.text(75, y + 30, name, {
-            fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
+        // Icon
+        const iconText = this.add.text(40, y + 28, icon, { fontSize: '22px' }).setOrigin(0, 0.5);
+        this.scrollContainer.add(iconText);
 
-        // Current value
-        const valueText = this.add.text(200, y + 30, getValue(), {
-            fontSize: '20px', color: '#55efc4', fontStyle: 'bold'
+        // Name
+        const nameText = this.add.text(72, y + 28, name, {
+            fontSize: '16px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0, 0.5);
+        this.scrollContainer.add(nameText);
+
+        // Value
+        const valueText = this.add.text(185, y + 28, getValue(), {
+            fontSize: '18px', color: '#55efc4', fontStyle: 'bold'
+        }).setOrigin(0, 0.5);
+        this.scrollContainer.add(valueText);
 
         // Cost
-        const costText = this.add.text(270, y + 30, getCost(), {
-            fontSize: '16px', color: '#f1c40f'
+        const costText = this.add.text(255, y + 28, getCost(), {
+            fontSize: '14px', color: '#f1c40f'
         }).setOrigin(0, 0.5);
+        this.scrollContainer.add(costText);
 
-        // Buy button
-        const btnX = W - 70;
-        const btnSize = 50;
+        // Button
+        const btnX = W - 60;
+        const btnSize = 44;
         const affordable = canAfford();
 
         const btn = this.add.graphics();
-        const btnColor = affordable ? 0x27ae60 : 0x555555;
-        btn.fillStyle(btnColor, 1);
-        btn.fillRoundedRect(btnX - btnSize / 2, y + 30 - btnSize / 2, btnSize, btnSize, 10);
+        btn.fillStyle(affordable ? 0x27ae60 : 0x555555, 1);
+        btn.fillRoundedRect(btnX - btnSize / 2, y + 28 - btnSize / 2, btnSize, btnSize, 8);
+        this.scrollContainer.add(btn);
 
-        const btnText = this.add.text(btnX, y + 30, getAction(), {
-            fontSize: '14px', color: '#ffffff', fontStyle: 'bold'
+        const btnLabel = this.add.text(btnX, y + 28, getAction(), {
+            fontSize: '12px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
+        this.scrollContainer.add(btnLabel);
 
-        const hitArea = this.add.rectangle(btnX, y + 30, btnSize, btnSize, 0x000000, 0)
+        const hitArea = this.add.rectangle(btnX, y + 28, btnSize, btnSize, 0x000000, 0)
             .setInteractive({ useHandCursor: affordable })
             .on('pointerover', () => {
-                if (canAfford()) {
-                    btn.clear().fillStyle(0x2ecc71, 1).fillRoundedRect(btnX - btnSize / 2, y + 30 - btnSize / 2, btnSize, btnSize, 10);
-                }
+                if (canAfford()) btn.clear().fillStyle(0x2ecc71, 1).fillRoundedRect(btnX - btnSize / 2, y + 28 - btnSize / 2, btnSize, btnSize, 8);
             })
             .on('pointerout', () => {
-                const col = canAfford() ? 0x27ae60 : 0x555555;
-                btn.clear().fillStyle(col, 1).fillRoundedRect(btnX - btnSize / 2, y + 30 - btnSize / 2, btnSize, btnSize, 10);
+                btn.clear().fillStyle(canAfford() ? 0x27ae60 : 0x555555, 1).fillRoundedRect(btnX - btnSize / 2, y + 28 - btnSize / 2, btnSize, btnSize, 8);
             })
             .on('pointerdown', () => {
                 if (canAfford() && onBuy()) {
-                    this.refreshRow(valueText, costText, btn, hitArea, btnX, y, btnSize, getValue, getCost, canAfford);
-                    this.currencyText.setText(`${PlayerData.currency}`);
-                }
-            });
-
-        this.upgradeRows.push({ valueText, costText, btn, hitArea, btnX, y, btnSize, getValue, getCost, canAfford });
-
-        return y + 70;
-    }
-
-    createColorUpgradeRow(y, colorIndex) {
-        const W = this.cameras.main.width;
-        const cx = W / 2;
-
-        // Row background
-        const rowBg = this.add.graphics();
-        rowBg.fillStyle(0x2a2a3e, 0.3);
-        rowBg.fillRoundedRect(25, y, W - 50, 50, 8);
-
-        // Color preview
-        const preview = this.add.graphics();
-        preview.fillStyle(ALL_GEM_COLORS[colorIndex], 1);
-        preview.fillRoundedRect(35, y + 10, 30, 30, 6);
-        preview.lineStyle(2, 0xffffff, 0.3);
-        preview.strokeRoundedRect(35, y + 10, 30, 30, 6);
-
-        // Color name
-        this.add.text(75, y + 25, COLOR_NAMES[colorIndex], {
-            fontSize: '16px', color: '#e0e0e0'
-        }).setOrigin(0, 0.5);
-
-        // Multiplier
-        const getValue = () => `x${PlayerData.colorMultipliers[colorIndex] || 1}`;
-        const valueText = this.add.text(190, y + 25, getValue(), {
-            fontSize: '18px', color: '#55efc4', fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-
-        // Cost
-        const getCost = () => `${getUpgradeCost(colorIndex)}💰`;
-        const costText = this.add.text(250, y + 25, getCost(), {
-            fontSize: '14px', color: '#f1c40f'
-        }).setOrigin(0, 0.5);
-
-        // Buy button
-        const btnX = W - 70;
-        const btnW = 50;
-        const btnH = 36;
-        const canAfford = () => PlayerData.currency >= getUpgradeCost(colorIndex);
-
-        const btn = this.add.graphics();
-        const btnColor = canAfford() ? 0x27ae60 : 0x555555;
-        btn.fillStyle(btnColor, 1);
-        btn.fillRoundedRect(btnX - btnW / 2, y + 25 - btnH / 2, btnW, btnH, 8);
-
-        this.add.text(btnX, y + 25, '+1', {
-            fontSize: '14px', color: '#ffffff', fontStyle: 'bold'
-        }).setOrigin(0.5);
-
-        const hitArea = this.add.rectangle(btnX, y + 25, btnW, btnH, 0x000000, 0)
-            .setInteractive({ useHandCursor: canAfford() })
-            .on('pointerover', () => {
-                if (canAfford()) {
-                    btn.clear().fillStyle(0x2ecc71, 1).fillRoundedRect(btnX - btnW / 2, y + 25 - btnH / 2, btnW, btnH, 8);
-                }
-            })
-            .on('pointerout', () => {
-                const col = canAfford() ? 0x27ae60 : 0x555555;
-                btn.clear().fillStyle(col, 1).fillRoundedRect(btnX - btnW / 2, y + 25 - btnH / 2, btnW, btnH, 8);
-            })
-            .on('pointerdown', () => {
-                if (canAfford() && upgradeColor(colorIndex)) {
-                    valueText.setText(getValue());
-                    costText.setText(getCost());
-                    const col = canAfford() ? 0x27ae60 : 0x555555;
-                    btn.clear().fillStyle(col, 1).fillRoundedRect(btnX - btnW / 2, y + 25 - btnH / 2, btnW, btnH, 8);
-                    hitArea.setInteractive({ useHandCursor: canAfford() });
                     this.currencyText.setText(`${PlayerData.currency}`);
                     this.refreshAllRows();
                 }
             });
+        this.scrollContainer.add(hitArea);
+
+        this.upgradeRows.push({ valueText, costText, btn, hitArea, btnX, y, btnSize, getValue, getCost, canAfford });
+
+        return y + 62;
+    }
+
+    createColorUpgradeRow(y, colorIndex) {
+        const W = this.cameras.main.width;
+
+        // Row background
+        const rowBg = this.add.graphics();
+        rowBg.fillStyle(0x2a2a3e, 0.3);
+        rowBg.fillRoundedRect(25, y, W - 50, 44, 8);
+        this.scrollContainer.add(rowBg);
+
+        // Color preview
+        const preview = this.add.graphics();
+        preview.fillStyle(ALL_GEM_COLORS[colorIndex], 1);
+        preview.fillRoundedRect(35, y + 8, 28, 28, 5);
+        preview.lineStyle(1, 0xffffff, 0.3);
+        preview.strokeRoundedRect(35, y + 8, 28, 28, 5);
+        this.scrollContainer.add(preview);
+
+        // Name
+        const nameText = this.add.text(72, y + 22, COLOR_NAMES[colorIndex], {
+            fontSize: '14px', color: '#e0e0e0'
+        }).setOrigin(0, 0.5);
+        this.scrollContainer.add(nameText);
+
+        // Value
+        const getValue = () => `x${PlayerData.colorMultipliers[colorIndex] || 1}`;
+        const valueText = this.add.text(175, y + 22, getValue(), {
+            fontSize: '16px', color: '#55efc4', fontStyle: 'bold'
+        }).setOrigin(0, 0.5);
+        this.scrollContainer.add(valueText);
+
+        // Cost
+        const getCost = () => `${getUpgradeCost(colorIndex)}💰`;
+        const costText = this.add.text(230, y + 22, getCost(), {
+            fontSize: '12px', color: '#f1c40f'
+        }).setOrigin(0, 0.5);
+        this.scrollContainer.add(costText);
+
+        // Button
+        const btnX = W - 60;
+        const btnW = 44;
+        const btnH = 32;
+        const canAfford = () => PlayerData.currency >= getUpgradeCost(colorIndex);
+
+        const btn = this.add.graphics();
+        btn.fillStyle(canAfford() ? 0x27ae60 : 0x555555, 1);
+        btn.fillRoundedRect(btnX - btnW / 2, y + 22 - btnH / 2, btnW, btnH, 6);
+        this.scrollContainer.add(btn);
+
+        const btnLabel = this.add.text(btnX, y + 22, '+1', {
+            fontSize: '12px', color: '#ffffff', fontStyle: 'bold'
+        }).setOrigin(0.5);
+        this.scrollContainer.add(btnLabel);
+
+        const hitArea = this.add.rectangle(btnX, y + 22, btnW, btnH, 0x000000, 0)
+            .setInteractive({ useHandCursor: canAfford() })
+            .on('pointerover', () => {
+                if (canAfford()) btn.clear().fillStyle(0x2ecc71, 1).fillRoundedRect(btnX - btnW / 2, y + 22 - btnH / 2, btnW, btnH, 6);
+            })
+            .on('pointerout', () => {
+                btn.clear().fillStyle(canAfford() ? 0x27ae60 : 0x555555, 1).fillRoundedRect(btnX - btnW / 2, y + 22 - btnH / 2, btnW, btnH, 6);
+            })
+            .on('pointerdown', () => {
+                if (canAfford() && upgradeColor(colorIndex)) {
+                    this.currencyText.setText(`${PlayerData.currency}`);
+                    this.refreshAllRows();
+                }
+            });
+        this.scrollContainer.add(hitArea);
 
         this.upgradeRows.push({
             valueText, costText, btn, hitArea,
-            btnX, y: y - 5, btnSize: btnH, btnW,
+            btnX, y, btnSize: btnH, btnW,
             getValue, getCost, canAfford, isColor: true
         });
 
-        return y + 55;
+        return y + 50;
     }
 
-    refreshRow(valueText, costText, btn, hitArea, btnX, y, btnSize, getValue, getCost, canAfford) {
-        valueText.setText(getValue());
-        costText.setText(getCost());
-        const affordable = canAfford();
-        const col = affordable ? 0x27ae60 : 0x555555;
-        btn.clear().fillStyle(col, 1).fillRoundedRect(btnX - btnSize / 2, y + 30 - btnSize / 2, btnSize, btnSize, 10);
-        hitArea.setInteractive({ useHandCursor: affordable });
-        this.refreshAllRows();
+    setupScrollInput() {
+        // Drag to scroll
+        this.input.on('pointermove', (pointer) => {
+            if (pointer.isDown && this.maxScroll > 0) {
+                const dy = pointer.velocity.y * -0.3;
+                this.scrollBy(dy);
+            }
+        });
+
+        // Mouse wheel
+        this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY) => {
+            this.scrollBy(deltaY * 0.5);
+        });
+    }
+
+    scrollBy(delta) {
+        this.scrollY = Phaser.Math.Clamp(this.scrollY + delta, 0, this.maxScroll);
+        this.scrollContainer.y = -this.scrollY;
+        this.updateScrollIndicator();
+    }
+
+    createScrollIndicator() {
+        if (this.maxScroll <= 0) return;
+
+        const W = this.cameras.main.width;
+        const trackX = W - 25;
+        const trackTop = this.scrollTop + 5;
+        const trackHeight = this.scrollHeight - 10;
+
+        // Track
+        this.scrollTrack = this.add.graphics();
+        this.scrollTrack.fillStyle(0x333333, 0.5);
+        this.scrollTrack.fillRoundedRect(trackX - 3, trackTop, 6, trackHeight, 3);
+
+        // Thumb
+        const thumbHeight = Math.max(30, (this.scrollHeight / this.contentHeight) * trackHeight);
+        this.scrollThumb = this.add.graphics();
+        this.scrollThumbHeight = thumbHeight;
+        this.scrollTrackTop = trackTop;
+        this.scrollTrackHeight = trackHeight;
+        this.scrollTrackX = trackX;
+
+        this.updateScrollIndicator();
+    }
+
+    updateScrollIndicator() {
+        if (!this.scrollThumb || this.maxScroll <= 0) return;
+
+        const progress = this.scrollY / this.maxScroll;
+        const thumbY = this.scrollTrackTop + progress * (this.scrollTrackHeight - this.scrollThumbHeight);
+
+        this.scrollThumb.clear();
+        this.scrollThumb.fillStyle(0x9b59b6, 0.8);
+        this.scrollThumb.fillRoundedRect(this.scrollTrackX - 3, thumbY, 6, this.scrollThumbHeight, 3);
     }
 
     refreshAllRows() {
@@ -275,12 +347,13 @@ export class UpgradesScene extends Phaser.Scene {
             row.costText.setText(row.getCost());
             const affordable = row.canAfford();
             const col = affordable ? 0x27ae60 : 0x555555;
+
             if (row.isColor) {
-                const btnW = row.btnW || 50;
+                const btnW = row.btnW || 44;
                 const btnH = row.btnSize;
-                row.btn.clear().fillStyle(col, 1).fillRoundedRect(row.btnX - btnW / 2, row.y + 30 - btnH / 2, btnW, btnH, 8);
+                row.btn.clear().fillStyle(col, 1).fillRoundedRect(row.btnX - btnW / 2, row.y + 22 - btnH / 2, btnW, btnH, 6);
             } else {
-                row.btn.clear().fillStyle(col, 1).fillRoundedRect(row.btnX - row.btnSize / 2, row.y + 30 - row.btnSize / 2, row.btnSize, row.btnSize, 10);
+                row.btn.clear().fillStyle(col, 1).fillRoundedRect(row.btnX - row.btnSize / 2, row.y + 28 - row.btnSize / 2, row.btnSize, row.btnSize, 8);
             }
             row.hitArea.setInteractive({ useHandCursor: affordable });
         }
@@ -293,6 +366,11 @@ export class UpgradesScene extends Phaser.Scene {
         const btnY = H - 50;
         const btnWidth = W - 60;
         const btnHeight = 50;
+
+        // Background to cover scrolled content
+        const btnBg = this.add.graphics();
+        btnBg.fillStyle(0x1e1e2e, 1);
+        btnBg.fillRect(15, H - 85, W - 30, 65);
 
         const btn = this.add.graphics();
         btn.fillStyle(0xe74c3c, 1);
