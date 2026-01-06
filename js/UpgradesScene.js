@@ -17,8 +17,6 @@ export class UpgradesScene extends Phaser.Scene {
     }
 
     create() {
-        this.scene.pause('MainScene');
-
         const cx = this.cameras.main.width / 2;
         const cy = this.cameras.main.height / 2;
 
@@ -44,10 +42,7 @@ export class UpgradesScene extends Phaser.Scene {
             .setInteractive({ useHandCursor: true })
             .on('pointerover', () => closeBtn.setFillStyle(0xc0392b))
             .on('pointerout', () => closeBtn.setFillStyle(0xe74c3c))
-            .on('pointerdown', () => {
-                this.scene.resume('MainScene');
-                this.scene.stop();
-            });
+            .on('pointerdown', () => this.scene.stop());
         this.add.text(cx, this.cameras.main.height - 40, '✕ Закрыть', {
             fontSize: '16px', color: '#ffffff'
         }).setOrigin(0.5);
