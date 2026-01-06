@@ -36,6 +36,7 @@ export class MainScene extends Phaser.Scene {
         this.lastMoveTime = 0;
         this.isAutoMoving = false;
         this.lastMatchWasManual = false;  // Track if last match came from manual move
+        this.pendingBombSpawn = null;     // Position to spawn bomb after match
 
         // FallManager handles falling, gravity, spawning
         this.fallManager = new FallManager({
@@ -389,10 +390,17 @@ export class MainScene extends Phaser.Scene {
                         onComplete: () => gem.destroy()
                     });
 
-                    this.board[row][col] = null;
+                    // Don't null the cell if bomb is pending there
+                    const pendingBomb = this.pendingBombSpawn;
+                    if (!pendingBomb || pendingBomb.row !== row || pendingBomb.col !== col) {
+                        this.board[row][col] = null;
+                    }
                     this.gems[row][col] = null;
                 }
             });
+
+            // Spawn bomb after gems are destroyed
+            this.spawnPendingBomb();
         }
     }
 
@@ -407,13 +415,20 @@ export class MainScene extends Phaser.Scene {
         // Don't spawn if there's already a bomb there
         if (this.board[row]?.[col] === 'bomb') return;
 
-        // Create bomb at center position (will be placed after gem is destroyed)
-        this.time.delayedCall(160, () => this.spawnBomb(row, col));
+        // Immediately reserve the cell for the bomb (prevent gravity from filling it)
+        // The gem at this position will be destroyed, so we mark it as bomb now
+        this.pendingBombSpawn = { row, col };
     }
 
-    spawnBomb(row, col) {
-        // Only spawn if cell is empty (gem was destroyed)
-        if (this.board[row]?.[col] !== null) return;
+    // Called after match gems are destroyed
+    spawnPendingBomb() {
+        if (!this.pendingBombSpawn) return;
+
+        const { row, col } = this.pendingBombSpawn;
+        this.pendingBombSpawn = null;
+
+        // Mark cell as bomb immediately to prevent gravity
+        this.board[row][col] = 'bomb';
 
         const pos = this.getGemPosition(row, col);
         const bomb = this.add.image(pos.x, pos.y, 'bomb');
@@ -435,8 +450,7 @@ export class MainScene extends Phaser.Scene {
             ease: 'Back.easeOut'
         });
 
-        // Store in board and gems arrays (bomb is a board element now)
-        this.board[row][col] = 'bomb';
+        // Store in gems array
         this.gems[row][col] = bomb;
     }
 
