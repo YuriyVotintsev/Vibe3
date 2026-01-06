@@ -19,6 +19,8 @@ import {
     matchSetToArray
 } from './BoardLogic.js';
 import { createGemTextures } from './GemRenderer.js';
+import { FallManager } from './FallManager.js';
+import { SwapHandler } from './SwapHandler.js';
 
 export class MainScene extends Phaser.Scene {
     constructor() {
@@ -29,12 +31,26 @@ export class MainScene extends Phaser.Scene {
         loadPlayerData();
         this.board = [];
         this.gems = [];
-        this.selectedGem = null;
         this.moves = 0;
-        this.lastSpawnTime = {};
         this.pendingMatches = [];
         this.lastMoveTime = 0;
         this.isAutoMoving = false;
+
+        // FallManager handles falling, gravity, spawning
+        this.fallManager = new FallManager({
+            board: this.board,
+            gems: this.gems,
+            pendingMatches: this.pendingMatches,
+            scene: this
+        });
+
+        // SwapHandler handles selection and swapping
+        this.swapHandler = new SwapHandler({
+            board: this.board,
+            gems: this.gems,
+            pendingMatches: this.pendingMatches,
+            scene: this
+        });
     }
 
     preload() {
@@ -83,18 +99,16 @@ export class MainScene extends Phaser.Scene {
 
         this.removeInitialMatches();
 
-        this.input.on('gameobjectdown', this.onGemClick, this);
+        this.input.on('gameobjectdown', (pointer, gem) => this.swapHandler.onGemClick(pointer, gem));
 
-        for (let col = 0; col < boardSize; col++) {
-            this.lastSpawnTime[col] = 0;
-        }
+        this.fallManager.initSpawnTimers(boardSize);
 
         this.events.on('shutdown', this.shutdown, this);
         this.events.on('resume', this.onResume, this);
     }
 
     shutdown() {
-        this.input.off('gameobjectdown', this.onGemClick, this);
+        this.input.off('gameobjectdown');
     }
 
     onResume() {
@@ -222,9 +236,9 @@ export class MainScene extends Phaser.Scene {
     }
 
     update(time, delta) {
-        this.updateFallingGems(delta);
-        this.updateGravity();
-        this.spawnNewGems(time);
+        this.fallManager.updateFallingGems(delta);
+        this.fallManager.updateGravity();
+        this.fallManager.spawnNewGems(time);
         this.checkLandedGems();
         this.checkAutoMove(time);
     }
@@ -249,7 +263,7 @@ export class MainScene extends Phaser.Scene {
                 // Pick random valid move
                 const move = validMoves[Phaser.Math.Between(0, validMoves.length - 1)];
                 this.isAutoMoving = true;
-                this.swapGems(move.row1, move.col1, move.row2, move.col2);
+                this.swapHandler.swapGems(move.row1, move.col1, move.row2, move.col2);
             } else {
                 // No valid moves - shuffle
                 this.showMessage('Нет ходов! Перемешиваю...');
@@ -309,97 +323,6 @@ export class MainScene extends Phaser.Scene {
         // Check if we have valid moves now, if not shuffle again
         if (findValidMoves(this.board, boardSize).length === 0) {
             this.shuffleBoard();
-        }
-    }
-
-    updateFallingGems(delta) {
-        const cellSize = getCellSize();
-        const fallAmount = (GameSettings.fallSpeed * cellSize * delta) / 1000;
-        const boardSize = GameSettings.boardSize;
-
-        for (let row = 0; row < boardSize; row++) {
-            for (let col = 0; col < boardSize; col++) {
-                const gem = this.gems[row]?.[col];
-                if (!gem) continue;
-
-                if (gem.getData('state') === GEM_STATE.FALLING) {
-                    const targetY = gem.getData('targetY');
-
-                    if (gem.y < targetY) {
-                        gem.y = Math.min(gem.y + fallAmount, targetY);
-
-                        if (gem.y >= targetY) {
-                            gem.y = targetY;
-                            gem.setData('state', GEM_STATE.IDLE);
-                            this.pendingMatches.push({ row, col });
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    updateGravity() {
-        const boardSize = GameSettings.boardSize;
-
-        for (let col = 0; col < boardSize; col++) {
-            for (let row = boardSize - 1; row >= 0; row--) {
-                if (this.board[row][col] === null) {
-                    for (let aboveRow = row - 1; aboveRow >= 0; aboveRow--) {
-                        if (this.board[aboveRow][col] !== null) {
-                            const gem = this.gems[aboveRow][col];
-                            if (gem && gem.getData('state') === GEM_STATE.IDLE) {
-                                this.board[row][col] = this.board[aboveRow][col];
-                                this.board[aboveRow][col] = null;
-
-                                this.gems[row][col] = gem;
-                                this.gems[aboveRow][col] = null;
-
-                                gem.setData('row', row);
-                                gem.setData('targetY', this.getGemPosition(row, col).y);
-                                gem.setData('state', GEM_STATE.FALLING);
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    spawnNewGems(time) {
-        const boardSize = GameSettings.boardSize;
-        const cellSize = getCellSize();
-        const gap = GameSettings.gap;
-
-        for (let col = 0; col < boardSize; col++) {
-            if (this.board[0][col] === null) {
-                if (time - this.lastSpawnTime[col] >= GameSettings.spawnDelay) {
-                    let canSpawn = true;
-                    for (let r = 0; r < boardSize; r++) {
-                        const gem = this.gems[r]?.[col];
-                        if (gem && gem.getData('state') === GEM_STATE.FALLING) {
-                            const targetRow = gem.getData('row');
-                            if (targetRow <= 0) {
-                                canSpawn = false;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (canSpawn) {
-                        const gemType = Phaser.Math.Between(0, GameSettings.colorCount - 1);
-                        const startY = BOARD_OFFSET_Y - cellSize / 2 - gap;
-                        const gem = this.createGem(0, col, gemType, startY);
-
-                        this.board[0][col] = gemType;
-                        this.gems[0][col] = gem;
-                        gem.setData('state', GEM_STATE.FALLING);
-
-                        this.lastSpawnTime[col] = time;
-                    }
-                }
-            }
         }
     }
 
@@ -468,154 +391,6 @@ export class MainScene extends Phaser.Scene {
         });
     }
 
-    onGemClick(pointer, gem) {
-        if (gem.getData('state') !== GEM_STATE.IDLE) return;
-
-        const row = gem.getData('row');
-        const col = gem.getData('col');
-
-        if (this.selectedGem === null) {
-            this.selectedGem = { row, col, gem };
-            const pos = this.getGemPosition(row, col);
-            this.selectionIndicator.setPosition(pos.x, pos.y);
-            this.selectionIndicator.setVisible(true);
-
-            this.tweens.killTweensOf(this.selectionIndicator);
-            this.tweens.add({
-                targets: this.selectionIndicator,
-                scale: { from: 1, to: 1.1 },
-                duration: 300,
-                yoyo: true,
-                repeat: -1
-            });
-        } else {
-            const { row: prevRow, col: prevCol, gem: prevGem } = this.selectedGem;
-
-            if (!prevGem || prevGem.getData('state') !== GEM_STATE.IDLE) {
-                this.clearSelection();
-                return;
-            }
-
-            if (this.areAdjacent(prevRow, prevCol, row, col)) {
-                this.clearSelection();
-                this.swapGems(prevRow, prevCol, row, col);
-            } else {
-                this.selectedGem = { row, col, gem };
-                const pos = this.getGemPosition(row, col);
-                this.selectionIndicator.setPosition(pos.x, pos.y);
-            }
-        }
-    }
-
-    clearSelection() {
-        this.selectedGem = null;
-        this.selectionIndicator.setVisible(false);
-        this.tweens.killTweensOf(this.selectionIndicator);
-        this.selectionIndicator.setScale(1);
-    }
-
-    areAdjacent(row1, col1, row2, col2) {
-        const rowDiff = Math.abs(row1 - row2);
-        const colDiff = Math.abs(col1 - col2);
-        return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
-    }
-
-    swapGems(row1, col1, row2, col2) {
-        const gem1 = this.gems[row1][col1];
-        const gem2 = this.gems[row2][col2];
-        const wasAutoMove = this.isAutoMoving;
-
-        if (!gem1 || !gem2) return;
-        if (gem1.getData('state') !== GEM_STATE.IDLE) return;
-        if (gem2.getData('state') !== GEM_STATE.IDLE) return;
-
-        gem1.setData('state', GEM_STATE.SWAPPING);
-        gem2.setData('state', GEM_STATE.SWAPPING);
-
-        const pos1 = this.getGemPosition(row1, col1);
-        const pos2 = this.getGemPosition(row2, col2);
-
-        [this.board[row1][col1], this.board[row2][col2]] = [this.board[row2][col2], this.board[row1][col1]];
-        [this.gems[row1][col1], this.gems[row2][col2]] = [this.gems[row2][col2], this.gems[row1][col1]];
-
-        gem1.setData('row', row2);
-        gem1.setData('col', col2);
-        gem2.setData('row', row1);
-        gem2.setData('col', col1);
-
-        this.tweens.add({
-            targets: gem1,
-            x: pos2.x,
-            y: pos2.y,
-            duration: SWAP_DURATION,
-            ease: 'Power2'
-        });
-
-        this.tweens.add({
-            targets: gem2,
-            x: pos1.x,
-            y: pos1.y,
-            duration: SWAP_DURATION,
-            ease: 'Power2',
-            onComplete: () => {
-                gem1.setData('state', GEM_STATE.IDLE);
-                gem2.setData('state', GEM_STATE.IDLE);
-                gem1.setData('targetY', pos2.y);
-                gem2.setData('targetY', pos1.y);
-
-                const matches = this.findAllMatches();
-
-                if (matches.length > 0) {
-                    this.moves++;
-                    this.movesText.setText(this.moves.toString());
-                    this.isAutoMoving = false;
-
-                    this.pendingMatches.push({ row: row2, col: col2 });
-                    this.pendingMatches.push({ row: row1, col: col1 });
-                } else {
-                    gem1.setData('state', GEM_STATE.SWAPPING);
-                    gem2.setData('state', GEM_STATE.SWAPPING);
-
-                    [this.board[row1][col1], this.board[row2][col2]] = [this.board[row2][col2], this.board[row1][col1]];
-                    [this.gems[row1][col1], this.gems[row2][col2]] = [this.gems[row2][col2], this.gems[row1][col1]];
-
-                    gem1.setData('row', row1);
-                    gem1.setData('col', col1);
-                    gem2.setData('row', row2);
-                    gem2.setData('col', col2);
-
-                    this.tweens.add({
-                        targets: gem1,
-                        x: pos1.x,
-                        y: pos1.y,
-                        duration: SWAP_DURATION,
-                        ease: 'Power2'
-                    });
-
-                    this.tweens.add({
-                        targets: gem2,
-                        x: pos2.x,
-                        y: pos2.y,
-                        duration: SWAP_DURATION,
-                        ease: 'Power2',
-                        onComplete: () => {
-                            gem1.setData('state', GEM_STATE.IDLE);
-                            gem2.setData('state', GEM_STATE.IDLE);
-                            gem1.setData('targetY', pos1.y);
-                            gem2.setData('targetY', pos2.y);
-                            this.isAutoMoving = false;
-                        }
-                    });
-
-                    if (!wasAutoMove) {
-                        this.showMessage('Нет совпадений!');
-                    }
-                    this.isAutoMoving = false;
-                }
-            }
-        });
-    }
-
     findAllMatches() {
         const boardSize = GameSettings.boardSize;
         const matchPositions = findAllMatchPositions(this.board, boardSize);
@@ -653,16 +428,13 @@ export class MainScene extends Phaser.Scene {
         }
 
         this.moves = 0;
-        this.selectedGem = null;
         this.pendingMatches = [];
 
         this.movesText.setText('0');
 
-        this.clearSelection();
+        this.swapHandler.clearSelection();
 
-        for (let col = 0; col < boardSize; col++) {
-            this.lastSpawnTime[col] = 0;
-        }
+        this.fallManager.resetSpawnTimers(boardSize);
 
         this.createBoard();
         this.removeInitialMatches();
