@@ -412,17 +412,16 @@ export class MainScene extends Phaser.Scene {
     showFloatingCurrency(x, y, amount) {
         const text = this.add.text(x, y, `+${amount}💰`, {
             fontSize: '14px',
-            color: '#f1c40f',
+            color: '#ffffff',
             fontStyle: 'bold',
-            stroke: '#ffffff',
-            strokeThickness: 2
+            stroke: '#000000',
+            strokeThickness: 3
         }).setOrigin(0.5).setDepth(200);
 
         this.tweens.add({
             targets: text,
-            scale: { from: 1, to: 1.1 },
-            alpha: { from: 1, to: 0 },
-            duration: 1000,
+            scale: { from: 1, to: 1.5 },
+            duration: 1500,
             ease: 'Power2',
             onComplete: () => text.destroy()
         });
