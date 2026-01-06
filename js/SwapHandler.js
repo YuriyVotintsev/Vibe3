@@ -143,8 +143,6 @@ export class SwapHandler {
                 gem2.setData('targetY', pos1.y);
 
                 if (willMatch) {
-                    scene.moves++;
-                    scene.movesText.setText(scene.moves.toString());
                     scene.isAutoMoving = false;
 
                     // Mark if this was a manual move (for bomb spawning)
