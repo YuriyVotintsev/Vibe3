@@ -552,11 +552,11 @@ export class MainScene extends Phaser.Scene {
         const particleCount = 8;
         for (let i = 0; i < particleCount; i++) {
             const angle = (i / particleCount) * Math.PI * 2 + Math.random() * 0.3;
-            const particle = this.add.circle(x, y, 6, color);
-            particle.setStrokeStyle(2, 0xffffff, 0.8);
+            const particle = this.add.circle(x, y, 12, color);
+            particle.setStrokeStyle(3, 0xffffff, 0.8);
             particle.setDepth(150);
 
-            const distance = 25 + Math.random() * 25;
+            const distance = 50 + Math.random() * 50;
             const targetX = x + Math.cos(angle) * distance;
             const targetY = y + Math.sin(angle) * distance;
 
@@ -564,9 +564,9 @@ export class MainScene extends Phaser.Scene {
                 targets: particle,
                 x: targetX,
                 y: targetY,
-                scale: { from: 1.2, to: 0 },
+                scale: { from: 1.5, to: 0 },
                 alpha: { from: 1, to: 0 },
-                duration: 350,
+                duration: 700,
                 ease: 'Quad.easeOut',
                 onComplete: () => particle.destroy()
             });
