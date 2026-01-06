@@ -414,15 +414,15 @@ export class MainScene extends Phaser.Scene {
             fontSize: '14px',
             color: '#f1c40f',
             fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 3
+            stroke: '#ffffff',
+            strokeThickness: 2
         }).setOrigin(0.5).setDepth(200);
 
         this.tweens.add({
             targets: text,
-            y: y - 40,
-            alpha: 0,
-            duration: 600,
+            scale: { from: 1, to: 1.1 },
+            alpha: { from: 1, to: 0 },
+            duration: 1000,
             ease: 'Power2',
             onComplete: () => text.destroy()
         });
