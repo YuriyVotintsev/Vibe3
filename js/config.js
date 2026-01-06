@@ -35,7 +35,8 @@ export const PlayerData = {
     currency: 0,          // earned from matches, spent on upgrades
     totalEarned: 0,       // lifetime currency earned
     prestigeLevel: 0,     // future use
-    colorMultipliers: {}  // { colorIndex: multiplier }
+    colorMultipliers: {}, // { colorIndex: multiplier }
+    autoMoveDelay: 5000   // ms between auto-moves (starts at 5 seconds)
 };
 
 // Initialize color multipliers (all start at 1x)
@@ -66,6 +67,27 @@ export function upgradeColor(colorIndex) {
     return false;
 }
 
+// Auto-move timer upgrade
+export function getAutoMoveLevel() {
+    return Math.round((5000 - PlayerData.autoMoveDelay) / 500); // level 0 = 5s, level 1 = 4.5s, etc.
+}
+
+export function getAutoMoveUpgradeCost() {
+    const level = getAutoMoveLevel();
+    return Math.floor(200 * Math.pow(1.8, level));
+}
+
+export function upgradeAutoMove() {
+    const cost = getAutoMoveUpgradeCost();
+    if (PlayerData.currency >= cost && PlayerData.autoMoveDelay > 1000) {
+        PlayerData.currency -= cost;
+        PlayerData.autoMoveDelay -= 500; // reduce by 0.5s each upgrade
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
 // Save/Load player data to localStorage
 export function savePlayerData() {
     localStorage.setItem('match3_player', JSON.stringify(PlayerData));
@@ -76,6 +98,10 @@ export function loadPlayerData() {
     if (saved) {
         const data = JSON.parse(saved);
         Object.assign(PlayerData, data);
+    }
+    // Ensure autoMoveDelay has a valid value
+    if (!PlayerData.autoMoveDelay || PlayerData.autoMoveDelay < 1000) {
+        PlayerData.autoMoveDelay = 5000;
     }
     initColorMultipliers();
 }
@@ -104,4 +130,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.23-js';
+export const JS_VERSION = '0.0.24-js';

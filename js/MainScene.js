@@ -9,7 +9,8 @@ import {
     JS_VERSION,
     PlayerData,
     loadPlayerData,
-    savePlayerData
+    savePlayerData,
+    getAutoMoveUpgradeCost
 } from './config.js';
 import { getCellSize } from './utils.js';
 
@@ -26,6 +27,8 @@ export class MainScene extends Phaser.Scene {
         this.moves = 0;
         this.lastSpawnTime = {};
         this.pendingMatches = [];
+        this.lastMoveTime = 0;
+        this.isAutoMoving = false;
     }
 
     preload() {
@@ -269,6 +272,149 @@ export class MainScene extends Phaser.Scene {
         this.updateGravity();
         this.spawnNewGems(time);
         this.checkLandedGems();
+        this.checkAutoMove(time);
+    }
+
+    checkAutoMove(time) {
+        // Don't auto-move if already moving or board is busy
+        if (this.isAutoMoving) return;
+        if (this.isBoardBusy()) return;
+
+        // Initialize lastMoveTime on first stable frame
+        if (this.lastMoveTime === 0) {
+            this.lastMoveTime = time;
+            return;
+        }
+
+        // Check if enough time has passed
+        if (time - this.lastMoveTime >= PlayerData.autoMoveDelay) {
+            const validMoves = this.findValidMoves();
+
+            if (validMoves.length > 0) {
+                // Pick random valid move
+                const move = validMoves[Phaser.Math.Between(0, validMoves.length - 1)];
+                this.isAutoMoving = true;
+                this.swapGems(move.row1, move.col1, move.row2, move.col2);
+            } else {
+                // No valid moves - shuffle
+                this.showMessage('Нет ходов! Перемешиваю...');
+                this.shuffleBoard();
+            }
+            this.lastMoveTime = time;
+        }
+    }
+
+    isBoardBusy() {
+        const boardSize = GameSettings.boardSize;
+        for (let row = 0; row < boardSize; row++) {
+            for (let col = 0; col < boardSize; col++) {
+                const gem = this.gems[row]?.[col];
+                if (!gem) return true; // Empty cell = gems falling
+                if (gem.getData('state') !== GEM_STATE.IDLE) return true;
+            }
+        }
+        return false;
+    }
+
+    findValidMoves() {
+        const validMoves = [];
+        const boardSize = GameSettings.boardSize;
+
+        for (let row = 0; row < boardSize; row++) {
+            for (let col = 0; col < boardSize; col++) {
+                // Check right swap
+                if (col < boardSize - 1) {
+                    if (this.wouldCreateMatch(row, col, row, col + 1)) {
+                        validMoves.push({ row1: row, col1: col, row2: row, col2: col + 1 });
+                    }
+                }
+                // Check down swap
+                if (row < boardSize - 1) {
+                    if (this.wouldCreateMatch(row, col, row + 1, col)) {
+                        validMoves.push({ row1: row, col1: col, row2: row + 1, col2: col });
+                    }
+                }
+            }
+        }
+        return validMoves;
+    }
+
+    wouldCreateMatch(row1, col1, row2, col2) {
+        // Temporarily swap
+        [this.board[row1][col1], this.board[row2][col2]] = [this.board[row2][col2], this.board[row1][col1]];
+
+        // Check if either position now has a match
+        const hasMatch = this.checkMatchAt(row1, col1) || this.checkMatchAt(row2, col2);
+
+        // Swap back
+        [this.board[row1][col1], this.board[row2][col2]] = [this.board[row2][col2], this.board[row1][col1]];
+
+        return hasMatch;
+    }
+
+    checkMatchAt(row, col) {
+        const type = this.board[row][col];
+        if (type === null || type === undefined) return false;
+
+        const boardSize = GameSettings.boardSize;
+
+        // Check horizontal
+        let count = 1;
+        for (let c = col - 1; c >= 0 && this.board[row][c] === type; c--) count++;
+        for (let c = col + 1; c < boardSize && this.board[row][c] === type; c++) count++;
+        if (count >= 3) return true;
+
+        // Check vertical
+        count = 1;
+        for (let r = row - 1; r >= 0 && this.board[r][col] === type; r--) count++;
+        for (let r = row + 1; r < boardSize && this.board[r][col] === type; r++) count++;
+        if (count >= 3) return true;
+
+        return false;
+    }
+
+    shuffleBoard() {
+        const boardSize = GameSettings.boardSize;
+
+        // Collect all gem types
+        const types = [];
+        for (let row = 0; row < boardSize; row++) {
+            for (let col = 0; col < boardSize; col++) {
+                if (this.board[row][col] !== null) {
+                    types.push(this.board[row][col]);
+                }
+            }
+        }
+
+        // Fisher-Yates shuffle
+        for (let i = types.length - 1; i > 0; i--) {
+            const j = Phaser.Math.Between(0, i);
+            [types[i], types[j]] = [types[j], types[i]];
+        }
+
+        // Reassign
+        let idx = 0;
+        for (let row = 0; row < boardSize; row++) {
+            for (let col = 0; col < boardSize; col++) {
+                if (this.board[row][col] !== null && idx < types.length) {
+                    this.board[row][col] = types[idx];
+                    const gem = this.gems[row][col];
+                    if (gem) {
+                        gem.setTexture(`gem_${types[idx]}`);
+                        gem.setData('type', types[idx]);
+                    }
+                    idx++;
+                }
+            }
+        }
+
+        // Remove any initial matches after shuffle
+        this.removeInitialMatches();
+
+        // Check if we have valid moves now, if not shuffle again
+        if (this.findValidMoves().length === 0) {
+            this.shuffleBoard();
+        }
     }
 
     updateFallingGems(delta) {
@@ -457,6 +603,7 @@ export class MainScene extends Phaser.Scene {
 
             if (this.areAdjacent(prevRow, prevCol, row, col)) {
                 this.clearSelection();
+                this.lastMoveTime = this.time.now; // Reset auto-move timer
                 this.swapGems(prevRow, prevCol, row, col);
             } else {
                 this.selectedGem = { row, col, gem };
@@ -482,6 +629,7 @@ export class MainScene extends Phaser.Scene {
     swapGems(row1, col1, row2, col2) {
         const gem1 = this.gems[row1][col1];
         const gem2 = this.gems[row2][col2];
+        const wasAutoMove = this.isAutoMoving;
 
         if (!gem1 || !gem2) return;
         if (gem1.getData('state') !== GEM_STATE.IDLE) return;
@@ -526,6 +674,7 @@ export class MainScene extends Phaser.Scene {
                 if (matches.length > 0) {
                     this.moves++;
                     this.movesText.setText(this.moves.toString());
+                    this.isAutoMoving = false;
 
                     this.pendingMatches.push({ row: row2, col: col2 });
                     this.pendingMatches.push({ row: row1, col: col1 });
@@ -560,10 +709,14 @@ export class MainScene extends Phaser.Scene {
                             gem2.setData('state', GEM_STATE.IDLE);
                             gem1.setData('targetY', pos1.y);
                             gem2.setData('targetY', pos2.y);
+                            this.isAutoMoving = false;
                         }
                     });
 
-                    this.showMessage('Нет совпадений!');
+                    if (!wasAutoMove) {
+                        this.showMessage('Нет совпадений!');
+                    }
+                    this.isAutoMoving = false;
                 }
             }
         });
