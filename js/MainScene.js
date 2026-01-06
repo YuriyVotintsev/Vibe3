@@ -8,7 +8,8 @@ import {
     JS_VERSION,
     PlayerData,
     loadPlayerData,
-    savePlayerData
+    savePlayerData,
+    ALL_GEM_COLORS
 } from './config.js';
 import { getCellSize } from './utils.js';
 import {
@@ -380,15 +381,7 @@ export class MainScene extends Phaser.Scene {
                 const gem = this.gems[row]?.[col];
                 if (gem && gem.getData('state') !== GEM_STATE.MATCHED) {
                     gem.setData('state', GEM_STATE.MATCHED);
-
-                    this.tweens.add({
-                        targets: gem,
-                        scale: 0,
-                        alpha: 0,
-                        duration: 150,
-                        ease: 'Power2',
-                        onComplete: () => gem.destroy()
-                    });
+                    this.destroyGemWithEffect(gem);
 
                     // Don't null the cell if bomb is pending there
                     const pendingBomb = this.pendingBombSpawn;
@@ -489,16 +482,9 @@ export class MainScene extends Phaser.Scene {
                     PlayerData.totalEarned += colorMultiplier;
                     this.showFloatingCurrency(gem.x, gem.y, colorMultiplier);
 
-                    // Destroy gem with explosion effect
+                    // Destroy gem with effect
                     gem.setData('state', GEM_STATE.MATCHED);
-                    this.tweens.add({
-                        targets: gem,
-                        scale: 1.5,
-                        alpha: 0,
-                        duration: 200,
-                        ease: 'Power2',
-                        onComplete: () => gem.destroy()
-                    });
+                    this.destroyGemWithEffect(gem);
 
                     this.board[r][c] = null;
                     this.gems[r][c] = null;
@@ -536,6 +522,54 @@ export class MainScene extends Phaser.Scene {
             ease: 'Power2',
             onComplete: () => text.destroy()
         });
+    }
+
+    destroyGemWithEffect(gem) {
+        const x = gem.x;
+        const y = gem.y;
+        const colorIndex = gem.getData('type');
+        const color = colorIndex !== 'bomb' ? ALL_GEM_COLORS[colorIndex] : 0xff6600;
+
+        // Pop animation: scale up then down
+        this.tweens.add({
+            targets: gem,
+            scale: { from: 1, to: 1.3 },
+            duration: 80,
+            ease: 'Quad.easeOut',
+            onComplete: () => {
+                this.tweens.add({
+                    targets: gem,
+                    scale: 0,
+                    alpha: 0,
+                    duration: 100,
+                    ease: 'Quad.easeIn',
+                    onComplete: () => gem.destroy()
+                });
+            }
+        });
+
+        // Spawn sparkle particles
+        const particleCount = 6;
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (i / particleCount) * Math.PI * 2;
+            const particle = this.add.circle(x, y, 4, color);
+            particle.setDepth(150);
+
+            const distance = 30 + Math.random() * 20;
+            const targetX = x + Math.cos(angle) * distance;
+            const targetY = y + Math.sin(angle) * distance;
+
+            this.tweens.add({
+                targets: particle,
+                x: targetX,
+                y: targetY,
+                scale: 0,
+                alpha: 0,
+                duration: 250,
+                ease: 'Quad.easeOut',
+                onComplete: () => particle.destroy()
+            });
+        }
     }
 
     findAllMatches() {
