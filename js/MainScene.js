@@ -13,6 +13,13 @@ import {
     getAutoMoveUpgradeCost
 } from './config.js';
 import { getCellSize } from './utils.js';
+import {
+    checkMatchAt,
+    wouldCreateMatch,
+    findValidMoves,
+    getValidColors,
+    shuffleArray
+} from './BoardLogic.js';
 
 export class MainScene extends Phaser.Scene {
     constructor() {
@@ -233,27 +240,7 @@ export class MainScene extends Phaser.Scene {
         // Smart placement: for each cell, pick a color that won't create a match
         for (let row = 0; row < boardSize; row++) {
             for (let col = 0; col < boardSize; col++) {
-                let forbiddenColors = new Set();
-
-                // Check horizontal (2 gems to the left)
-                if (col >= 2 &&
-                    this.board[row][col-1] === this.board[row][col-2]) {
-                    forbiddenColors.add(this.board[row][col-1]);
-                }
-
-                // Check vertical (2 gems above)
-                if (row >= 2 &&
-                    this.board[row-1][col] === this.board[row-2][col]) {
-                    forbiddenColors.add(this.board[row-1][col]);
-                }
-
-                // Pick a valid color
-                let validColors = [];
-                for (let c = 0; c < colorCount; c++) {
-                    if (!forbiddenColors.has(c)) {
-                        validColors.push(c);
-                    }
-                }
+                const validColors = getValidColors(this.board, row, col, colorCount);
 
                 if (validColors.length > 0) {
                     const newType = validColors[Phaser.Math.Between(0, validColors.length - 1)];
@@ -288,7 +275,8 @@ export class MainScene extends Phaser.Scene {
 
         // Check if enough time has passed
         if (time - this.lastMoveTime >= PlayerData.autoMoveDelay) {
-            const validMoves = this.findValidMoves();
+            const boardSize = GameSettings.boardSize;
+            const validMoves = findValidMoves(this.board, boardSize);
 
             if (validMoves.length > 0) {
                 // Pick random valid move
@@ -316,63 +304,6 @@ export class MainScene extends Phaser.Scene {
         return false;
     }
 
-    findValidMoves() {
-        const validMoves = [];
-        const boardSize = GameSettings.boardSize;
-
-        for (let row = 0; row < boardSize; row++) {
-            for (let col = 0; col < boardSize; col++) {
-                // Check right swap
-                if (col < boardSize - 1) {
-                    if (this.wouldCreateMatch(row, col, row, col + 1)) {
-                        validMoves.push({ row1: row, col1: col, row2: row, col2: col + 1 });
-                    }
-                }
-                // Check down swap
-                if (row < boardSize - 1) {
-                    if (this.wouldCreateMatch(row, col, row + 1, col)) {
-                        validMoves.push({ row1: row, col1: col, row2: row + 1, col2: col });
-                    }
-                }
-            }
-        }
-        return validMoves;
-    }
-
-    wouldCreateMatch(row1, col1, row2, col2) {
-        // Temporarily swap
-        [this.board[row1][col1], this.board[row2][col2]] = [this.board[row2][col2], this.board[row1][col1]];
-
-        // Check if either position now has a match
-        const hasMatch = this.checkMatchAt(row1, col1) || this.checkMatchAt(row2, col2);
-
-        // Swap back
-        [this.board[row1][col1], this.board[row2][col2]] = [this.board[row2][col2], this.board[row1][col1]];
-
-        return hasMatch;
-    }
-
-    checkMatchAt(row, col) {
-        const type = this.board[row][col];
-        if (type === null || type === undefined) return false;
-
-        const boardSize = GameSettings.boardSize;
-
-        // Check horizontal
-        let count = 1;
-        for (let c = col - 1; c >= 0 && this.board[row][c] === type; c--) count++;
-        for (let c = col + 1; c < boardSize && this.board[row][c] === type; c++) count++;
-        if (count >= 3) return true;
-
-        // Check vertical
-        count = 1;
-        for (let r = row - 1; r >= 0 && this.board[r][col] === type; r--) count++;
-        for (let r = row + 1; r < boardSize && this.board[r][col] === type; r++) count++;
-        if (count >= 3) return true;
-
-        return false;
-    }
-
     shuffleBoard() {
         const boardSize = GameSettings.boardSize;
 
@@ -386,11 +317,8 @@ export class MainScene extends Phaser.Scene {
             }
         }
 
-        // Fisher-Yates shuffle
-        for (let i = types.length - 1; i > 0; i--) {
-            const j = Phaser.Math.Between(0, i);
-            [types[i], types[j]] = [types[j], types[i]];
-        }
+        // Fisher-Yates shuffle using BoardLogic
+        shuffleArray(types, (i) => Phaser.Math.Between(0, i));
 
         // Reassign
         let idx = 0;
@@ -412,7 +340,7 @@ export class MainScene extends Phaser.Scene {
         this.removeInitialMatches();
 
         // Check if we have valid moves now, if not shuffle again
-        if (this.findValidMoves().length === 0) {
+        if (findValidMoves(this.board, boardSize).length === 0) {
             this.shuffleBoard();
         }
     }
