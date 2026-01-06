@@ -23,9 +23,7 @@ export class MainScene extends Phaser.Scene {
         this.board = [];
         this.gems = [];
         this.selectedGem = null;
-        this.score = 0;
         this.moves = 0;
-        this.combo = 1;
         this.lastSpawnTime = {};
         this.pendingMatches = [];
     }
@@ -135,20 +133,14 @@ export class MainScene extends Phaser.Scene {
         ).setOrigin(0.5);
 
         const panelY = 75;
-        const panelSpacing = 120;
-        const startX = this.cameras.main.width / 2 - panelSpacing * 1.5;
+        const panelSpacing = 150;
+        const startX = this.cameras.main.width / 2 - panelSpacing / 2;
 
-        this.add.text(startX, panelY, 'ОЧКИ', { fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
-        this.scoreText = this.add.text(startX, panelY + 20, '0', { fontSize: '20px', color: '#e94560', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(startX, panelY, '💰 ДЕНЬГИ', { fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
+        this.currencyText = this.add.text(startX, panelY + 20, `${PlayerData.currency}`, { fontSize: '24px', color: '#f1c40f', fontStyle: 'bold' }).setOrigin(0.5);
 
-        this.add.text(startX + panelSpacing, panelY, 'ВАЛЮТА', { fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
-        this.currencyText = this.add.text(startX + panelSpacing, panelY + 20, `${PlayerData.currency}`, { fontSize: '20px', color: '#f1c40f', fontStyle: 'bold' }).setOrigin(0.5);
-
-        this.add.text(startX + panelSpacing * 2, panelY, 'ХОДЫ', { fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
-        this.movesText = this.add.text(startX + panelSpacing * 2, panelY + 20, '0', { fontSize: '20px', color: '#e94560', fontStyle: 'bold' }).setOrigin(0.5);
-
-        this.add.text(startX + panelSpacing * 3, panelY, 'КОМБО', { fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
-        this.comboText = this.add.text(startX + panelSpacing * 3, panelY + 20, 'x1', { fontSize: '20px', color: '#e94560', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(startX + panelSpacing, panelY, '👆 ХОДЫ', { fontSize: '12px', color: '#aaaaaa' }).setOrigin(0.5);
+        this.movesText = this.add.text(startX + panelSpacing, panelY + 20, '0', { fontSize: '24px', color: '#e94560', fontStyle: 'bold' }).setOrigin(0.5);
 
         this.messageText = this.add.text(
             this.cameras.main.width / 2,
@@ -377,28 +369,22 @@ export class MainScene extends Phaser.Scene {
         const matches = this.findAllMatches();
 
         if (matches.length > 0) {
-            // Calculate points with color multipliers and show floating text
-            let totalPoints = 0;
+            // Calculate currency with color multipliers and show floating text
             matches.forEach(({ row, col }) => {
                 const gem = this.gems[row]?.[col];
                 if (gem) {
                     const colorIndex = gem.getData('type');
                     const colorMultiplier = PlayerData.colorMultipliers[colorIndex] || 1;
-                    const gemPoints = 10 * colorMultiplier * this.combo;
-                    totalPoints += gemPoints;
+                    const gemCurrency = colorMultiplier;
 
-                    // Show floating points at gem position
-                    this.showFloatingPoints(gem.x, gem.y, gemPoints);
+                    PlayerData.currency += gemCurrency;
+                    PlayerData.totalEarned += gemCurrency;
+
+                    // Show floating currency at gem position
+                    this.showFloatingCurrency(gem.x, gem.y, gemCurrency);
                 }
             });
 
-            this.score += totalPoints;
-            this.scoreText.setText(this.score.toString());
-
-            // Add currency (1 currency per 10 points)
-            const currencyEarned = Math.floor(totalPoints / 10);
-            PlayerData.currency += currencyEarned;
-            PlayerData.totalEarned += currencyEarned;
             this.currencyText.setText(`${PlayerData.currency}`);
             savePlayerData();
 
@@ -420,16 +406,13 @@ export class MainScene extends Phaser.Scene {
                     this.gems[row][col] = null;
                 }
             });
-
-            this.combo++;
-            this.comboText.setText(`x${this.combo}`);
         }
     }
 
-    showFloatingPoints(x, y, points) {
-        const text = this.add.text(x, y, `+${points}`, {
-            fontSize: '16px',
-            color: '#ffffff',
+    showFloatingCurrency(x, y, amount) {
+        const text = this.add.text(x, y, `+${amount}💰`, {
+            fontSize: '14px',
+            color: '#f1c40f',
             fontStyle: 'bold',
             stroke: '#000000',
             strokeThickness: 3
@@ -544,7 +527,6 @@ export class MainScene extends Phaser.Scene {
                 if (matches.length > 0) {
                     this.moves++;
                     this.movesText.setText(this.moves.toString());
-                    this.combo = 1;
 
                     this.pendingMatches.push({ row: row2, col: col2 });
                     this.pendingMatches.push({ row: row1, col: col1 });
@@ -679,15 +661,11 @@ export class MainScene extends Phaser.Scene {
             }
         }
 
-        this.score = 0;
         this.moves = 0;
-        this.combo = 1;
         this.selectedGem = null;
         this.pendingMatches = [];
 
-        this.scoreText.setText('0');
         this.movesText.setText('0');
-        this.comboText.setText('x1');
 
         this.clearSelection();
 
