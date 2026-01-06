@@ -125,77 +125,133 @@ export function createBombTexture(scene, cellSize) {
 export function createEnhancementTextures(scene, cellSize) {
     const size = cellSize - 8;
 
-    // Silver overlay - simple shine effect
-    createEnhancementOverlay(scene, 'overlay_silver', size, {
-        borderColor: 0xc0c0c0,
-        borderAlpha: 0.9,
-        shineColor: 0xffffff,
-        shineAlpha: 0.4,
-        starCount: 0
-    });
+    // Silver overlay - visible shine with border
+    createSilverOverlay(scene, 'overlay_silver', size);
 
-    // Gold overlay - golden border with sparkle
-    createEnhancementOverlay(scene, 'overlay_gold', size, {
-        borderColor: 0xffd700,
-        borderAlpha: 1,
-        shineColor: 0xffff88,
-        shineAlpha: 0.5,
-        starCount: 2
-    });
+    // Gold overlay - golden border with sparkles
+    createGoldOverlay(scene, 'overlay_gold', size);
 
     // Crystal overlay - rainbow/prismatic effect with stars
-    createEnhancementOverlay(scene, 'overlay_crystal', size, {
-        borderColor: 0x88ffff,
-        borderAlpha: 1,
-        shineColor: 0xffffff,
-        shineAlpha: 0.6,
-        starCount: 4,
-        rainbow: true
-    });
+    createCrystalOverlay(scene, 'overlay_crystal', size);
 }
 
 /**
- * Create a single enhancement overlay texture
+ * Create silver overlay - visible border with shimmer
  */
-function createEnhancementOverlay(scene, key, size, options) {
+function createSilverOverlay(scene, key, size) {
     if (scene.textures.exists(key)) {
         scene.textures.remove(key);
     }
 
     const graphics = scene.make.graphics({ x: 0, y: 0, add: false });
     const radius = 10;
-    const cx = size / 2;
-    const cy = size / 2;
 
-    // Border glow
-    graphics.lineStyle(3, options.borderColor, options.borderAlpha);
-    graphics.strokeRoundedRect(2, 2, size - 4, size - 4, radius);
+    // Outer glow (thick, semi-transparent)
+    graphics.lineStyle(6, 0xe0e0e0, 0.5);
+    graphics.strokeRoundedRect(1, 1, size - 2, size - 2, radius + 2);
 
-    // Inner shine (top-left corner)
-    graphics.fillStyle(options.shineColor, options.shineAlpha);
-    graphics.fillTriangle(4, 4, 4, size * 0.4, size * 0.4, 4);
+    // Main silver border (bright)
+    graphics.lineStyle(4, 0xffffff, 0.9);
+    graphics.strokeRoundedRect(3, 3, size - 6, size - 6, radius);
 
-    // Rainbow effect for crystal
-    if (options.rainbow) {
-        graphics.lineStyle(2, 0xff88ff, 0.5);
-        graphics.strokeRoundedRect(4, 4, size - 8, size - 8, radius - 2);
+    // Corner accents
+    graphics.fillStyle(0xffffff, 0.8);
+    // Top-left
+    graphics.fillTriangle(5, 5, 5, 18, 18, 5);
+    // Bottom-right
+    graphics.fillTriangle(size - 5, size - 5, size - 5, size - 18, size - 18, size - 5);
+
+    // Shine stripe diagonal
+    graphics.fillStyle(0xffffff, 0.3);
+    graphics.fillTriangle(0, 0, 0, size * 0.5, size * 0.5, 0);
+
+    graphics.generateTexture(key, size, size);
+    graphics.destroy();
+}
+
+/**
+ * Create gold overlay - prominent golden border with sparkles
+ */
+function createGoldOverlay(scene, key, size) {
+    if (scene.textures.exists(key)) {
+        scene.textures.remove(key);
     }
 
-    // Stars/sparkles
-    if (options.starCount > 0) {
-        const starPositions = [
-            { x: size * 0.2, y: size * 0.2 },
-            { x: size * 0.8, y: size * 0.25 },
-            { x: size * 0.75, y: size * 0.8 },
-            { x: size * 0.15, y: size * 0.75 }
-        ];
+    const graphics = scene.make.graphics({ x: 0, y: 0, add: false });
+    const radius = 10;
 
-        graphics.fillStyle(0xffffff, 0.9);
-        for (let i = 0; i < options.starCount && i < starPositions.length; i++) {
-            const star = starPositions[i];
-            drawStar(graphics, star.x, star.y, 4, 2, 4);
-        }
+    // Outer golden glow
+    graphics.lineStyle(7, 0xffaa00, 0.5);
+    graphics.strokeRoundedRect(0, 0, size, size, radius + 2);
+
+    // Main gold border (thick)
+    graphics.lineStyle(5, 0xffd700, 1);
+    graphics.strokeRoundedRect(3, 3, size - 6, size - 6, radius);
+
+    // Inner bright line
+    graphics.lineStyle(2, 0xffff88, 0.8);
+    graphics.strokeRoundedRect(6, 6, size - 12, size - 12, radius - 2);
+
+    // Golden corner accents
+    graphics.fillStyle(0xffd700, 0.9);
+    graphics.fillTriangle(5, 5, 5, 22, 22, 5);
+    graphics.fillTriangle(size - 5, size - 5, size - 5, size - 22, size - 22, size - 5);
+
+    // Sparkles at all corners
+    graphics.fillStyle(0xffffff, 1);
+    drawStar(graphics, size * 0.15, size * 0.15, 6, 2.5, 4);
+    drawStar(graphics, size * 0.85, size * 0.15, 5, 2, 4);
+    drawStar(graphics, size * 0.85, size * 0.85, 6, 2.5, 4);
+    drawStar(graphics, size * 0.15, size * 0.85, 5, 2, 4);
+
+    graphics.generateTexture(key, size, size);
+    graphics.destroy();
+}
+
+/**
+ * Create crystal overlay - rainbow prismatic effect
+ */
+function createCrystalOverlay(scene, key, size) {
+    if (scene.textures.exists(key)) {
+        scene.textures.remove(key);
     }
+
+    const graphics = scene.make.graphics({ x: 0, y: 0, add: false });
+    const radius = 10;
+
+    // Multi-color rainbow borders
+    graphics.lineStyle(4, 0xff88ff, 0.6); // Pink outer
+    graphics.strokeRoundedRect(0, 0, size, size, radius + 2);
+
+    graphics.lineStyle(4, 0x88ffff, 0.8); // Cyan
+    graphics.strokeRoundedRect(3, 3, size - 6, size - 6, radius);
+
+    graphics.lineStyle(3, 0xffff88, 0.7); // Yellow inner
+    graphics.strokeRoundedRect(6, 6, size - 12, size - 12, radius - 2);
+
+    graphics.lineStyle(2, 0xffffff, 0.9); // White innermost
+    graphics.strokeRoundedRect(8, 8, size - 16, size - 16, radius - 3);
+
+    // Bright corner flares
+    graphics.fillStyle(0xffffff, 0.9);
+    graphics.fillTriangle(4, 4, 4, 25, 25, 4);
+    graphics.fillTriangle(size - 4, size - 4, size - 4, size - 25, size - 25, size - 4);
+
+    // Colored corner accents
+    graphics.fillStyle(0x88ffff, 0.7);
+    graphics.fillTriangle(size - 4, 4, size - 4, 20, size - 20, 4);
+    graphics.fillStyle(0xff88ff, 0.7);
+    graphics.fillTriangle(4, size - 4, 4, size - 20, 20, size - 4);
+
+    // Stars at all corners (bigger and brighter)
+    graphics.fillStyle(0xffffff, 1);
+    drawStar(graphics, size * 0.15, size * 0.15, 7, 3, 4);
+    drawStar(graphics, size * 0.85, size * 0.15, 7, 3, 4);
+    drawStar(graphics, size * 0.85, size * 0.85, 7, 3, 4);
+    drawStar(graphics, size * 0.15, size * 0.85, 7, 3, 4);
+
+    // Center diamond sparkle
+    drawStar(graphics, size / 2, size / 2, 8, 3, 4);
 
     graphics.generateTexture(key, size, size);
     graphics.destroy();
