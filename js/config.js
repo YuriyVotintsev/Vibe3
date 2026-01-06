@@ -201,4 +201,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.54-js';
+export const JS_VERSION = '0.0.55-js';

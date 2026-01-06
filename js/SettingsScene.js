@@ -20,19 +20,20 @@ export class SettingsScene extends Phaser.Scene {
         const H = this.cameras.main.height;
         const cx = W / 2;
 
-        // Dark overlay
-        this.add.rectangle(cx, H / 2, W, H, 0x000000, 0.92);
-
-        // Panel
-        const panelPadding = 15;
+        // Panel bounds (buttons are outside, below panel)
         const panelTop = 20;
-        const panelBottom = H - 20;
+        const panelBottom = H - 200;
+        const panelHeight = panelBottom - panelTop;
 
+        // Dark overlay (covers entire screen)
+        this.add.rectangle(cx, H / 2, W, H, 0x000000, 0.85);
+
+        // Panel (smaller, doesn't include buttons)
         const panel = this.add.graphics();
         panel.fillStyle(0x1e1e2e, 1);
-        panel.fillRoundedRect(panelPadding, panelTop, W - panelPadding * 2, panelBottom - panelTop, 16);
+        panel.fillRoundedRect(15, panelTop, W - 30, panelHeight, 16);
         panel.lineStyle(3, 0xe94560, 1);
-        panel.strokeRoundedRect(panelPadding, panelTop, W - panelPadding * 2, panelBottom - panelTop, 16);
+        panel.strokeRoundedRect(15, panelTop, W - 30, panelHeight, 16);
 
         // Title
         this.add.text(cx, 55, 'НАСТРОЙКИ', {
@@ -41,9 +42,9 @@ export class SettingsScene extends Phaser.Scene {
             color: '#ffffff'
         }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
 
-        // Settings rows - fixed positions
+        // Settings rows - fixed positions inside panel
         const ROW_HEIGHT = 90;
-        const START_Y = 110;
+        const START_Y = 100;
 
         // Row 1: Board size
         this.createSettingRow(START_Y, 'Размер поля', 4, 12, GameSettings.boardSize, 1, false,
@@ -61,7 +62,7 @@ export class SettingsScene extends Phaser.Scene {
         this.createSettingRow(START_Y + ROW_HEIGHT * 3, 'Множитель цен', 0.1, 1, GameSettings.priceMultiplier, 0.1, true,
             val => { GameSettings.priceMultiplier = val; });
 
-        // Buttons at bottom
+        // Buttons outside panel (on overlay)
         this.createBottomButtons();
     }
 
@@ -145,24 +146,25 @@ export class SettingsScene extends Phaser.Scene {
 
     createBottomButtons() {
         const W = this.cameras.main.width;
+        const H = this.cameras.main.height;
         const cx = W / 2;
         const btnWidth = W - 60;
         const btnHeight = 50;
 
-        // Apply button
-        const applyY = this.cameras.main.height - 185;
+        // Apply button (outside panel)
+        const applyY = H - 170;
         this.createActionButton(cx, applyY, btnWidth, btnHeight, '✓ ПРИМЕНИТЬ', 0x27ae60, 0x2ecc71, () => {
             this.applySettings();
         });
 
-        // Cancel button
-        const cancelY = this.cameras.main.height - 125;
+        // Cancel button (outside panel)
+        const cancelY = H - 110;
         this.createActionButton(cx, cancelY, btnWidth, btnHeight, '✕ ОТМЕНА', 0xe74c3c, 0xc0392b, () => {
             this.cancelSettings();
         });
 
-        // Reset button
-        const resetY = this.cameras.main.height - 60;
+        // Reset button (outside panel)
+        const resetY = H - 50;
         this.resetConfirm = false;
 
         const resetBtn = this.add.graphics();

@@ -24,20 +24,28 @@ export class UpgradesScene extends Phaser.Scene {
         const H = this.cameras.main.height;
         const cx = W / 2;
 
-        // Scroll area bounds
+        // Panel bounds (button is outside, below panel)
+        const panelTop = 20;
+        const panelBottom = H - 90;
+        const panelHeight = panelBottom - panelTop;
+
+        // Scroll area bounds (inside panel)
         this.scrollTop = 150;
-        this.scrollBottom = H - 80;
+        this.scrollBottom = panelBottom - 15;
         this.scrollHeight = this.scrollBottom - this.scrollTop;
 
-        // Dark overlay
-        this.add.rectangle(cx, H / 2, W, H, 0x000000, 0.92);
+        // Track last currency for live updates
+        this.lastCurrency = PlayerData.currency;
 
-        // Panel background
+        // Dark overlay (covers entire screen)
+        this.add.rectangle(cx, H / 2, W, H, 0x000000, 0.85);
+
+        // Panel background (smaller, doesn't include button)
         const panel = this.add.graphics();
         panel.fillStyle(0x1e1e2e, 1);
-        panel.fillRoundedRect(15, 20, W - 30, H - 40, 16);
+        panel.fillRoundedRect(15, panelTop, W - 30, panelHeight, 16);
         panel.lineStyle(3, 0x9b59b6, 1);
-        panel.strokeRoundedRect(15, 20, W - 30, H - 40, 16);
+        panel.strokeRoundedRect(15, panelTop, W - 30, panelHeight, 16);
 
         // Title (fixed)
         this.add.text(cx, 55, 'АПГРЕЙДЫ', {
@@ -72,11 +80,20 @@ export class UpgradesScene extends Phaser.Scene {
         // Setup scroll input
         this.setupScrollInput();
 
-        // Close button (fixed, on top)
+        // Close button (outside panel, on overlay)
         this.createCloseButton();
 
         // Scroll indicator
         this.createScrollIndicator();
+    }
+
+    update() {
+        // Live update when currency changes (game runs in background)
+        if (PlayerData.currency !== this.lastCurrency) {
+            this.lastCurrency = PlayerData.currency;
+            this.currencyText.setText(`${PlayerData.currency}`);
+            this.refreshAllRows();
+        }
     }
 
     createUpgradeList() {
@@ -363,15 +380,11 @@ export class UpgradesScene extends Phaser.Scene {
         const W = this.cameras.main.width;
         const H = this.cameras.main.height;
         const cx = W / 2;
-        const btnY = H - 50;
+        const btnY = H - 45;
         const btnWidth = W - 60;
         const btnHeight = 50;
 
-        // Background to cover scrolled content
-        const btnBg = this.add.graphics();
-        btnBg.fillStyle(0x1e1e2e, 1);
-        btnBg.fillRect(15, H - 85, W - 30, 65);
-
+        // Button directly on overlay (no background needed)
         const btn = this.add.graphics();
         btn.fillStyle(0xe74c3c, 1);
         btn.fillRoundedRect(cx - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
