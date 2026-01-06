@@ -196,18 +196,42 @@ export class MainScene extends Phaser.Scene {
     }
 
     removeInitialMatches() {
-        let hasMatches = true;
-        while (hasMatches) {
-            const matches = this.findAllMatches();
-            if (matches.length === 0) {
-                hasMatches = false;
-            } else {
-                matches.forEach(({ row, col }) => {
-                    const newType = Phaser.Math.Between(0, GameSettings.colorCount - 1);
-                    this.board[row][col] = newType;
-                    this.gems[row][col].setTexture(`gem_${newType}`);
-                    this.gems[row][col].setData('type', newType);
-                });
+        const boardSize = GameSettings.boardSize;
+        const colorCount = GameSettings.colorCount;
+
+        // Smart placement: for each cell, pick a color that won't create a match
+        for (let row = 0; row < boardSize; row++) {
+            for (let col = 0; col < boardSize; col++) {
+                let forbiddenColors = new Set();
+
+                // Check horizontal (2 gems to the left)
+                if (col >= 2 &&
+                    this.board[row][col-1] === this.board[row][col-2]) {
+                    forbiddenColors.add(this.board[row][col-1]);
+                }
+
+                // Check vertical (2 gems above)
+                if (row >= 2 &&
+                    this.board[row-1][col] === this.board[row-2][col]) {
+                    forbiddenColors.add(this.board[row-1][col]);
+                }
+
+                // Pick a valid color
+                let validColors = [];
+                for (let c = 0; c < colorCount; c++) {
+                    if (!forbiddenColors.has(c)) {
+                        validColors.push(c);
+                    }
+                }
+
+                if (validColors.length > 0) {
+                    const newType = validColors[Phaser.Math.Between(0, validColors.length - 1)];
+                    if (newType !== this.board[row][col]) {
+                        this.board[row][col] = newType;
+                        this.gems[row][col].setTexture(`gem_${newType}`);
+                        this.gems[row][col].setData('type', newType);
+                    }
+                }
             }
         }
     }
