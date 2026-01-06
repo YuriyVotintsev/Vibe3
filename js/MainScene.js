@@ -603,7 +603,6 @@ export class MainScene extends Phaser.Scene {
 
             if (this.areAdjacent(prevRow, prevCol, row, col)) {
                 this.clearSelection();
-                this.lastMoveTime = this.time.now; // Reset auto-move timer
                 this.swapGems(prevRow, prevCol, row, col);
             } else {
                 this.selectedGem = { row, col, gem };
