@@ -279,7 +279,7 @@ export class SwapHandler {
         });
 
         if (!wasAutoMove) {
-            scene.showMessage('Нет совпадений!');
+            scene.uiManager.showMessage('Нет совпадений!');
         }
         scene.isAutoMoving = false;
     }
