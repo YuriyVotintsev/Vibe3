@@ -1,5 +1,6 @@
 // SwapHandler.js - Handles gem selection and swapping
 import { GameSettings, SWAP_DURATION, GEM_STATE } from './config.js';
+import { checkMatchAt } from './BoardLogic.js';
 
 /**
  * Manages gem selection and swap operations:
@@ -109,6 +110,12 @@ export class SwapHandler {
         gem2.setData('row', row1);
         gem2.setData('col', col1);
 
+        // Check match IMMEDIATELY after board swap (before animation)
+        // This prevents issues where board changes during animation
+        const boardSize = GameSettings.boardSize;
+        const willMatch = checkMatchAt(board, row1, col1, boardSize) ||
+                          checkMatchAt(board, row2, col2, boardSize);
+
         // Animate gem1
         scene.tweens.add({
             targets: gem1,
@@ -118,7 +125,7 @@ export class SwapHandler {
             ease: 'Power2'
         });
 
-        // Animate gem2 and check for matches on complete
+        // Animate gem2 and use pre-calculated match result
         scene.tweens.add({
             targets: gem2,
             x: pos1.x,
@@ -131,9 +138,7 @@ export class SwapHandler {
                 gem1.setData('targetY', pos2.y);
                 gem2.setData('targetY', pos1.y);
 
-                const matches = scene.findAllMatches();
-
-                if (matches.length > 0) {
+                if (willMatch) {
                     scene.moves++;
                     scene.movesText.setText(scene.moves.toString());
                     scene.isAutoMoving = false;
