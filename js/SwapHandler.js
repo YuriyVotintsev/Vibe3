@@ -24,6 +24,8 @@ export class SwapHandler {
      */
     onGemClick(pointer, gem) {
         if (gem.getData('state') !== GEM_STATE.IDLE) return;
+        // Don't select bombs (they're handled separately)
+        if (gem.getData('isBomb')) return;
 
         const { scene } = this.ctx;
         const row = gem.getData('row');
@@ -94,6 +96,8 @@ export class SwapHandler {
         if (!gem1 || !gem2) return;
         if (gem1.getData('state') !== GEM_STATE.IDLE) return;
         if (gem2.getData('state') !== GEM_STATE.IDLE) return;
+        // Can't swap bombs
+        if (gem1.getData('isBomb') || gem2.getData('isBomb')) return;
 
         gem1.setData('state', GEM_STATE.SWAPPING);
         gem2.setData('state', GEM_STATE.SWAPPING);

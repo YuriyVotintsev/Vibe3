@@ -31,7 +31,6 @@ export class MainScene extends Phaser.Scene {
         loadPlayerData();
         this.board = [];
         this.gems = [];
-        this.bombs = [];  // 2D array tracking bomb positions
         this.moves = 0;
         this.pendingMatches = [];
         this.lastMoveTime = 0;
@@ -188,18 +187,15 @@ export class MainScene extends Phaser.Scene {
         // Clear arrays without reassigning (keep references for managers)
         this.board.length = 0;
         this.gems.length = 0;
-        this.bombs.length = 0;
         const boardSize = GameSettings.boardSize;
 
         for (let row = 0; row < boardSize; row++) {
             this.board[row] = [];
             this.gems[row] = [];
-            this.bombs[row] = [];
             for (let col = 0; col < boardSize; col++) {
                 const gemType = Phaser.Math.Between(0, GameSettings.colorCount - 1);
                 this.board[row][col] = gemType;
                 this.gems[row][col] = this.createGem(row, col, gemType);
-                this.bombs[row][col] = null;
             }
         }
     }
@@ -314,8 +310,8 @@ export class MainScene extends Phaser.Scene {
         const shufflePositions = [];
         for (let row = 0; row < boardSize; row++) {
             for (let col = 0; col < boardSize; col++) {
-                // Skip if there's a bomb at this position
-                if (this.bombs[row]?.[col]) continue;
+                // Skip if there's a bomb at this position (bomb stays in place)
+                if (this.board[row][col] === 'bomb') continue;
 
                 if (this.board[row][col] !== null) {
                     types.push(this.board[row][col]);
@@ -409,21 +405,26 @@ export class MainScene extends Phaser.Scene {
         const { row, col } = matches[centerIdx];
 
         // Don't spawn if there's already a bomb there
-        if (this.bombs[row]?.[col]) return;
+        if (this.board[row]?.[col] === 'bomb') return;
 
-        // Create bomb at center position
-        this.spawnBomb(row, col);
+        // Create bomb at center position (will be placed after gem is destroyed)
+        this.time.delayedCall(160, () => this.spawnBomb(row, col));
     }
 
     spawnBomb(row, col) {
+        // Only spawn if cell is empty (gem was destroyed)
+        if (this.board[row]?.[col] !== null) return;
+
         const pos = this.getGemPosition(row, col);
         const bomb = this.add.image(pos.x, pos.y, 'bomb');
         bomb.setInteractive({ useHandCursor: true });
         bomb.setData('row', row);
         bomb.setData('col', col);
+        bomb.setData('type', 'bomb');
         bomb.setData('isBomb', true);
+        bomb.setData('state', GEM_STATE.IDLE);
+        bomb.setData('targetY', pos.y);
         bomb.setMask(this.gemMask);
-        bomb.setDepth(50);
 
         // Spawn animation
         bomb.setScale(0);
@@ -434,7 +435,9 @@ export class MainScene extends Phaser.Scene {
             ease: 'Back.easeOut'
         });
 
-        this.bombs[row][col] = bomb;
+        // Store in board and gems arrays (bomb is a board element now)
+        this.board[row][col] = 'bomb';
+        this.gems[row][col] = bomb;
     }
 
     explodeBomb(bomb) {
@@ -443,18 +446,29 @@ export class MainScene extends Phaser.Scene {
         const radius = PlayerData.bombRadius;
         const boardSize = GameSettings.boardSize;
 
-        // Remove the bomb
-        this.bombs[row][col] = null;
+        // Remove the bomb from board
+        this.board[row][col] = null;
+        this.gems[row][col] = null;
         bomb.destroy();
+
+        // Collect other bombs for chain reaction
+        const chainBombs = [];
 
         // Destroy gems in radius
         for (let r = row - radius; r <= row + radius; r++) {
             for (let c = col - radius; c <= col + radius; c++) {
                 if (r < 0 || r >= boardSize || c < 0 || c >= boardSize) continue;
+                if (r === row && c === col) continue; // Skip the exploding bomb itself
 
                 const gem = this.gems[r]?.[c];
                 if (gem && gem.getData('state') === GEM_STATE.IDLE) {
-                    // Award currency
+                    // Check if it's another bomb (chain reaction)
+                    if (gem.getData('isBomb')) {
+                        chainBombs.push(gem);
+                        continue;
+                    }
+
+                    // Award currency for gems (not bombs)
                     const colorIndex = gem.getData('type');
                     const colorMultiplier = PlayerData.colorMultipliers[colorIndex] || 1;
                     PlayerData.currency += colorMultiplier;
@@ -475,17 +489,18 @@ export class MainScene extends Phaser.Scene {
                     this.board[r][c] = null;
                     this.gems[r][c] = null;
                 }
-
-                // Also destroy any other bombs in radius (chain reaction)
-                const otherBomb = this.bombs[r]?.[c];
-                if (otherBomb && (r !== row || c !== col)) {
-                    this.time.delayedCall(100, () => this.explodeBomb(otherBomb));
-                }
             }
         }
 
         this.currencyText.setText(`${PlayerData.currency}`);
         savePlayerData();
+
+        // Chain reaction: explode nearby bombs after a short delay
+        chainBombs.forEach(otherBomb => {
+            this.time.delayedCall(100, () => {
+                if (otherBomb.active) this.explodeBomb(otherBomb);
+            });
+        });
 
         // Show explosion message
         this.showMessage('💥 БУМ!');
@@ -541,9 +556,6 @@ export class MainScene extends Phaser.Scene {
             for (let col = 0; col < boardSize; col++) {
                 if (this.gems[row]?.[col]) {
                     this.gems[row][col].destroy();
-                }
-                if (this.bombs[row]?.[col]) {
-                    this.bombs[row][col].destroy();
                 }
             }
         }

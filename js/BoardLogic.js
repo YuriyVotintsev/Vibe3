@@ -10,7 +10,7 @@
  */
 export function checkMatchAt(board, row, col, boardSize) {
     const type = board[row][col];
-    if (type === null || type === undefined) return false;
+    if (type === null || type === undefined || type === 'bomb') return false;
 
     // Check horizontal
     let count = 1;
@@ -38,9 +38,10 @@ export function checkMatchAt(board, row, col, boardSize) {
  * @returns {boolean} - True if swap would create a match
  */
 export function wouldCreateMatch(board, row1, col1, row2, col2, boardSize) {
-    // Can't swap with empty cells
+    // Can't swap with empty cells or bombs
     if (board[row1][col1] === null || board[row1][col1] === undefined ||
-        board[row2][col2] === null || board[row2][col2] === undefined) {
+        board[row2][col2] === null || board[row2][col2] === undefined ||
+        board[row1][col1] === 'bomb' || board[row2][col2] === 'bomb') {
         return false;
     }
 
@@ -144,7 +145,8 @@ export function findAllMatchPositions(board, boardSize) {
     for (let row = 0; row < boardSize; row++) {
         for (let col = 0; col < boardSize - 2; col++) {
             const type = board[row]?.[col];
-            if (type !== null && type !== undefined &&
+            // Skip bombs - they don't match
+            if (type !== null && type !== undefined && type !== 'bomb' &&
                 type === board[row]?.[col + 1] &&
                 type === board[row]?.[col + 2]) {
 
@@ -166,7 +168,8 @@ export function findAllMatchPositions(board, boardSize) {
     for (let col = 0; col < boardSize; col++) {
         for (let row = 0; row < boardSize - 2; row++) {
             const type = board[row]?.[col];
-            if (type !== null && type !== undefined &&
+            // Skip bombs - they don't match
+            if (type !== null && type !== undefined && type !== 'bomb' &&
                 type === board[row + 1]?.[col] &&
                 type === board[row + 2]?.[col]) {
 
