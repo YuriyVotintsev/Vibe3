@@ -244,11 +244,10 @@ export class MainScene extends Phaser.Scene {
     }
 
     checkAutoMove(time) {
-        // Don't auto-move if already moving or board is busy
+        // Don't auto-move if swap is in progress
         if (this.isAutoMoving) return;
-        if (this.isBoardBusy()) return;
 
-        // Initialize lastMoveTime on first stable frame
+        // Initialize lastMoveTime on first frame
         if (this.lastMoveTime === 0) {
             this.lastMoveTime = time;
             return;
@@ -259,17 +258,27 @@ export class MainScene extends Phaser.Scene {
             const boardSize = GameSettings.boardSize;
             const validMoves = findValidMoves(this.board, boardSize);
 
-            if (validMoves.length > 0) {
-                // Pick random valid move
-                const move = validMoves[Phaser.Math.Between(0, validMoves.length - 1)];
+            // Filter to moves where both gems are IDLE (can swap during falling)
+            const availableMoves = validMoves.filter(move => {
+                const gem1 = this.gems[move.row1]?.[move.col1];
+                const gem2 = this.gems[move.row2]?.[move.col2];
+                return gem1?.getData('state') === GEM_STATE.IDLE &&
+                       gem2?.getData('state') === GEM_STATE.IDLE;
+            });
+
+            if (availableMoves.length > 0) {
+                // Pick random available move
+                const move = availableMoves[Phaser.Math.Between(0, availableMoves.length - 1)];
                 this.isAutoMoving = true;
                 this.swapHandler.swapGems(move.row1, move.col1, move.row2, move.col2);
-            } else {
-                // No valid moves - shuffle
+                this.lastMoveTime = time;
+            } else if (validMoves.length === 0 && !this.isBoardBusy()) {
+                // No valid moves AND board is settled - shuffle
                 this.showMessage('Нет ходов! Перемешиваю...');
                 this.shuffleBoard();
+                this.lastMoveTime = time;
             }
-            this.lastMoveTime = time;
+            // If validMoves exist but none available (gems falling) - wait
         }
     }
 
