@@ -21,15 +21,38 @@ export const COLORS = {
 
     // Background colors
     bgDark: 0x1a1a2e,
+    bgHeader: 0x16213e,
     bgPanel: 0x1e1e2e,
     bgButton: 0x2a2a3e,
     bgButtonHover: 0x3a3a4e,
     bgDisabled: 0x444444,
+    bgDisabledDark: 0x222233,
     bgOverlay: 0x000000,
 
     // Border colors
     border: 0x333333,
     borderLight: 0x555555,
+
+    // Generic colors
+    white: 0xffffff,
+    black: 0x000000,
+
+    // Effect colors
+    bombParticle: 0xff6600,
+
+    // Rendering colors
+    shadow: 0x000000,
+    highlight: 0xffffff,
+    selection: 0xffffff,
+
+    // Bomb colors
+    bombBody: 0x8b0000,
+    bombHighlight: 0xff4444,
+    bombCircle: 0x1a1a1a,
+    bombShine: 0x444444,
+    bombFuse: 0xffaa00,
+    bombSparkOuter: 0xffff00,
+    bombSparkInner: 0xff6600,
 
     // Text colors (hex strings for Phaser text)
     text: {

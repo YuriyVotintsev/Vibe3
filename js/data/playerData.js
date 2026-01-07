@@ -1,6 +1,27 @@
-// playerData.js - Player state management (DRY version)
+// playerData.js - Player state management with EventEmitter
 
-// Default values - single source of truth
+// ========== SIMPLE EVENT EMITTER ==========
+
+const listeners = {};
+
+export function on(event, callback) {
+    if (!listeners[event]) listeners[event] = [];
+    listeners[event].push(callback);
+    return () => off(event, callback); // Return unsubscribe function
+}
+
+export function off(event, callback) {
+    if (!listeners[event]) return;
+    listeners[event] = listeners[event].filter(cb => cb !== callback);
+}
+
+function emit(event, data) {
+    if (!listeners[event]) return;
+    listeners[event].forEach(cb => cb(data));
+}
+
+// ========== DEFAULT VALUES ==========
+
 const DEFAULTS = {
     // Currency
     currency: 0,
@@ -40,61 +61,94 @@ const DEFAULTS = {
     autoBuyCelestial: false
 };
 
-// Properties that reset on prestige (not prestige upgrades or auto-buys)
+// Properties that reset on prestige
 const PRESTIGE_RESET_KEYS = [
     'currency', 'totalEarned', 'autoMoveDelay', 'bombChance', 'bombRadius',
     'bronzeChance', 'silverChance', 'goldChance', 'crystalChance',
     'rainbowChance', 'prismaticChance', 'celestialChance'
 ];
 
-// Player persistent data - initialized from defaults
-export const PlayerData = { ...DEFAULTS };
+// ========== REACTIVE PLAYER DATA ==========
 
-// Save player data to localStorage
+// Internal data store
+const _data = { ...DEFAULTS };
+
+// Proxy with change notifications
+export const PlayerData = new Proxy(_data, {
+    set(target, prop, value) {
+        const oldValue = target[prop];
+        target[prop] = value;
+
+        // Emit specific property change
+        if (oldValue !== value) {
+            emit(`change:${prop}`, { prop, oldValue, newValue: value });
+            emit('change', { prop, oldValue, newValue: value });
+        }
+
+        return true;
+    },
+    get(target, prop) {
+        return target[prop];
+    }
+});
+
+// ========== PERSISTENCE ==========
+
 export function savePlayerData() {
-    localStorage.setItem('match3_player', JSON.stringify(PlayerData));
+    try {
+        localStorage.setItem('match3_player', JSON.stringify(_data));
+    } catch (e) {
+        console.warn('Failed to save player data:', e);
+    }
 }
 
-// Load player data from localStorage
 export function loadPlayerData() {
-    const saved = localStorage.getItem('match3_player');
-    if (saved) {
-        const data = JSON.parse(saved);
-        Object.assign(PlayerData, data);
+    try {
+        const saved = localStorage.getItem('match3_player');
+        if (saved) {
+            const data = JSON.parse(saved);
+            // Use Object.assign on internal data to avoid triggering events
+            Object.assign(_data, data);
+        }
+    } catch (e) {
+        console.warn('Failed to load player data:', e);
     }
 
-    // Ensure all properties have valid values
     ensureValidValues();
 }
 
-// Ensure all player data properties have valid values
 function ensureValidValues() {
     for (const [key, defaultValue] of Object.entries(DEFAULTS)) {
-        if (PlayerData[key] === undefined || PlayerData[key] === null) {
-            PlayerData[key] = defaultValue;
+        if (_data[key] === undefined || _data[key] === null) {
+            _data[key] = defaultValue;
         }
     }
 
-    // Special validation for autoMoveDelay
-    if (PlayerData.autoMoveDelay < 100) {
-        PlayerData.autoMoveDelay = DEFAULTS.autoMoveDelay;
+    // Validate ranges
+    if (_data.autoMoveDelay < 100) {
+        _data.autoMoveDelay = DEFAULTS.autoMoveDelay;
+    }
+    if (_data.currency < 0) {
+        _data.currency = 0;
     }
 }
 
-// Reset player data (keeps prestige upgrades and auto-buys)
+// ========== RESET FUNCTIONS ==========
+
 export function resetPlayerData() {
     for (const key of PRESTIGE_RESET_KEYS) {
-        PlayerData[key] = DEFAULTS[key];
+        PlayerData[key] = DEFAULTS[key]; // Use proxy to emit events
     }
     savePlayerData();
+    emit('reset', { type: 'soft' });
 }
 
-// Get default value for a property (used by prestige.js)
+// ========== HELPERS ==========
+
 export function getDefaultValue(key) {
     return DEFAULTS[key];
 }
 
-// Get all prestige reset keys (used by prestige.js)
 export function getPrestigeResetKeys() {
     return PRESTIGE_RESET_KEYS;
 }

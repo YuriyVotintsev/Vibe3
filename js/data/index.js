@@ -18,7 +18,11 @@ export {
     PlayerData,
     savePlayerData,
     loadPlayerData,
-    resetPlayerData
+    resetPlayerData,
+    on,
+    off,
+    getDefaultValue,
+    getPrestigeResetKeys
 } from './playerData.js';
 
 // Enhancements

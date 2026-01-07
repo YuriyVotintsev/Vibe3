@@ -62,7 +62,7 @@ export class UIManager {
 
         // Header panel background
         const headerBg = scene.add.graphics();
-        headerBg.fillStyle(0x16213e, 0.95);
+        headerBg.fillStyle(COLORS.bgHeader, 0.95);
         headerBg.fillRoundedRect(10, 8, scene.cameras.main.width - 20, 100, 15);
         headerBg.lineStyle(2, COLORS.secondary, 0.5);
         headerBg.strokeRoundedRect(10, 8, scene.cameras.main.width - 20, 100, 15);

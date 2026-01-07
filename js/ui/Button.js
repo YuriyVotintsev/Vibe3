@@ -1,5 +1,10 @@
-// Button.js - Reusable button component
-import { COLORS, FONT_SIZE, RADIUS, BUTTON_STYLE } from '../styles.js';
+// Button.js - Base button component
+
+import { FONT_SIZE, RADIUS, BUTTON_STYLE } from '../styles.js';
+
+// Re-export other button components for backward compatibility
+export { UpgradeButton } from './UpgradeButton.js';
+export { AutoBuyButton } from './AutoBuyButton.js';
 
 /**
  * Creates a styled button with hover effects
@@ -13,9 +18,9 @@ export class Button {
      * @param {number} config.width - Button width
      * @param {number} config.height - Button height
      * @param {string} config.text - Button label
-     * @param {string} [config.style='default'] - Style preset (primary, secondary, success, warning, danger, disabled, default)
+     * @param {string} [config.style='default'] - Style preset
      * @param {Function} [config.onClick] - Click handler
-     * @param {Object} [config.container] - Optional container to add elements to
+     * @param {Object} [config.container] - Optional container
      * @param {number} [config.fontSize] - Override font size
      * @param {number} [config.radius] - Override border radius
      */
@@ -33,7 +38,6 @@ export class Button {
             radius = RADIUS.lg
         } = config;
 
-        // Get style preset
         this.stylePreset = BUTTON_STYLE[style] || BUTTON_STYLE.default;
         this.x = x;
         this.y = y;
@@ -41,25 +45,23 @@ export class Button {
         this.height = height;
         this.radius = radius;
 
-        // Create graphics for background
+        // Background
         this.bg = scene.add.graphics();
         this.drawBackground(this.stylePreset.bg);
 
-        // Create hit area
+        // Hit area
         this.hitArea = scene.add.rectangle(x, y, width, height, 0x000000, 0)
             .setInteractive({ useHandCursor: style !== 'disabled' });
 
-        // Create text
+        // Label
         this.label = scene.add.text(x, y, text, {
             fontSize: fontSize,
             color: this.stylePreset.text,
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Setup events
         this.setupEvents(onClick);
 
-        // Add to container if provided
         if (container) {
             container.add(this.bg);
             container.add(this.hitArea);
@@ -67,9 +69,6 @@ export class Button {
         }
     }
 
-    /**
-     * Draw button background
-     */
     drawBackground(color, border = null) {
         const { x, y, width, height, radius } = this;
         const left = x - width / 2;
@@ -85,9 +84,6 @@ export class Button {
         }
     }
 
-    /**
-     * Setup hover and click events
-     */
     setupEvents(onClick) {
         this.hitArea
             .on('pointerover', () => {
@@ -107,17 +103,11 @@ export class Button {
             });
     }
 
-    /**
-     * Update button text
-     */
     setText(text) {
         this.label.setText(text);
         return this;
     }
 
-    /**
-     * Update button style
-     */
     setStyle(styleName) {
         this.stylePreset = BUTTON_STYLE[styleName] || BUTTON_STYLE.default;
         this.drawBackground(this.stylePreset.bg);
@@ -126,9 +116,6 @@ export class Button {
         return this;
     }
 
-    /**
-     * Enable/disable button
-     */
     setEnabled(enabled) {
         this.enabled = enabled;
         if (!enabled) {
@@ -143,334 +130,9 @@ export class Button {
         return this;
     }
 
-    /**
-     * Destroy button and all its components
-     */
     destroy() {
         this.bg.destroy();
         this.hitArea.destroy();
         this.label.destroy();
-    }
-}
-
-/**
- * Creates an upgrade-style button with name, value, level, and cost
- */
-export class UpgradeButton {
-    /**
-     * @param {Phaser.Scene} scene
-     * @param {Object} config
-     * @param {number} config.x - Left X position
-     * @param {number} config.y - Top Y position
-     * @param {number} config.width
-     * @param {number} config.height
-     * @param {Object} config.upgrade - Upgrade data object
-     * @param {Function} config.upgrade.getName - Returns display name
-     * @param {Function} config.upgrade.getValue - Returns current value string
-     * @param {Function} config.upgrade.getLevel - Returns level string (e.g. "3/10")
-     * @param {Function} config.upgrade.getCost - Returns cost or null if maxed
-     * @param {Function} config.upgrade.canAfford - Returns boolean
-     * @param {Function} config.upgrade.onBuy - Buy handler, returns boolean
-     * @param {Function} config.formatCost - Format cost for display
-     * @param {Object} [config.container] - Optional container
-     * @param {Function} [config.onPurchase] - Called after successful purchase
-     */
-    constructor(scene, config) {
-        this.scene = scene;
-        this.config = config;
-        this.upgrade = config.upgrade;
-
-        const {
-            x, y, width, height,
-            container,
-            formatCost = (c) => c,
-            onPurchase
-        } = config;
-
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.formatCost = formatCost;
-        this.onPurchase = onPurchase;
-
-        // Create elements
-        this.bg = scene.add.graphics();
-        this.elements = [];
-
-        // Name text
-        this.nameText = scene.add.text(x + width / 2, y + 12, this.upgrade.getName(), {
-            fontSize: FONT_SIZE.md,
-            color: COLORS.text.white,
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.elements.push(this.nameText);
-
-        // Level text
-        this.levelText = scene.add.text(x + width / 2, y + 26, '', {
-            fontSize: FONT_SIZE.xs,
-            color: COLORS.text.light
-        }).setOrigin(0.5);
-        this.elements.push(this.levelText);
-
-        // Value text
-        this.valueText = scene.add.text(x + width / 2, y + 43, '', {
-            fontSize: FONT_SIZE.lg,
-            color: COLORS.text.green,
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.elements.push(this.valueText);
-
-        // Cost text
-        this.costText = scene.add.text(x + width / 2, y + 59, '', {
-            fontSize: FONT_SIZE.sm,
-            color: COLORS.text.gold
-        }).setOrigin(0.5);
-        this.elements.push(this.costText);
-
-        // Hit area
-        this.hitArea = scene.add.rectangle(x + width / 2, y + height / 2, width, height, 0x000000, 0);
-        this.elements.push(this.hitArea);
-
-        // Add to container
-        if (container) {
-            container.add(this.bg);
-            this.elements.forEach(el => container.add(el));
-        }
-
-        // Setup events
-        this.setupEvents();
-
-        // Initial render
-        this.refresh();
-    }
-
-    /**
-     * Get current button state
-     */
-    getState() {
-        const cost = this.upgrade.getCost();
-        const isMaxed = cost === null;
-        const canAfford = !isMaxed && this.upgrade.canAfford();
-        return { cost, isMaxed, canAfford };
-    }
-
-    /**
-     * Draw background based on state
-     */
-    drawBackground(hover = false) {
-        const { x, y, width, height } = this;
-        const { isMaxed, canAfford } = this.getState();
-
-        let bgColor;
-        if (isMaxed) {
-            bgColor = COLORS.bgDisabled;
-        } else if (canAfford) {
-            bgColor = hover ? COLORS.successHover : COLORS.success;
-        } else {
-            bgColor = hover ? COLORS.bgButtonHover : COLORS.bgButton;
-        }
-
-        this.bg.clear();
-        this.bg.fillStyle(bgColor, 1);
-        this.bg.fillRoundedRect(x, y, width, height, RADIUS.md);
-
-        if (!isMaxed) {
-            const borderColor = canAfford ? COLORS.successBright : COLORS.borderLight;
-            this.bg.lineStyle(2, borderColor, 1);
-            this.bg.strokeRoundedRect(x, y, width, height, RADIUS.md);
-        }
-    }
-
-    /**
-     * Setup events
-     */
-    setupEvents() {
-        this.hitArea
-            .setInteractive({ useHandCursor: true })
-            .on('pointerover', () => {
-                const { isMaxed } = this.getState();
-                if (!isMaxed) {
-                    this.drawBackground(true);
-                }
-            })
-            .on('pointerout', () => {
-                this.drawBackground(false);
-            })
-            .on('pointerdown', () => {
-                const { canAfford } = this.getState();
-                if (canAfford && this.upgrade.onBuy()) {
-                    if (this.onPurchase) {
-                        this.onPurchase();
-                    }
-                }
-            });
-    }
-
-    /**
-     * Refresh button display
-     */
-    refresh() {
-        const { cost, isMaxed, canAfford } = this.getState();
-
-        this.levelText.setText(this.upgrade.getLevel());
-        this.valueText.setText(this.upgrade.getValue());
-
-        if (isMaxed) {
-            this.costText.setText('MAX');
-            this.costText.setColor(COLORS.text.muted);
-        } else {
-            this.costText.setText(this.formatCost(cost));
-            this.costText.setColor(canAfford ? COLORS.text.gold : COLORS.text.goldDark);
-        }
-
-        this.hitArea.setInteractive({ useHandCursor: canAfford });
-        this.drawBackground(false);
-    }
-
-    /**
-     * Destroy all elements
-     */
-    destroy() {
-        this.bg.destroy();
-        this.elements.forEach(el => el.destroy());
-    }
-}
-
-/**
- * Creates an auto-buy toggle button
- * Uses "Tell, Don't Ask" - receives item object and calls its methods
- */
-export class AutoBuyButton {
-    /**
-     * @param {Phaser.Scene} scene
-     * @param {Object} config
-     * @param {number} config.x - Left X position
-     * @param {number} config.y - Top Y position
-     * @param {number} config.width
-     * @param {number} config.height
-     * @param {Object} config.item - Auto-buy item object with methods:
-     *   - name: string - Display name
-     *   - cost: number - Cost to unlock
-     *   - isOwned(): boolean - Whether already purchased
-     *   - canAfford(): boolean - Whether can be purchased
-     *   - onBuy(): boolean - Purchase handler
-     * @param {Object} [config.container] - Optional container
-     * @param {Function} [config.onPurchase] - Called after successful purchase
-     */
-    constructor(scene, config) {
-        this.scene = scene;
-        this.item = config.item;
-
-        const { x, y, width, height, container, onPurchase } = config;
-
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.onPurchase = onPurchase;
-
-        // Background
-        this.bg = scene.add.graphics();
-
-        // Name
-        this.nameText = scene.add.text(x + width / 2, y + 18, this.item.name, {
-            fontSize: FONT_SIZE.md,
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-
-        // Status/cost
-        this.statusText = scene.add.text(x + width / 2, y + 38, '', {
-            fontSize: FONT_SIZE.base,
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-
-        // Hit area
-        this.hitArea = scene.add.rectangle(x + width / 2, y + height / 2, width, height, 0x000000, 0)
-            .setInteractive({ useHandCursor: true })
-            .on('pointerover', () => this.refresh(true))
-            .on('pointerout', () => this.refresh(false))
-            .on('pointerdown', () => this.handleClick());
-
-        // Add to container
-        if (container) {
-            container.add(this.bg);
-            container.add(this.nameText);
-            container.add(this.statusText);
-            container.add(this.hitArea);
-        }
-
-        // Initial render
-        this.refresh(false);
-    }
-
-    /**
-     * Handle click - Tell the item to buy itself
-     */
-    handleClick() {
-        if (this.item.canAfford() && this.item.onBuy()) {
-            if (this.onPurchase) {
-                this.onPurchase();
-            }
-        }
-    }
-
-    /**
-     * Refresh display based on current item state
-     */
-    refresh(hover = false) {
-        const isOwned = this.item.isOwned();
-        const canAfford = this.item.canAfford();
-
-        // Update name color
-        this.nameText.setColor(isOwned ? COLORS.text.green : COLORS.text.white);
-
-        // Update status
-        if (isOwned) {
-            this.statusText.setText('✓ ВКЛ');
-            this.statusText.setColor(COLORS.text.green);
-        } else {
-            this.statusText.setText(`${this.item.cost}👑`);
-            this.statusText.setColor(canAfford ? COLORS.text.gold : COLORS.text.goldDark);
-        }
-
-        // Update cursor
-        this.hitArea.setInteractive({ useHandCursor: !isOwned && canAfford });
-
-        // Draw background
-        this.drawBackground(isOwned, canAfford, hover);
-    }
-
-    drawBackground(isOwned, canAfford, hover) {
-        const { x, y, width, height } = this;
-
-        let bgColor;
-        let alpha = 1;
-
-        if (isOwned) {
-            bgColor = COLORS.success;
-            alpha = 0.6;
-        } else if (hover && canAfford) {
-            bgColor = COLORS.bgButtonHover;
-        } else {
-            bgColor = canAfford ? COLORS.bgButton : 0x222233;
-        }
-
-        this.bg.clear();
-        this.bg.fillStyle(bgColor, alpha);
-        this.bg.fillRoundedRect(x, y, width, height, RADIUS.md);
-
-        if (!isOwned) {
-            const borderColor = canAfford ? COLORS.successBright : COLORS.bgDisabled;
-            this.bg.lineStyle(2, borderColor, 1);
-            this.bg.strokeRoundedRect(x, y, width, height, RADIUS.md);
-        }
-    }
-
-    destroy() {
-        this.bg.destroy();
-        this.nameText.destroy();
-        this.statusText.destroy();
-        this.hitArea.destroy();
     }
 }
