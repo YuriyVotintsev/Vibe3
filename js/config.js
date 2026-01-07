@@ -108,7 +108,7 @@ export function getSilverLevel() {
 
 export function getSilverUpgradeCost() {
     const level = getSilverLevel();
-    return Math.floor(50 * Math.pow(1.25, level) * GameSettings.priceMultiplier);
+    return Math.floor(30 * Math.pow(1.12, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeSilver() {
@@ -129,7 +129,7 @@ export function getGoldLevel() {
 
 export function getGoldUpgradeCost() {
     const level = getGoldLevel();
-    return Math.floor(100 * Math.pow(1.3, level) * GameSettings.priceMultiplier);
+    return Math.floor(50 * Math.pow(1.15, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeGold() {
@@ -150,7 +150,7 @@ export function getCrystalLevel() {
 
 export function getCrystalUpgradeCost() {
     const level = getCrystalLevel();
-    return Math.floor(200 * Math.pow(1.35, level) * GameSettings.priceMultiplier);
+    return Math.floor(80 * Math.pow(1.18, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeCrystal() {
@@ -171,7 +171,7 @@ export function getRainbowLevel() {
 
 export function getRainbowUpgradeCost() {
     const level = getRainbowLevel();
-    return Math.floor(400 * Math.pow(1.4, level) * GameSettings.priceMultiplier);
+    return Math.floor(120 * Math.pow(1.2, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeRainbow() {
@@ -192,7 +192,7 @@ export function getPrismaticLevel() {
 
 export function getPrismaticUpgradeCost() {
     const level = getPrismaticLevel();
-    return Math.floor(800 * Math.pow(1.45, level) * GameSettings.priceMultiplier);
+    return Math.floor(200 * Math.pow(1.22, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradePrismatic() {
@@ -346,4 +346,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.64-js';
+export const JS_VERSION = '0.0.65-js';
