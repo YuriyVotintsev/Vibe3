@@ -149,8 +149,9 @@ export class MainScene extends Phaser.Scene {
         // Use Container so overlay moves automatically with gem
         const container = this.add.container(pos.x, startY !== null ? startY : pos.y);
 
-        // Gem sprite at center of container
-        const gemSprite = this.add.image(0, 0, `gem_${gemType}`);
+        // Gem sprite at center of container (use make.image to avoid double-tracking)
+        const gemSprite = this.make.image({ x: 0, y: 0, key: `gem_${gemType}`, add: false });
+        gemSprite.setMask(this.gemMask);
         container.add(gemSprite);
         container.setData('sprite', gemSprite);
 
@@ -160,8 +161,9 @@ export class MainScene extends Phaser.Scene {
 
         if (enh !== ENHANCEMENT.NONE) {
             const cornerOffset = cellSize * 0.25;
-            const overlay = this.add.image(cornerOffset, cornerOffset, `overlay_${enh}`);
+            const overlay = this.make.image({ x: cornerOffset, y: cornerOffset, key: `overlay_${enh}`, add: false });
             overlay.setScale(0.7);
+            overlay.setMask(this.gemMask);
             container.add(overlay);
             container.setData('overlay', overlay);
         }
@@ -176,11 +178,6 @@ export class MainScene extends Phaser.Scene {
         container.setData('type', gemType);
         container.setData('state', GEM_STATE.IDLE);
         container.setData('targetY', pos.y);
-
-        // Apply mask to container children
-        gemSprite.setMask(this.gemMask);
-        const overlay = container.getData('overlay');
-        if (overlay) overlay.setMask(this.gemMask);
 
         return container;
     }
