@@ -70,34 +70,34 @@ export class PrestigeScene extends Phaser.Scene {
     }
 
     createCoinsSection(W, cx) {
-        const y = 80;
+        const y = 75;
         const potential = getPrestigeCoinsFromCurrency(PlayerData.currency);
         const multiplier = getMoneyMultiplier();
 
-        // Background card for coins
+        // Background card for coins - taller
         const cardBg = this.add.graphics();
         cardBg.fillStyle(0x2a1a4a, 1); // dark purple
-        cardBg.fillRoundedRect(25, y - 10, W - 50, 55, RADIUS.lg);
+        cardBg.fillRoundedRect(25, y - 5, W - 50, 70, RADIUS.lg);
         cardBg.lineStyle(2, 0x9b59b6, 0.6);
-        cardBg.strokeRoundedRect(25, y - 10, W - 50, 55, RADIUS.lg);
+        cardBg.strokeRoundedRect(25, y - 5, W - 50, 70, RADIUS.lg);
 
         // Build coins text - centered
         const coinsText = potential > 0
             ? `👑 ${PlayerData.prestigeCurrency}  +${potential}`
             : `👑 ${PlayerData.prestigeCurrency}`;
 
-        this.add.text(cx, y + 8, coinsText, {
+        this.add.text(cx, y + 18, coinsText, {
             fontSize: FONT_SIZE['4xl'],
             color: '#e056fd', // bright purple
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Multiplier - bottom right of card
-        this.add.text(W - 35, y + 30, `x${multiplier}`, {
+        // Multiplier - centered below coins
+        this.add.text(cx, y + 50, `множитель денег: x${multiplier}`, {
             fontSize: FONT_SIZE.lg,
             color: COLORS.text.gold,
             fontStyle: 'bold'
-        }).setOrigin(1, 0.5);
+        }).setOrigin(0.5);
     }
 
     createPrestigeSection(W, cx) {
@@ -106,7 +106,7 @@ export class PrestigeScene extends Phaser.Scene {
         const canPrestige = potential > 0;
 
         // Progress bar
-        const barY = 150;
+        const barY = 160;
         const barWidth = W - 60;
         const barHeight = 24;
 
