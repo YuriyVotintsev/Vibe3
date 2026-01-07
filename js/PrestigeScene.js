@@ -24,7 +24,7 @@ export class PrestigeScene extends Phaser.Scene {
     }
 
     create() {
-        this.scene.pause('MainScene');
+        // Don't pause MainScene - let it run in background (like UpgradesScene)
 
         const W = this.cameras.main.width;
         const H = this.cameras.main.height;
@@ -307,10 +307,7 @@ export class PrestigeScene extends Phaser.Scene {
             .on('pointerout', () => {
                 closeBtn.clear().fillStyle(0xe74c3c, 1).fillRoundedRect(W - 30 - btnWidth, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
             })
-            .on('pointerdown', () => {
-                this.scene.resume('MainScene');
-                this.scene.stop();
-            });
+            .on('pointerdown', () => this.scene.stop());
 
         this.add.text(closeBtnX, btnY, '✕ ЗАКРЫТЬ', {
             fontSize: '16px', color: '#ffffff', fontStyle: 'bold'
