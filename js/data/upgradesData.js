@@ -2,15 +2,12 @@
 // Generates upgrade objects from UPGRADE_CONFIGS - single source of truth
 
 import { PlayerData } from './playerData.js';
-import { isTierUnlocked } from './enhancements.js';
+import { isTierUnlocked, getUnlockedTiers } from './enhancements.js';
 import { UPGRADE_CONFIGS, AUTO_BUY_KEYS, createUpgradeForUI } from './upgrades.js';
 import {
     getMoneyMultiplier,
-    getUnlockedTiers,
     getBoardSize,
     getColorCount,
-    getPrestigeMoneyMultCost,
-    upgradePrestigeMoneyMult,
     getPrestigeTiersCost,
     upgradePrestigeTiers,
     getPrestigeColorsCost,
@@ -59,17 +56,6 @@ export function getPrestigeUpgrades() {
     const prestigeCurrency = () => PlayerData.prestigeCurrency;
 
     return [
-        {
-            getName: () => 'Множитель',
-            getValue: () => `x${getMoneyMultiplier()}`,
-            getLevel: () => `${PlayerData.prestigeMoneyMult}/∞`,
-            getCost: () => getPrestigeMoneyMultCost(),
-            canAfford() {
-                const cost = this.getCost();
-                return cost !== null && prestigeCurrency() >= cost;
-            },
-            onBuy: () => upgradePrestigeMoneyMult()
-        },
         {
             getName: () => 'Тиры гемов',
             getValue: () => `${getUnlockedTiers()}/7`,

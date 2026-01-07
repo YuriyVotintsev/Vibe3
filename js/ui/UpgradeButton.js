@@ -47,35 +47,37 @@ export class UpgradeButton {
         this.bg = scene.add.graphics();
         this.elements = [];
 
-        // Name text
-        this.nameText = scene.add.text(x + width / 2, y + 12, this.upgrade.getName(), {
-            fontSize: FONT_SIZE.md,
+        // Name text (top center)
+        this.nameText = scene.add.text(x + width / 2, y + 14, this.upgrade.getName(), {
+            fontSize: FONT_SIZE['2xl'],
             color: COLORS.text.white,
             fontStyle: 'bold'
         }).setOrigin(0.5);
         this.elements.push(this.nameText);
 
-        // Level text
-        this.levelText = scene.add.text(x + width / 2, y + 26, '', {
-            fontSize: FONT_SIZE.xs,
-            color: COLORS.text.light
-        }).setOrigin(0.5);
-        this.elements.push(this.levelText);
-
-        // Value text
-        this.valueText = scene.add.text(x + width / 2, y + 43, '', {
-            fontSize: FONT_SIZE.lg,
+        // Value text (center)
+        this.valueText = scene.add.text(x + width / 2, y + 38, '', {
+            fontSize: FONT_SIZE['3xl'],
             color: COLORS.text.green,
             fontStyle: 'bold'
         }).setOrigin(0.5);
         this.elements.push(this.valueText);
 
-        // Cost text
-        this.costText = scene.add.text(x + width / 2, y + 59, '', {
-            fontSize: FONT_SIZE.sm,
-            color: COLORS.text.gold
+        // Cost text (bottom center)
+        this.costText = scene.add.text(x + width / 2, y + 60, '', {
+            fontSize: FONT_SIZE['2xl'],
+            color: '#ffff00',  // bright yellow
+            fontStyle: 'bold'
         }).setOrigin(0.5);
         this.elements.push(this.costText);
+
+        // Level text (bottom right corner)
+        this.levelText = scene.add.text(x + width - 6, y + height - 6, '', {
+            fontSize: FONT_SIZE.xl,
+            color: '#ffffff',  // bright white
+            fontStyle: 'bold'
+        }).setOrigin(1, 1);
+        this.elements.push(this.levelText);
 
         // Hit area
         this.hitArea = scene.add.rectangle(x + width / 2, y + height / 2, width, height, 0x000000, 0);
@@ -170,7 +172,7 @@ export class UpgradeButton {
             this.costText.setColor(COLORS.text.muted);
         } else {
             this.costText.setText(this.formatCost(cost));
-            this.costText.setColor(canAfford ? COLORS.text.gold : COLORS.text.goldDark);
+            this.costText.setColor(canAfford ? '#ffff00' : '#999900');  // bright/dim yellow
         }
 
         this.hitArea.setInteractive({ useHandCursor: canAfford });

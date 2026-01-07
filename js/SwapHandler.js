@@ -188,24 +188,18 @@ export class SwapHandler {
         const willMatch = checkMatchAt(board, row1, col1, boardSize) ||
                           checkMatchAt(board, row2, col2, boardSize);
 
-        // Get overlays if they exist
-        const overlay1 = gem1.getData('overlay');
-        const overlay2 = gem2.getData('overlay');
-
-        // Animate gem1 (and its overlay)
-        const targets1 = overlay1 ? [gem1, overlay1] : gem1;
+        // Animate gem1 (Container - overlay moves automatically)
         scene.tweens.add({
-            targets: targets1,
+            targets: gem1,
             x: pos2.x,
             y: pos2.y,
             duration: SWAP_DURATION,
             ease: 'Power2'
         });
 
-        // Animate gem2 (and its overlay) and use pre-calculated match result
-        const targets2 = overlay2 ? [gem2, overlay2] : gem2;
+        // Animate gem2 and use pre-calculated match result
         scene.tweens.add({
-            targets: targets2,
+            targets: gem2,
             x: pos1.x,
             y: pos1.y,
             duration: SWAP_DURATION,
@@ -249,22 +243,18 @@ export class SwapHandler {
         gem2.setData('row', row2);
         gem2.setData('col', col2);
 
-        // Get overlays if they exist
-        const overlay1 = gem1.getData('overlay');
-        const overlay2 = gem2.getData('overlay');
-
-        const targets1 = overlay1 ? [gem1, overlay1] : gem1;
+        // Animate gem1 (Container - overlay moves automatically)
         scene.tweens.add({
-            targets: targets1,
+            targets: gem1,
             x: pos1.x,
             y: pos1.y,
             duration: SWAP_DURATION,
             ease: 'Power2'
         });
 
-        const targets2 = overlay2 ? [gem2, overlay2] : gem2;
+        // Animate gem2
         scene.tweens.add({
-            targets: targets2,
+            targets: gem2,
             x: pos2.x,
             y: pos2.y,
             duration: SWAP_DURATION,

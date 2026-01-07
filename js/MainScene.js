@@ -113,6 +113,13 @@ export class MainScene extends Phaser.Scene {
 
         this.fallManager.initSpawnTimers(boardSize);
 
+        // FPS counter for debugging
+        this.fpsText = this.add.text(10, 10, 'FPS: --', {
+            fontSize: '14px',
+            color: '#00ff00',
+            backgroundColor: '#000000'
+        }).setDepth(1000);
+
         this.events.on('shutdown', this.shutdown, this);
         this.events.on('resume', this.onResume, this);
     }
@@ -124,6 +131,7 @@ export class MainScene extends Phaser.Scene {
 
     onResume() {
         this.uiManager.updateCurrency();
+        this.uiManager.updatePrestige();
     }
 
     createBoard() {
@@ -144,25 +152,43 @@ export class MainScene extends Phaser.Scene {
 
     createGem(row, col, gemType, startY = null, enhancement = null) {
         const pos = this.getGemPosition(row, col);
-        const gem = this.add.image(pos.x, startY !== null ? startY : pos.y, `gem_${gemType}`);
-        gem.setInteractive({ useHandCursor: true });
-        gem.setData('row', row);
-        gem.setData('col', col);
-        gem.setData('type', gemType);
-        gem.setData('state', GEM_STATE.IDLE);
-        gem.setData('targetY', pos.y);
-        gem.setMask(this.gemMask);
+        const cellSize = getCellSize();
 
+        // Use Container so overlay moves automatically with gem
+        const container = this.add.container(pos.x, startY !== null ? startY : pos.y);
+
+        // Gem sprite at center of container
+        const gemSprite = this.make.image({ x: 0, y: 0, key: `gem_${gemType}`, add: false });
+        container.add(gemSprite);
+        container.setData('sprite', gemSprite);
+
+        // Enhancement overlay (offset to corner, inside container)
         const enh = enhancement !== null ? enhancement : rollEnhancement();
-        gem.setData('enhancement', enh);
+        container.setData('enhancement', enh);
 
         if (enh !== ENHANCEMENT.NONE) {
-            const overlay = this.add.image(gem.x, gem.y, `overlay_${enh}`);
-            overlay.setMask(this.gemMask);
-            gem.setData('overlay', overlay);
+            const cornerOffset = cellSize * 0.25;
+            const overlay = this.make.image({ x: cornerOffset, y: cornerOffset, key: `overlay_${enh}`, add: false });
+            overlay.setScale(0.7);
+            container.add(overlay);
+            container.setData('overlay', overlay);
         }
 
-        return gem;
+        // Apply mask to container (not children) - better performance
+        container.setMask(this.gemMask);
+
+        // Set container size for interaction
+        container.setSize(cellSize, cellSize);
+        container.setInteractive({ useHandCursor: true });
+
+        // Store data on container
+        container.setData('row', row);
+        container.setData('col', col);
+        container.setData('type', gemType);
+        container.setData('state', GEM_STATE.IDLE);
+        container.setData('targetY', pos.y);
+
+        return container;
     }
 
     getGemPosition(row, col) {
@@ -180,14 +206,20 @@ export class MainScene extends Phaser.Scene {
 
         for (let row = 0; row < boardSize; row++) {
             for (let col = 0; col < boardSize; col++) {
+                // Skip bombs - they should not be modified
+                if (this.board[row][col] === 'bomb') continue;
+
                 const validColors = getValidColors(this.board, row, col, colorCount);
 
                 if (validColors.length > 0) {
                     const newType = validColors[Phaser.Math.Between(0, validColors.length - 1)];
                     if (newType !== this.board[row][col]) {
                         this.board[row][col] = newType;
-                        this.gems[row][col].setTexture(`gem_${newType}`);
-                        this.gems[row][col].setData('type', newType);
+                        // Container: update sprite texture inside
+                        const gem = this.gems[row][col];
+                        const sprite = gem.getData('sprite');
+                        if (sprite) sprite.setTexture(`gem_${newType}`);
+                        gem.setData('type', newType);
                     }
                 }
             }
@@ -201,6 +233,9 @@ export class MainScene extends Phaser.Scene {
         this.checkLandedGems();
         this.checkAutoMove(time);
         processAutoBuys();
+
+        // Update FPS counter
+        this.fpsText.setText(`FPS: ${Math.round(this.game.loop.actualFps)}`);
     }
 
     checkLandedGems() {
@@ -280,7 +315,9 @@ export class MainScene extends Phaser.Scene {
             this.board[row][col] = types[i];
             const gem = this.gems[row][col];
             if (gem) {
-                gem.setTexture(`gem_${types[i]}`);
+                // Container: update sprite texture inside
+                const sprite = gem.getData('sprite');
+                if (sprite) sprite.setTexture(`gem_${types[i]}`);
                 gem.setData('type', types[i]);
             }
         }
@@ -298,9 +335,7 @@ export class MainScene extends Phaser.Scene {
         const colorIndex = gem.getData('type');
         const color = colorIndex !== 'bomb' ? ALL_GEM_COLORS[colorIndex] : COLORS.bombParticle;
 
-        const overlay = gem.getData('overlay');
-        if (overlay) overlay.destroy();
-
+        // Container: animate the whole container, destroy() removes all children
         // Pop animation
         this.tweens.add({
             targets: gem,
@@ -350,11 +385,8 @@ export class MainScene extends Phaser.Scene {
         for (let row = 0; row < boardSize; row++) {
             for (let col = 0; col < boardSize; col++) {
                 const gem = this.gems[row]?.[col];
-                if (gem) {
-                    const overlay = gem.getData('overlay');
-                    if (overlay) overlay.destroy();
-                    gem.destroy();
-                }
+                // Container: destroy() removes all children (sprite, overlay)
+                if (gem) gem.destroy();
             }
         }
 

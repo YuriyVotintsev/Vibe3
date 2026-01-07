@@ -6,7 +6,8 @@ import {
     getPrestigeCoinsFromCurrency,
     getProgressToNextCoin,
     getCurrencyForNextCoin,
-    performPrestige
+    performPrestige,
+    getMoneyMultiplier
 } from './config.js';
 import { getPrestigeUpgrades, getAutoBuyItems } from './data/upgradesData.js';
 import { COLORS, FONT_SIZE, RADIUS, SPACING } from './styles.js';
@@ -73,12 +74,24 @@ export class PrestigeScene extends Phaser.Scene {
     createPrestigeCoinsDisplay(cx) {
         const coinsBg = this.add.graphics();
         coinsBg.fillStyle(COLORS.primary, 0.2);
-        coinsBg.fillRoundedRect(cx - 80, 80, 160, 40, RADIUS.lg);
+        coinsBg.fillRoundedRect(cx - 100, 75, 200, 50, RADIUS.lg);
 
-        this.add.text(cx, 100, `👑 ${PlayerData.prestigeCurrency}`, {
+        const potential = getPrestigeCoinsFromCurrency(PlayerData.currency);
+        const displayText = potential > 0
+            ? `👑 ${PlayerData.prestigeCurrency} (+${potential})`
+            : `👑 ${PlayerData.prestigeCurrency}`;
+
+        this.add.text(cx, 90, displayText, {
             fontSize: FONT_SIZE['3xl'],
             color: COLORS.text.purple,
             fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        // Show multiplier based on total earned coins
+        const multiplier = getMoneyMultiplier();
+        this.add.text(cx, 115, `Множитель: x${multiplier} (всего заработано: ${PlayerData.totalPrestigeCoinsEarned}👑)`, {
+            fontSize: FONT_SIZE.md,
+            color: COLORS.text.light
         }).setOrigin(0.5);
     }
 
@@ -108,28 +121,28 @@ export class PrestigeScene extends Phaser.Scene {
 
         const nextCoinCost = getCurrencyForNextCoin();
         this.add.text(cx, barY + barHeight + 12, `${formatNumber(PlayerData.currency)} / ${formatNumber(nextCoinCost)} 💰`, {
-            fontSize: FONT_SIZE.md,
-            color: COLORS.text.muted
+            fontSize: FONT_SIZE.lg,
+            color: '#ffff00',  // bright yellow
+            fontStyle: 'bold'
         }).setOrigin(0.5);
     }
 
     createPrestigeButton(cx) {
         const potential = getPrestigeCoinsFromCurrency(PlayerData.currency);
-        if (potential <= 0) return;
-
         const prestigeBtnY = 225;
+        const canPrestige = potential > 0;
 
         new Button(this, {
             x: cx,
             y: prestigeBtnY,
-            width: 200,
-            height: 36,
-            text: `ПРЕСТИЖ +${potential}👑`,
-            style: 'primary',
+            width: 220,
+            height: 40,
+            text: canPrestige ? `ПРЕСТИЖ (+${potential}👑)` : 'ПРЕСТИЖ',
+            style: canPrestige ? 'warning' : 'disabled',
             radius: RADIUS.lg,
-            fontSize: FONT_SIZE.lg,
+            fontSize: FONT_SIZE.xl,
             onClick: () => {
-                if (performPrestige()) {
+                if (canPrestige && performPrestige()) {
                     this.scene.stop();
                     this.scene.stop('MainScene');
                     this.scene.start('MainScene');

@@ -25,18 +25,18 @@ export const ENHANCEMENT_TIER = {
     [ENHANCEMENT.CELESTIAL]: 6
 };
 
-// === MULTIPLIER BALANCE v3 ===
-// Power curve: each tier roughly 3-4x previous
-// Celestial is the ultimate endgame reward
+// === MULTIPLIER BALANCE v4 ===
+// Power curve: each tier 4-5x previous
+// Massive rewards for late-game progression
 export const ENHANCEMENT_MULTIPLIERS = {
     [ENHANCEMENT.NONE]: 1,
-    [ENHANCEMENT.BRONZE]: 2,        // +100% — common early boost
-    [ENHANCEMENT.SILVER]: 5,        // 2.5x bronze
-    [ENHANCEMENT.GOLD]: 15,         // 3x silver
-    [ENHANCEMENT.CRYSTAL]: 50,      // ~3x gold
-    [ENHANCEMENT.RAINBOW]: 150,     // 3x crystal
-    [ENHANCEMENT.PRISMATIC]: 500,   // ~3x rainbow
-    [ENHANCEMENT.CELESTIAL]: 2000   // 4x prismatic — endgame crown
+    [ENHANCEMENT.BRONZE]: 5,         // x5 — solid early boost
+    [ENHANCEMENT.SILVER]: 20,        // x4 from bronze
+    [ENHANCEMENT.GOLD]: 100,         // x5 from silver
+    [ENHANCEMENT.CRYSTAL]: 500,      // x5 from gold
+    [ENHANCEMENT.RAINBOW]: 2000,     // x4 from crystal
+    [ENHANCEMENT.PRISMATIC]: 10000,  // x5 from rainbow
+    [ENHANCEMENT.CELESTIAL]: 50000   // x5 from prismatic — ultimate reward
 };
 
 // Display names for enhancements
