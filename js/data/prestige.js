@@ -17,18 +17,21 @@ export function getColorCount() {
 }
 
 // === PRESTIGE BALANCE v3: Active play economy ===
-// Base income: ~240 currency/min (active) + upgrades
-// Coins require: 1st=3000, 2nd=6000, 3rd=9000... Nth=N*3000
-// Total for N coins = 3000 * N * (N+1) / 2
+// IMPORTANT: Currency resets to 0 after each prestige!
+// Coins are earned fresh each run, not cumulative.
 //
-// Progression timeline (with upgrades accelerating income):
-//   Coin 1: 3000 currency (~8-10 min active play)
-//   Coin 2: 9000 total (~18-20 min, has 2x mult)
-//   Coin 3: 18000 total (~28-30 min)
-//   Coin 5: 45000 total (~45-50 min)
-//   Coin 10: 165000 total (~75-80 min)
-//   Coin 15: 360000 total (~100-110 min)
-//   Coin 20: 630000 total (~120 min = endgame)
+// Coin costs (cumulative within single run):
+//   1 coin: 3000, 2 coins: 9000, 3 coins: 18000
+//
+// Prestige progression (currency resets each time):
+//   Prestige 1: mult=0→1, ~240/min, earn 1 coin in ~12 min
+//   Prestige 2: mult=1 (2x), ~400/min, earn 1-2 coins in ~12 min
+//   Prestige 3: mult=2 (4x), ~800/min, earn 2-3 coins in ~12 min
+//   Prestige 5: mult=4 (16x), earn 3-4 coins per run
+//   Prestige 10: mult=8+ (256x+), earn 5-6 coins per run
+//
+// Total coins over 2 hours: ~50-60 coins
+// Enough for: all tiers, arena, colors, several auto-buys, high mult
 export function getPrestigeCoinsFromCurrency(currency) {
     if (currency < 3000) return 0;
     // Derived from: 3000 * n * (n+1) / 2 = currency
@@ -125,12 +128,32 @@ export const upgradePrestigeColors = () => performPrestigeUpgrade(PRESTIGE_UPGRA
 export const upgradePrestigeArena = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.arena);
 
 // ========== AUTO-BUY UNLOCKS ==========
+// v3: Different costs based on when player needs them
+// Early game (Bronze/Silver): cheap, needed soon
+// Mid game (Gold/Crystal/Bombs): moderate
+// Late game (Rainbow/Prismatic/Celestial): expensive luxury
 
-export const AUTO_BUY_COST = 3; // v3: reasonable for active economy
+const AUTO_BUY_COSTS = {
+    autoBuyBronze: 2,       // Essential, buy early
+    autoBuySilver: 2,       // Essential, buy early
+    autoBuyGold: 3,         // Mid-game
+    autoBuyCrystal: 3,      // Mid-game
+    autoBuyBombChance: 3,   // Mid-game QoL
+    autoBuyBombRadius: 4,   // Late-mid, powerful
+    autoBuyRainbow: 4,      // Late game
+    autoBuyAutoMove: 4,     // Late game (active players don't need early)
+    autoBuyPrismatic: 5,    // Endgame luxury
+    autoBuyCelestial: 5     // Endgame luxury
+};
+
+export function getAutoBuyCost(property) {
+    return AUTO_BUY_COSTS[property] || 3;
+}
 
 function buyAutoBuy(property) {
-    if (!PlayerData[property] && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
-        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+    const cost = getAutoBuyCost(property);
+    if (!PlayerData[property] && PlayerData.prestigeCurrency >= cost) {
+        PlayerData.prestigeCurrency -= cost;
         PlayerData[property] = true;
         savePlayerData();
         return true;
@@ -148,3 +171,6 @@ export const buyAutoBuyCrystal = () => buyAutoBuy('autoBuyCrystal');
 export const buyAutoBuyRainbow = () => buyAutoBuy('autoBuyRainbow');
 export const buyAutoBuyPrismatic = () => buyAutoBuy('autoBuyPrismatic');
 export const buyAutoBuyCelestial = () => buyAutoBuy('autoBuyCelestial');
+
+// Export costs for UI
+export { AUTO_BUY_COSTS };
