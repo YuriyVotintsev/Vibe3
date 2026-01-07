@@ -153,6 +153,12 @@ export class UIManager {
         } else if (enhancement === ENHANCEMENT.CRYSTAL) {
             color = '#88ffff';
             fontSize = '22px';
+        } else if (enhancement === ENHANCEMENT.RAINBOW) {
+            color = '#ff88ff';
+            fontSize = '26px';
+        } else if (enhancement === ENHANCEMENT.PRISMATIC) {
+            color = '#ffff88';
+            fontSize = '30px';
         }
 
         const text = this.scene.add.text(x, y, `+${amount}💰`, {

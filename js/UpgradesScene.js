@@ -12,7 +12,11 @@ import {
     getGoldUpgradeCost,
     upgradeGold,
     getCrystalUpgradeCost,
-    upgradeCrystal
+    upgradeCrystal,
+    getRainbowUpgradeCost,
+    upgradeRainbow,
+    getPrismaticUpgradeCost,
+    upgradePrismatic
 } from './config.js';
 
 export class UpgradesScene extends Phaser.Scene {
@@ -153,10 +157,10 @@ export class UpgradesScene extends Phaser.Scene {
         y = this.createUpgradeRow(y, '🥈', 'Серебряный', () => {
             return `${PlayerData.silverChance}%`;
         }, () => {
-            const atMax = PlayerData.silverChance >= 30;
+            const atMax = PlayerData.silverChance >= 100;
             return atMax ? 'MAX' : `${getSilverUpgradeCost()}💰`;
         }, () => '+5%', () => {
-            const atMax = PlayerData.silverChance >= 30;
+            const atMax = PlayerData.silverChance >= 100;
             return !atMax && PlayerData.currency >= getSilverUpgradeCost();
         }, () => upgradeSilver());
 
@@ -164,10 +168,10 @@ export class UpgradesScene extends Phaser.Scene {
         y = this.createUpgradeRow(y, '🥇', 'Золотой', () => {
             return `${PlayerData.goldChance}%`;
         }, () => {
-            const atMax = PlayerData.goldChance >= 10;
+            const atMax = PlayerData.goldChance >= 100;
             return atMax ? 'MAX' : `${getGoldUpgradeCost()}💰`;
-        }, () => '+1%', () => {
-            const atMax = PlayerData.goldChance >= 10;
+        }, () => '+3%', () => {
+            const atMax = PlayerData.goldChance >= 100;
             return !atMax && PlayerData.currency >= getGoldUpgradeCost();
         }, () => upgradeGold());
 
@@ -175,12 +179,34 @@ export class UpgradesScene extends Phaser.Scene {
         y = this.createUpgradeRow(y, '💎', 'Кристальный', () => {
             return `${PlayerData.crystalChance}%`;
         }, () => {
-            const atMax = PlayerData.crystalChance >= 3;
+            const atMax = PlayerData.crystalChance >= 100;
             return atMax ? 'MAX' : `${getCrystalUpgradeCost()}💰`;
-        }, () => '+0.5%', () => {
-            const atMax = PlayerData.crystalChance >= 3;
+        }, () => '+2%', () => {
+            const atMax = PlayerData.crystalChance >= 100;
             return !atMax && PlayerData.currency >= getCrystalUpgradeCost();
         }, () => upgradeCrystal());
+
+        // Rainbow gem upgrade (x625)
+        y = this.createUpgradeRow(y, '🌈', 'Радужный', () => {
+            return `${PlayerData.rainbowChance}%`;
+        }, () => {
+            const atMax = PlayerData.rainbowChance >= 100;
+            return atMax ? 'MAX' : `${getRainbowUpgradeCost()}💰`;
+        }, () => '+2%', () => {
+            const atMax = PlayerData.rainbowChance >= 100;
+            return !atMax && PlayerData.currency >= getRainbowUpgradeCost();
+        }, () => upgradeRainbow());
+
+        // Prismatic gem upgrade (x3125)
+        y = this.createUpgradeRow(y, '⭐', 'Призматич.', () => {
+            return `${PlayerData.prismaticChance}%`;
+        }, () => {
+            const atMax = PlayerData.prismaticChance >= 100;
+            return atMax ? 'MAX' : `${getPrismaticUpgradeCost()}💰`;
+        }, () => '+1%', () => {
+            const atMax = PlayerData.prismaticChance >= 100;
+            return !atMax && PlayerData.currency >= getPrismaticUpgradeCost();
+        }, () => upgradePrismatic());
 
         return y - this.scrollTop + 20;
     }

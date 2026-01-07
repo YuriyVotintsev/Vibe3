@@ -118,7 +118,7 @@ export function createBombTexture(scene, cellSize) {
 }
 
 /**
- * Create enhancement overlay textures (silver, gold, crystal)
+ * Create enhancement overlay textures (silver, gold, crystal, rainbow, prismatic)
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {number} cellSize - Size of a cell
  */
@@ -131,8 +131,14 @@ export function createEnhancementTextures(scene, cellSize) {
     // Gold overlay - golden border with sparkles
     createGoldOverlay(scene, 'overlay_gold', size);
 
-    // Crystal overlay - rainbow/prismatic effect with stars
+    // Crystal overlay - cyan effect
     createCrystalOverlay(scene, 'overlay_crystal', size);
+
+    // Rainbow overlay - multicolor effect
+    createRainbowOverlay(scene, 'overlay_rainbow', size);
+
+    // Prismatic overlay - star/sparkle effect
+    createPrismaticOverlay(scene, 'overlay_prismatic', size);
 }
 
 /**
@@ -220,7 +226,63 @@ function createCrystalOverlay(scene, key, size) {
 }
 
 /**
- * Draw a simple star shape
+ * Create rainbow overlay - multicolor rounded square with gradient-like effect
+ */
+function createRainbowOverlay(scene, key, size) {
+    if (scene.textures.exists(key)) {
+        scene.textures.remove(key);
+    }
+
+    const graphics = scene.make.graphics({ x: 0, y: 0, add: false });
+    const squareSize = size * 0.4;
+    const offset = (size - squareSize) / 2;
+
+    // Shadow
+    graphics.fillStyle(0x000000, 0.4);
+    graphics.fillRoundedRect(offset + 2, offset + 2, squareSize, squareSize, 6);
+
+    // Main square - magenta/pink base
+    graphics.fillStyle(0xff00ff, 1);
+    graphics.fillRoundedRect(offset, offset, squareSize, squareSize, 6);
+
+    // Border - purple
+    graphics.lineStyle(2, 0x8800ff, 1);
+    graphics.strokeRoundedRect(offset, offset, squareSize, squareSize, 6);
+
+    graphics.generateTexture(key, size, size);
+    graphics.destroy();
+}
+
+/**
+ * Create prismatic overlay - golden star with sparkle effect
+ */
+function createPrismaticOverlay(scene, key, size) {
+    if (scene.textures.exists(key)) {
+        scene.textures.remove(key);
+    }
+
+    const graphics = scene.make.graphics({ x: 0, y: 0, add: false });
+    const cx = size / 2;
+    const cy = size / 2;
+
+    // Shadow
+    graphics.fillStyle(0x000000, 0.4);
+    drawStar(graphics, cx + 2, cy + 2, size * 0.25, size * 0.12, 5);
+
+    // Main star - bright yellow/white
+    graphics.fillStyle(0xffff88, 1);
+    drawStar(graphics, cx, cy, size * 0.25, size * 0.12, 5);
+
+    // Border star
+    graphics.lineStyle(2, 0xffaa00, 1);
+    drawStarStroke(graphics, cx, cy, size * 0.25, size * 0.12, 5);
+
+    graphics.generateTexture(key, size, size);
+    graphics.destroy();
+}
+
+/**
+ * Draw a simple star shape (filled)
  */
 function drawStar(graphics, cx, cy, outerRadius, innerRadius, points) {
     const step = Math.PI / points;
@@ -238,4 +300,25 @@ function drawStar(graphics, cx, cy, outerRadius, innerRadius, points) {
     }
     graphics.closePath();
     graphics.fillPath();
+}
+
+/**
+ * Draw a simple star shape (stroke only)
+ */
+function drawStarStroke(graphics, cx, cy, outerRadius, innerRadius, points) {
+    const step = Math.PI / points;
+    graphics.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+        const radius = i % 2 === 0 ? outerRadius : innerRadius;
+        const angle = i * step - Math.PI / 2;
+        const x = cx + Math.cos(angle) * radius;
+        const y = cy + Math.sin(angle) * radius;
+        if (i === 0) {
+            graphics.moveTo(x, y);
+        } else {
+            graphics.lineTo(x, y);
+        }
+    }
+    graphics.closePath();
+    graphics.strokePath();
 }

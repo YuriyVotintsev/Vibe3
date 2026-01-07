@@ -38,10 +38,12 @@ export const PlayerData = {
     autoMoveDelay: 5000,  // ms between auto-moves (starts at 5 seconds)
     bombChance: 10,       // % chance to spawn bomb on manual match (starts at 10%)
     bombRadius: 1,        // explosion radius (starts at 1)
-    // Enhanced gem spawn chances (in %)
-    silverChance: 5,      // chance for silver gem (x5)
-    goldChance: 1,        // chance for gold gem (x25)
-    crystalChance: 0      // chance for crystal gem (x125), starts at 0
+    // Enhanced gem spawn chances (in %) - CASCADING: each tier rolls from previous
+    silverChance: 5,      // chance for silver gem (x5) - from normal
+    goldChance: 1,        // chance for gold gem (x25) - from silver
+    crystalChance: 0,     // chance for crystal gem (x125) - from gold
+    rainbowChance: 0,     // chance for rainbow gem (x625) - from crystal
+    prismaticChance: 0    // chance for prismatic gem (x3125) - from rainbow
 };
 
 // Enhanced gem types and multipliers
@@ -49,50 +51,69 @@ export const ENHANCEMENT = {
     NONE: 'none',
     SILVER: 'silver',
     GOLD: 'gold',
-    CRYSTAL: 'crystal'
+    CRYSTAL: 'crystal',
+    RAINBOW: 'rainbow',
+    PRISMATIC: 'prismatic'
 };
 
 export const ENHANCEMENT_MULTIPLIERS = {
     [ENHANCEMENT.NONE]: 1,
     [ENHANCEMENT.SILVER]: 5,
     [ENHANCEMENT.GOLD]: 25,
-    [ENHANCEMENT.CRYSTAL]: 125
+    [ENHANCEMENT.CRYSTAL]: 125,
+    [ENHANCEMENT.RAINBOW]: 625,
+    [ENHANCEMENT.PRISMATIC]: 3125
 };
 
 export const ENHANCEMENT_NAMES = {
     [ENHANCEMENT.SILVER]: 'Серебряный',
     [ENHANCEMENT.GOLD]: 'Золотой',
-    [ENHANCEMENT.CRYSTAL]: 'Кристальный'
+    [ENHANCEMENT.CRYSTAL]: 'Кристальный',
+    [ENHANCEMENT.RAINBOW]: 'Радужный',
+    [ENHANCEMENT.PRISMATIC]: 'Призматический'
 };
 
-// Roll for gem enhancement when spawning
+// Roll for gem enhancement when spawning (CASCADING system)
+// Each tier can only upgrade from the previous tier
+// e.g., if silver=50%, gold=50%, actual gold chance = 25% (50% * 50%)
 export function rollEnhancement() {
-    const roll = Phaser.Math.Between(1, 100);
-    if (PlayerData.crystalChance > 0 && roll <= PlayerData.crystalChance) {
-        return ENHANCEMENT.CRYSTAL;
+    // Roll for silver (from normal gem)
+    if (Phaser.Math.Between(1, 100) > PlayerData.silverChance) {
+        return ENHANCEMENT.NONE;
     }
-    if (roll <= PlayerData.crystalChance + PlayerData.goldChance) {
-        return ENHANCEMENT.GOLD;
-    }
-    if (roll <= PlayerData.crystalChance + PlayerData.goldChance + PlayerData.silverChance) {
+    // Got silver! Roll for gold upgrade
+    if (Phaser.Math.Between(1, 100) > PlayerData.goldChance) {
         return ENHANCEMENT.SILVER;
     }
-    return ENHANCEMENT.NONE;
+    // Got gold! Roll for crystal upgrade
+    if (PlayerData.crystalChance <= 0 || Phaser.Math.Between(1, 100) > PlayerData.crystalChance) {
+        return ENHANCEMENT.GOLD;
+    }
+    // Got crystal! Roll for rainbow upgrade
+    if (PlayerData.rainbowChance <= 0 || Phaser.Math.Between(1, 100) > PlayerData.rainbowChance) {
+        return ENHANCEMENT.CRYSTAL;
+    }
+    // Got rainbow! Roll for prismatic upgrade
+    if (PlayerData.prismaticChance <= 0 || Phaser.Math.Between(1, 100) > PlayerData.prismaticChance) {
+        return ENHANCEMENT.RAINBOW;
+    }
+    // Got prismatic!
+    return ENHANCEMENT.PRISMATIC;
 }
 
-// Silver chance upgrade (5% -> 10% -> 15% ... up to 30%)
+// Silver chance upgrade (5% -> 100%, +5% per upgrade)
 export function getSilverLevel() {
     return (PlayerData.silverChance - 5) / 5;
 }
 
 export function getSilverUpgradeCost() {
     const level = getSilverLevel();
-    return Math.floor(150 * Math.pow(1.6, level) * GameSettings.priceMultiplier);
+    return Math.floor(50 * Math.pow(1.25, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeSilver() {
     const cost = getSilverUpgradeCost();
-    if (PlayerData.currency >= cost && PlayerData.silverChance < 30) {
+    if (PlayerData.currency >= cost && PlayerData.silverChance < 100) {
         PlayerData.currency -= cost;
         PlayerData.silverChance += 5;
         savePlayerData();
@@ -101,42 +122,84 @@ export function upgradeSilver() {
     return false;
 }
 
-// Gold chance upgrade (1% -> 2% -> 3% ... up to 10%)
+// Gold chance upgrade (1% -> 100%, +3% per upgrade)
 export function getGoldLevel() {
-    return PlayerData.goldChance - 1;
+    return Math.floor((PlayerData.goldChance - 1) / 3);
 }
 
 export function getGoldUpgradeCost() {
     const level = getGoldLevel();
-    return Math.floor(500 * Math.pow(1.8, level) * GameSettings.priceMultiplier);
+    return Math.floor(100 * Math.pow(1.3, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeGold() {
     const cost = getGoldUpgradeCost();
-    if (PlayerData.currency >= cost && PlayerData.goldChance < 10) {
+    if (PlayerData.currency >= cost && PlayerData.goldChance < 100) {
         PlayerData.currency -= cost;
-        PlayerData.goldChance += 1;
+        PlayerData.goldChance = Math.min(100, PlayerData.goldChance + 3);
         savePlayerData();
         return true;
     }
     return false;
 }
 
-// Crystal chance upgrade (0% -> 0.5% -> 1% ... up to 3%)
+// Crystal chance upgrade (0% -> 100%, +2% per upgrade)
 export function getCrystalLevel() {
-    return PlayerData.crystalChance * 2; // 0, 1, 2, 3, 4, 5, 6
+    return Math.floor(PlayerData.crystalChance / 2);
 }
 
 export function getCrystalUpgradeCost() {
     const level = getCrystalLevel();
-    return Math.floor(2000 * Math.pow(2, level) * GameSettings.priceMultiplier);
+    return Math.floor(200 * Math.pow(1.35, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeCrystal() {
     const cost = getCrystalUpgradeCost();
-    if (PlayerData.currency >= cost && PlayerData.crystalChance < 3) {
+    if (PlayerData.currency >= cost && PlayerData.crystalChance < 100) {
         PlayerData.currency -= cost;
-        PlayerData.crystalChance += 0.5;
+        PlayerData.crystalChance = Math.min(100, PlayerData.crystalChance + 2);
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Rainbow chance upgrade (0% -> 100%, +2% per upgrade)
+export function getRainbowLevel() {
+    return Math.floor(PlayerData.rainbowChance / 2);
+}
+
+export function getRainbowUpgradeCost() {
+    const level = getRainbowLevel();
+    return Math.floor(400 * Math.pow(1.4, level) * GameSettings.priceMultiplier);
+}
+
+export function upgradeRainbow() {
+    const cost = getRainbowUpgradeCost();
+    if (PlayerData.currency >= cost && PlayerData.rainbowChance < 100) {
+        PlayerData.currency -= cost;
+        PlayerData.rainbowChance = Math.min(100, PlayerData.rainbowChance + 2);
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Prismatic chance upgrade (0% -> 100%, +1% per upgrade)
+export function getPrismaticLevel() {
+    return PlayerData.prismaticChance;
+}
+
+export function getPrismaticUpgradeCost() {
+    const level = getPrismaticLevel();
+    return Math.floor(800 * Math.pow(1.45, level) * GameSettings.priceMultiplier);
+}
+
+export function upgradePrismatic() {
+    const cost = getPrismaticUpgradeCost();
+    if (PlayerData.currency >= cost && PlayerData.prismaticChance < 100) {
+        PlayerData.currency -= cost;
+        PlayerData.prismaticChance = Math.min(100, PlayerData.prismaticChance + 1);
         savePlayerData();
         return true;
     }
@@ -239,6 +302,8 @@ export function loadPlayerData() {
     if (PlayerData.silverChance === undefined) PlayerData.silverChance = 5;
     if (PlayerData.goldChance === undefined) PlayerData.goldChance = 1;
     if (PlayerData.crystalChance === undefined) PlayerData.crystalChance = 0;
+    if (PlayerData.rainbowChance === undefined) PlayerData.rainbowChance = 0;
+    if (PlayerData.prismaticChance === undefined) PlayerData.prismaticChance = 0;
 }
 
 export function resetPlayerData() {
@@ -251,6 +316,8 @@ export function resetPlayerData() {
     PlayerData.silverChance = 5;
     PlayerData.goldChance = 1;
     PlayerData.crystalChance = 0;
+    PlayerData.rainbowChance = 0;
+    PlayerData.prismaticChance = 0;
     savePlayerData();
 }
 
@@ -279,4 +346,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.63-js';
+export const JS_VERSION = '0.0.64-js';
