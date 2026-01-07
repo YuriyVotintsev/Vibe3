@@ -7,6 +7,8 @@ import {
     upgradeBombChance,
     getBombRadiusUpgradeCost,
     upgradeBombRadius,
+    getBronzeUpgradeCost,
+    upgradeBronze,
     getSilverUpgradeCost,
     upgradeSilver,
     getGoldUpgradeCost,
@@ -16,7 +18,11 @@ import {
     getRainbowUpgradeCost,
     upgradeRainbow,
     getPrismaticUpgradeCost,
-    upgradePrismatic
+    upgradePrismatic,
+    getCelestialUpgradeCost,
+    upgradeCelestial,
+    isTierUnlocked,
+    ENHANCEMENT
 } from './config.js';
 
 export class UpgradesScene extends Phaser.Scene {
@@ -153,62 +159,141 @@ export class UpgradesScene extends Phaser.Scene {
         this.scrollContainer.add(separator);
         y += 25;
 
-        // Silver gem upgrade (x5)
-        y = this.createUpgradeRow(y, '🥈', 'Серебряный', () => {
-            return `${PlayerData.silverChance}%`;
-        }, () => {
-            const atMax = PlayerData.silverChance >= 100;
-            return atMax ? 'MAX' : `${getSilverUpgradeCost()}💰`;
-        }, () => '+5%', () => {
-            const atMax = PlayerData.silverChance >= 100;
-            return !atMax && PlayerData.currency >= getSilverUpgradeCost();
-        }, () => upgradeSilver());
+        // Bronze gem upgrade (x2) - tier 0
+        if (isTierUnlocked(ENHANCEMENT.BRONZE)) {
+            y = this.createUpgradeRow(y, '🥉', 'Бронзовый', () => {
+                return `${PlayerData.bronzeChance}%`;
+            }, () => {
+                const atMax = PlayerData.bronzeChance >= 100;
+                return atMax ? 'MAX' : `${getBronzeUpgradeCost()}💰`;
+            }, () => '+5%', () => {
+                const atMax = PlayerData.bronzeChance >= 100;
+                return !atMax && PlayerData.currency >= getBronzeUpgradeCost();
+            }, () => upgradeBronze());
+        }
 
-        // Gold gem upgrade (x25)
-        y = this.createUpgradeRow(y, '🥇', 'Золотой', () => {
-            return `${PlayerData.goldChance}%`;
-        }, () => {
-            const atMax = PlayerData.goldChance >= 100;
-            return atMax ? 'MAX' : `${getGoldUpgradeCost()}💰`;
-        }, () => '+4%', () => {
-            const atMax = PlayerData.goldChance >= 100;
-            return !atMax && PlayerData.currency >= getGoldUpgradeCost();
-        }, () => upgradeGold());
+        // Silver gem upgrade (x5) - tier 1
+        if (isTierUnlocked(ENHANCEMENT.SILVER)) {
+            y = this.createUpgradeRow(y, '🥈', 'Серебряный', () => {
+                return `${PlayerData.silverChance}%`;
+            }, () => {
+                const atMax = PlayerData.silverChance >= 100;
+                return atMax ? 'MAX' : `${getSilverUpgradeCost()}💰`;
+            }, () => '+4%', () => {
+                const atMax = PlayerData.silverChance >= 100;
+                return !atMax && PlayerData.currency >= getSilverUpgradeCost();
+            }, () => upgradeSilver());
+        }
 
-        // Crystal gem upgrade (x125)
-        y = this.createUpgradeRow(y, '💎', 'Кристальный', () => {
-            return `${PlayerData.crystalChance}%`;
-        }, () => {
-            const atMax = PlayerData.crystalChance >= 100;
-            return atMax ? 'MAX' : `${getCrystalUpgradeCost()}💰`;
-        }, () => '+3%', () => {
-            const atMax = PlayerData.crystalChance >= 100;
-            return !atMax && PlayerData.currency >= getCrystalUpgradeCost();
-        }, () => upgradeCrystal());
+        // Gold gem upgrade (x15) - tier 2
+        if (isTierUnlocked(ENHANCEMENT.GOLD)) {
+            y = this.createUpgradeRow(y, '🥇', 'Золотой', () => {
+                return `${PlayerData.goldChance}%`;
+            }, () => {
+                const atMax = PlayerData.goldChance >= 100;
+                return atMax ? 'MAX' : `${getGoldUpgradeCost()}💰`;
+            }, () => '+3%', () => {
+                const atMax = PlayerData.goldChance >= 100;
+                return !atMax && PlayerData.currency >= getGoldUpgradeCost();
+            }, () => upgradeGold());
+        }
 
-        // Rainbow gem upgrade (x625)
-        y = this.createUpgradeRow(y, '🌈', 'Радужный', () => {
-            return `${PlayerData.rainbowChance}%`;
-        }, () => {
-            const atMax = PlayerData.rainbowChance >= 100;
-            return atMax ? 'MAX' : `${getRainbowUpgradeCost()}💰`;
-        }, () => '+2%', () => {
-            const atMax = PlayerData.rainbowChance >= 100;
-            return !atMax && PlayerData.currency >= getRainbowUpgradeCost();
-        }, () => upgradeRainbow());
+        // Crystal gem upgrade (x50) - tier 3
+        if (isTierUnlocked(ENHANCEMENT.CRYSTAL)) {
+            y = this.createUpgradeRow(y, '💎', 'Кристальный', () => {
+                return `${PlayerData.crystalChance}%`;
+            }, () => {
+                const atMax = PlayerData.crystalChance >= 100;
+                return atMax ? 'MAX' : `${getCrystalUpgradeCost()}💰`;
+            }, () => '+2%', () => {
+                const atMax = PlayerData.crystalChance >= 100;
+                return !atMax && PlayerData.currency >= getCrystalUpgradeCost();
+            }, () => upgradeCrystal());
+        }
 
-        // Prismatic gem upgrade (x3125)
-        y = this.createUpgradeRow(y, '⭐', 'Призматич.', () => {
-            return `${PlayerData.prismaticChance}%`;
-        }, () => {
-            const atMax = PlayerData.prismaticChance >= 100;
-            return atMax ? 'MAX' : `${getPrismaticUpgradeCost()}💰`;
-        }, () => '+1%', () => {
-            const atMax = PlayerData.prismaticChance >= 100;
-            return !atMax && PlayerData.currency >= getPrismaticUpgradeCost();
-        }, () => upgradePrismatic());
+        // Rainbow gem upgrade (x200) - tier 4
+        if (isTierUnlocked(ENHANCEMENT.RAINBOW)) {
+            y = this.createUpgradeRow(y, '🌈', 'Радужный', () => {
+                return `${PlayerData.rainbowChance}%`;
+            }, () => {
+                const atMax = PlayerData.rainbowChance >= 100;
+                return atMax ? 'MAX' : `${getRainbowUpgradeCost()}💰`;
+            }, () => '+1%', () => {
+                const atMax = PlayerData.rainbowChance >= 100;
+                return !atMax && PlayerData.currency >= getRainbowUpgradeCost();
+            }, () => upgradeRainbow());
+        }
+
+        // Prismatic gem upgrade (x1000) - tier 5
+        if (isTierUnlocked(ENHANCEMENT.PRISMATIC)) {
+            y = this.createUpgradeRow(y, '⭐', 'Призматич.', () => {
+                return `${PlayerData.prismaticChance}%`;
+            }, () => {
+                const atMax = PlayerData.prismaticChance >= 100;
+                return atMax ? 'MAX' : `${getPrismaticUpgradeCost()}💰`;
+            }, () => '+1%', () => {
+                const atMax = PlayerData.prismaticChance >= 100;
+                return !atMax && PlayerData.currency >= getPrismaticUpgradeCost();
+            }, () => upgradePrismatic());
+        }
+
+        // Celestial gem upgrade (x5000) - tier 6
+        if (isTierUnlocked(ENHANCEMENT.CELESTIAL)) {
+            y = this.createUpgradeRow(y, '💠', 'Небесный', () => {
+                return `${PlayerData.celestialChance}%`;
+            }, () => {
+                const atMax = PlayerData.celestialChance >= 100;
+                return atMax ? 'MAX' : `${getCelestialUpgradeCost()}💰`;
+            }, () => '+1%', () => {
+                const atMax = PlayerData.celestialChance >= 100;
+                return !atMax && PlayerData.currency >= getCelestialUpgradeCost();
+            }, () => upgradeCelestial());
+        }
+
+        // Separator - Prestige
+        y += 15;
+        const separator2 = this.add.text(cx, y, '— ПРЕСТИЖ —', {
+            fontSize: '14px', color: '#f1c40f', fontStyle: 'bold'
+        }).setOrigin(0.5);
+        this.scrollContainer.add(separator2);
+        y += 25;
+
+        // Prestige button
+        y = this.createPrestigeButton(y);
 
         return y - this.scrollTop + 20;
+    }
+
+    createPrestigeButton(y) {
+        const W = this.cameras.main.width;
+        const cx = W / 2;
+        const btnWidth = W - 60;
+        const btnHeight = 50;
+
+        const btn = this.add.graphics();
+        btn.fillStyle(0xf1c40f, 1);
+        btn.fillRoundedRect(cx - btnWidth / 2, y, btnWidth, btnHeight, 12);
+        this.scrollContainer.add(btn);
+
+        const hitArea = this.add.rectangle(cx, y + btnHeight / 2, btnWidth, btnHeight, 0x000000, 0)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerover', () => {
+                btn.clear().fillStyle(0xf39c12, 1).fillRoundedRect(cx - btnWidth / 2, y, btnWidth, btnHeight, 12);
+            })
+            .on('pointerout', () => {
+                btn.clear().fillStyle(0xf1c40f, 1).fillRoundedRect(cx - btnWidth / 2, y, btnWidth, btnHeight, 12);
+            })
+            .on('pointerdown', () => {
+                this.scene.launch('PrestigeScene');
+            });
+        this.scrollContainer.add(hitArea);
+
+        const label = this.add.text(cx, y + btnHeight / 2, '👑 ПРЕСТИЖ', {
+            fontSize: '18px', color: '#000000', fontStyle: 'bold'
+        }).setOrigin(0.5);
+        this.scrollContainer.add(label);
+
+        return y + btnHeight + 10;
     }
 
     createUpgradeRow(y, icon, name, getValue, getCost, getAction, canAfford, onBuy) {

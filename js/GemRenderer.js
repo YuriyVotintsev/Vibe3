@@ -118,12 +118,15 @@ export function createBombTexture(scene, cellSize) {
 }
 
 /**
- * Create enhancement overlay textures (silver, gold, crystal, rainbow, prismatic)
+ * Create enhancement overlay textures (bronze, silver, gold, crystal, rainbow, prismatic, celestial)
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {number} cellSize - Size of a cell
  */
 export function createEnhancementTextures(scene, cellSize) {
     const size = cellSize - 8;
+
+    // Bronze overlay - copper/brown color
+    createBronzeOverlay(scene, 'overlay_bronze', size);
 
     // Silver overlay - visible shine with border
     createSilverOverlay(scene, 'overlay_silver', size);
@@ -139,6 +142,37 @@ export function createEnhancementTextures(scene, cellSize) {
 
     // Prismatic overlay - star/sparkle effect
     createPrismaticOverlay(scene, 'overlay_prismatic', size);
+
+    // Celestial overlay - divine blue/white glow
+    createCelestialOverlay(scene, 'overlay_celestial', size);
+}
+
+/**
+ * Create bronze overlay - copper/brown rounded square with border and shadow
+ */
+function createBronzeOverlay(scene, key, size) {
+    if (scene.textures.exists(key)) {
+        scene.textures.remove(key);
+    }
+
+    const graphics = scene.make.graphics({ x: 0, y: 0, add: false });
+    const squareSize = size * 0.4;
+    const offset = (size - squareSize) / 2;
+
+    // Shadow
+    graphics.fillStyle(0x000000, 0.4);
+    graphics.fillRoundedRect(offset + 2, offset + 2, squareSize, squareSize, 6);
+
+    // Main square - bronze/copper color
+    graphics.fillStyle(0xcd7f32, 1);
+    graphics.fillRoundedRect(offset, offset, squareSize, squareSize, 6);
+
+    // Border - darker bronze
+    graphics.lineStyle(2, 0x8b4513, 1);
+    graphics.strokeRoundedRect(offset, offset, squareSize, squareSize, 6);
+
+    graphics.generateTexture(key, size, size);
+    graphics.destroy();
 }
 
 /**
@@ -319,6 +353,61 @@ function drawStarStroke(graphics, cx, cy, outerRadius, innerRadius, points) {
             graphics.lineTo(x, y);
         }
     }
+    graphics.closePath();
+    graphics.strokePath();
+}
+
+/**
+ * Create celestial overlay - divine blue/white diamond shape
+ */
+function createCelestialOverlay(scene, key, size) {
+    if (scene.textures.exists(key)) {
+        scene.textures.remove(key);
+    }
+
+    const graphics = scene.make.graphics({ x: 0, y: 0, add: false });
+    const cx = size / 2;
+    const cy = size / 2;
+    const diamondSize = size * 0.22;
+
+    // Shadow
+    graphics.fillStyle(0x000000, 0.4);
+    drawDiamond(graphics, cx + 2, cy + 2, diamondSize);
+
+    // Main diamond - bright white/blue
+    graphics.fillStyle(0xaaddff, 1);
+    drawDiamond(graphics, cx, cy, diamondSize);
+
+    // Border - celestial blue
+    graphics.lineStyle(2, 0x4488ff, 1);
+    drawDiamondStroke(graphics, cx, cy, diamondSize);
+
+    graphics.generateTexture(key, size, size);
+    graphics.destroy();
+}
+
+/**
+ * Draw a diamond shape (filled)
+ */
+function drawDiamond(graphics, cx, cy, size) {
+    graphics.beginPath();
+    graphics.moveTo(cx, cy - size);
+    graphics.lineTo(cx + size, cy);
+    graphics.lineTo(cx, cy + size);
+    graphics.lineTo(cx - size, cy);
+    graphics.closePath();
+    graphics.fillPath();
+}
+
+/**
+ * Draw a diamond shape (stroke only)
+ */
+function drawDiamondStroke(graphics, cx, cy, size) {
+    graphics.beginPath();
+    graphics.moveTo(cx, cy - size);
+    graphics.lineTo(cx + size, cy);
+    graphics.lineTo(cx, cy + size);
+    graphics.lineTo(cx - size, cy);
     graphics.closePath();
     graphics.strokePath();
 }

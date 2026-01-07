@@ -144,7 +144,10 @@ export class UIManager {
         // Color based on enhancement
         let color = '#ffffff';
         let fontSize = '14px';
-        if (enhancement === ENHANCEMENT.SILVER) {
+        if (enhancement === ENHANCEMENT.BRONZE) {
+            color = '#cd7f32';
+            fontSize = '15px';
+        } else if (enhancement === ENHANCEMENT.SILVER) {
             color = '#c0c0c0';
             fontSize = '16px';
         } else if (enhancement === ENHANCEMENT.GOLD) {
@@ -159,6 +162,9 @@ export class UIManager {
         } else if (enhancement === ENHANCEMENT.PRISMATIC) {
             color = '#ffff88';
             fontSize = '30px';
+        } else if (enhancement === ENHANCEMENT.CELESTIAL) {
+            color = '#aaddff';
+            fontSize = '34px';
         }
 
         const text = this.scene.add.text(x, y, `+${amount}💰`, {

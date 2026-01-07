@@ -10,7 +10,8 @@ import {
     ALL_GEM_COLORS,
     ENHANCEMENT,
     ENHANCEMENT_MULTIPLIERS,
-    rollEnhancement
+    rollEnhancement,
+    getMoneyMultiplier
 } from './config.js';
 import { getCellSize } from './utils.js';
 import {
@@ -315,13 +316,14 @@ export class MainScene extends Phaser.Scene {
         const matches = this.findAllMatches();
 
         if (matches.length > 0) {
-            // Calculate currency with enhancement multipliers and show floating text
+            // Calculate currency with enhancement multipliers and prestige multiplier
+            const moneyMult = getMoneyMultiplier();
             matches.forEach(({ row, col }) => {
                 const gem = this.gems[row]?.[col];
                 if (gem) {
                     const enhancement = gem.getData('enhancement') || ENHANCEMENT.NONE;
                     const enhMultiplier = ENHANCEMENT_MULTIPLIERS[enhancement] || 1;
-                    const gemCurrency = enhMultiplier;
+                    const gemCurrency = enhMultiplier * moneyMult;
 
                     PlayerData.currency += gemCurrency;
                     PlayerData.totalEarned += gemCurrency;
@@ -442,12 +444,13 @@ export class MainScene extends Phaser.Scene {
                         continue;
                     }
 
-                    // Award currency for gems (not bombs)
+                    // Award currency for gems (not bombs) with prestige multiplier
                     const enhancement = gem.getData('enhancement') || ENHANCEMENT.NONE;
                     const enhMultiplier = ENHANCEMENT_MULTIPLIERS[enhancement] || 1;
-                    PlayerData.currency += enhMultiplier;
-                    PlayerData.totalEarned += enhMultiplier;
-                    this.uiManager.showFloatingCurrency(gem.x, gem.y, enhMultiplier, enhancement);
+                    const gemCurrency = enhMultiplier * getMoneyMultiplier();
+                    PlayerData.currency += gemCurrency;
+                    PlayerData.totalEarned += gemCurrency;
+                    this.uiManager.showFloatingCurrency(gem.x, gem.y, gemCurrency, enhancement);
 
                     // Destroy gem with effect
                     gem.setData('state', GEM_STATE.MATCHED);
