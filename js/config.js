@@ -101,14 +101,14 @@ export function rollEnhancement() {
     return ENHANCEMENT.PRISMATIC;
 }
 
-// Silver chance upgrade (5% -> 100%, +5% per upgrade)
+// Silver chance upgrade (5% -> 100%, +5% per upgrade = 19 upgrades)
 export function getSilverLevel() {
     return (PlayerData.silverChance - 5) / 5;
 }
 
 export function getSilverUpgradeCost() {
     const level = getSilverLevel();
-    return Math.floor(30 * Math.pow(1.12, level) * GameSettings.priceMultiplier);
+    return Math.floor(50 * Math.pow(1.10, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeSilver() {
@@ -122,56 +122,56 @@ export function upgradeSilver() {
     return false;
 }
 
-// Gold chance upgrade (1% -> 100%, +3% per upgrade)
+// Gold chance upgrade (1% -> 100%, +4% per upgrade = 25 upgrades)
 export function getGoldLevel() {
-    return Math.floor((PlayerData.goldChance - 1) / 3);
+    return Math.floor((PlayerData.goldChance - 1) / 4);
 }
 
 export function getGoldUpgradeCost() {
     const level = getGoldLevel();
-    return Math.floor(50 * Math.pow(1.15, level) * GameSettings.priceMultiplier);
+    return Math.floor(50 * Math.pow(1.10, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeGold() {
     const cost = getGoldUpgradeCost();
     if (PlayerData.currency >= cost && PlayerData.goldChance < 100) {
         PlayerData.currency -= cost;
-        PlayerData.goldChance = Math.min(100, PlayerData.goldChance + 3);
+        PlayerData.goldChance = Math.min(100, PlayerData.goldChance + 4);
         savePlayerData();
         return true;
     }
     return false;
 }
 
-// Crystal chance upgrade (0% -> 100%, +2% per upgrade)
+// Crystal chance upgrade (0% -> 100%, +3% per upgrade = 34 upgrades)
 export function getCrystalLevel() {
-    return Math.floor(PlayerData.crystalChance / 2);
+    return Math.floor(PlayerData.crystalChance / 3);
 }
 
 export function getCrystalUpgradeCost() {
     const level = getCrystalLevel();
-    return Math.floor(80 * Math.pow(1.18, level) * GameSettings.priceMultiplier);
+    return Math.floor(50 * Math.pow(1.10, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeCrystal() {
     const cost = getCrystalUpgradeCost();
     if (PlayerData.currency >= cost && PlayerData.crystalChance < 100) {
         PlayerData.currency -= cost;
-        PlayerData.crystalChance = Math.min(100, PlayerData.crystalChance + 2);
+        PlayerData.crystalChance = Math.min(100, PlayerData.crystalChance + 3);
         savePlayerData();
         return true;
     }
     return false;
 }
 
-// Rainbow chance upgrade (0% -> 100%, +2% per upgrade)
+// Rainbow chance upgrade (0% -> 100%, +2% per upgrade = 50 upgrades)
 export function getRainbowLevel() {
     return Math.floor(PlayerData.rainbowChance / 2);
 }
 
 export function getRainbowUpgradeCost() {
     const level = getRainbowLevel();
-    return Math.floor(120 * Math.pow(1.2, level) * GameSettings.priceMultiplier);
+    return Math.floor(50 * Math.pow(1.10, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeRainbow() {
@@ -185,14 +185,14 @@ export function upgradeRainbow() {
     return false;
 }
 
-// Prismatic chance upgrade (0% -> 100%, +1% per upgrade)
+// Prismatic chance upgrade (0% -> 100%, +1% per upgrade = 100 upgrades)
 export function getPrismaticLevel() {
     return PlayerData.prismaticChance;
 }
 
 export function getPrismaticUpgradeCost() {
     const level = getPrismaticLevel();
-    return Math.floor(200 * Math.pow(1.22, level) * GameSettings.priceMultiplier);
+    return Math.floor(50 * Math.pow(1.10, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradePrismatic() {
@@ -346,4 +346,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.65-js';
+export const JS_VERSION = '0.0.66-js';

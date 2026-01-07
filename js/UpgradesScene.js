@@ -170,7 +170,7 @@ export class UpgradesScene extends Phaser.Scene {
         }, () => {
             const atMax = PlayerData.goldChance >= 100;
             return atMax ? 'MAX' : `${getGoldUpgradeCost()}💰`;
-        }, () => '+3%', () => {
+        }, () => '+4%', () => {
             const atMax = PlayerData.goldChance >= 100;
             return !atMax && PlayerData.currency >= getGoldUpgradeCost();
         }, () => upgradeGold());
@@ -181,7 +181,7 @@ export class UpgradesScene extends Phaser.Scene {
         }, () => {
             const atMax = PlayerData.crystalChance >= 100;
             return atMax ? 'MAX' : `${getCrystalUpgradeCost()}💰`;
-        }, () => '+2%', () => {
+        }, () => '+3%', () => {
             const atMax = PlayerData.crystalChance >= 100;
             return !atMax && PlayerData.currency >= getCrystalUpgradeCost();
         }, () => upgradeCrystal());
