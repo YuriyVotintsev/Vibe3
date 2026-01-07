@@ -393,20 +393,20 @@ export function getColorCount() {
 }
 
 // Calculate how many prestige coins you can get from a currency amount
-// Coins require: 1st=500, 2nd=1000, 3rd=1500... Nth=N*500
-// Total for N coins = 500 * N * (N+1) / 2
+// Coins require: 1st=10K, 2nd=20K, 3rd=30K... Nth=N*10K
+// Total for N coins = 10000 * N * (N+1) / 2
 export function getPrestigeCoinsFromCurrency(currency) {
-    // Solve: 500 * N * (N+1) / 2 <= currency
-    // N^2 + N - currency/250 <= 0
-    // N = floor((-1 + sqrt(1 + currency/62.5)) / 2)
-    if (currency < 500) return 0;
-    const n = Math.floor((-1 + Math.sqrt(1 + currency / 62.5)) / 2);
+    // Solve: 10000 * N * (N+1) / 2 <= currency
+    // N^2 + N - currency/5000 <= 0
+    // N = floor((-1 + sqrt(1 + currency/1250)) / 2)
+    if (currency < 10000) return 0;
+    const n = Math.floor((-1 + Math.sqrt(1 + currency / 1250)) / 2);
     return Math.max(0, n);
 }
 
 // Get total currency required for N prestige coins
 export function getCurrencyForCoins(n) {
-    return 500 * n * (n + 1) / 2;
+    return 10000 * n * (n + 1) / 2;
 }
 
 // Get currency needed for the next prestige coin from current amount
@@ -595,4 +595,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.85-js';
+export const JS_VERSION = '0.0.86-js';
