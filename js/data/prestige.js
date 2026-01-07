@@ -82,7 +82,7 @@ export function performPrestige() {
 const PRESTIGE_UPGRADE_CONFIGS = {
     moneyMult: {
         property: 'prestigeMoneyMult',
-        getCost: () => (PlayerData.prestigeMoneyMult + 1) * 2,
+        getCost: () => PlayerData.prestigeMoneyMult + 1,  // 1, 2, 3, 4...
         maxLevel: Infinity
     },
     tiers: {
