@@ -1,4 +1,4 @@
-// PrestigeScene.js - Prestige menu scene (mobile-friendly redesign)
+// PrestigeScene.js - Prestige menu scene (mobile-friendly, v2)
 
 import {
     PlayerData,
@@ -16,7 +16,7 @@ import { Button } from './ui/Button.js';
 export class PrestigeScene extends Phaser.Scene {
     constructor() {
         super({ key: 'PrestigeScene' });
-        this.currentTab = 0; // 0 = upgrades, 1 = auto-buy
+        this.currentTab = 0;
     }
 
     create() {
@@ -29,25 +29,25 @@ export class PrestigeScene extends Phaser.Scene {
         this.add.rectangle(cx, H / 2, W, H, COLORS.bgOverlay, 0.92);
 
         // Main panel
-        const panelTop = 15;
-        const panelHeight = H - 30;
-
         const panel = this.add.graphics();
         panel.fillStyle(COLORS.bgPanel, 1);
-        panel.fillRoundedRect(padding, panelTop, W - padding * 2, panelHeight, RADIUS['2xl']);
+        panel.fillRoundedRect(padding, 15, W - padding * 2, H - 30, RADIUS['2xl']);
         panel.lineStyle(2, COLORS.warning, 0.8);
-        panel.strokeRoundedRect(padding, panelTop, W - padding * 2, panelHeight, RADIUS['2xl']);
+        panel.strokeRoundedRect(padding, 15, W - padding * 2, H - 30, RADIUS['2xl']);
 
-        // === HEADER SECTION ===
+        // === HEADER: Title + Close ===
         this.createHeader(W, padding);
 
-        // === PRESTIGE INFO SECTION ===
+        // === COINS SECTION (most important!) ===
+        this.createCoinsSection(W, cx);
+
+        // === PRESTIGE BUTTON + PROGRESS ===
         this.createPrestigeSection(W, cx);
 
         // === TABS ===
         this.createTabs(W, padding);
 
-        // === CONTENT AREA ===
+        // === CONTENT ===
         if (this.currentTab === 0) {
             this.createUpgradesTab(W, padding);
         } else {
@@ -57,94 +57,105 @@ export class PrestigeScene extends Phaser.Scene {
         // === CLOSE BUTTON ===
         this.createCloseButton(W, H, padding);
 
-        // Track currency for live updates
         this.lastCurrency = PlayerData.currency;
     }
 
     createHeader(W, padding) {
-        const headerY = 35;
-
-        // Title
-        this.add.text(padding + 15, headerY, '👑 ПРЕСТИЖ', {
+        // Title left
+        this.add.text(padding + 15, 38, '👑 ПРЕСТИЖ', {
             fontSize: FONT_SIZE['3xl'],
             fontFamily: 'Arial Black',
             color: COLORS.text.gold
         }).setOrigin(0, 0.5);
 
-        // Close X button in corner
-        const closeX = this.add.text(W - padding - 15, headerY, '✕', {
+        // Close X button
+        const closeX = this.add.text(W - padding - 18, 38, '✕', {
             fontSize: FONT_SIZE['3xl'],
-            color: COLORS.text.muted
+            color: COLORS.text.muted,
+            fontStyle: 'bold'
         }).setOrigin(1, 0.5).setInteractive({ useHandCursor: true });
 
-        closeX.on('pointerover', () => closeX.setColor(COLORS.text.white));
+        closeX.on('pointerover', () => closeX.setColor('#ffffff'));
         closeX.on('pointerout', () => closeX.setColor(COLORS.text.muted));
         closeX.on('pointerdown', () => this.scene.stop());
+    }
 
-        // Coins display right side
+    createCoinsSection(W, cx) {
+        const y = 75;
         const potential = getPrestigeCoinsFromCurrency(PlayerData.currency);
-        const coinsText = potential > 0
-            ? `${PlayerData.prestigeCurrency} (+${potential})`
-            : `${PlayerData.prestigeCurrency}`;
+        const multiplier = getMoneyMultiplier();
 
-        this.add.text(W - padding - 50, headerY, coinsText, {
-            fontSize: FONT_SIZE['2xl'],
-            color: COLORS.text.purple,
+        // Background card for coins
+        const cardBg = this.add.graphics();
+        cardBg.fillStyle(0x2a1a4a, 1); // dark purple
+        cardBg.fillRoundedRect(25, y - 5, W - 50, 60, RADIUS.lg);
+        cardBg.lineStyle(2, 0x9b59b6, 0.6);
+        cardBg.strokeRoundedRect(25, y - 5, W - 50, 60, RADIUS.lg);
+
+        // Current coins - BIG
+        this.add.text(cx - 80, y + 12, '👑', { fontSize: '36px' }).setOrigin(0.5);
+
+        this.add.text(cx - 40, y + 12, `${PlayerData.prestigeCurrency}`, {
+            fontSize: FONT_SIZE['4xl'],
+            color: '#e056fd', // bright purple
+            fontStyle: 'bold'
+        }).setOrigin(0, 0.5);
+
+        // Potential gain - highlighted
+        if (potential > 0) {
+            this.add.text(cx + 60, y + 12, `+${potential}`, {
+                fontSize: FONT_SIZE['3xl'],
+                color: '#55efc4', // bright green
+                fontStyle: 'bold'
+            }).setOrigin(0, 0.5);
+        }
+
+        // Multiplier - smaller, bottom right of card
+        this.add.text(W - 35, y + 40, `x${multiplier}`, {
+            fontSize: FONT_SIZE.xl,
+            color: COLORS.text.gold,
             fontStyle: 'bold'
         }).setOrigin(1, 0.5);
     }
 
     createPrestigeSection(W, cx) {
-        const sectionY = 70;
         const potential = getPrestigeCoinsFromCurrency(PlayerData.currency);
         const progress = getProgressToNextCoin();
-        const multiplier = getMoneyMultiplier();
-
-        // Multiplier badge
-        const multiBg = this.add.graphics();
-        multiBg.fillStyle(COLORS.warning, 0.3);
-        multiBg.fillRoundedRect(cx - 60, sectionY, 120, 32, RADIUS.lg);
-
-        this.add.text(cx, sectionY + 16, `Множитель: x${multiplier}`, {
-            fontSize: FONT_SIZE.lg,
-            color: COLORS.text.gold,
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
+        const canPrestige = potential > 0;
 
         // Progress bar
-        const barY = sectionY + 45;
-        const barWidth = W - 80;
-        const barHeight = 20;
+        const barY = 150;
+        const barWidth = W - 60;
+        const barHeight = 24;
 
         const barBg = this.add.graphics();
-        barBg.fillStyle(COLORS.border, 1);
-        barBg.fillRoundedRect(cx - barWidth / 2, barY, barWidth, barHeight, RADIUS.sm);
+        barBg.fillStyle(0x333344, 1);
+        barBg.fillRoundedRect(cx - barWidth / 2, barY, barWidth, barHeight, RADIUS.md);
 
         if (progress > 0) {
             const barFill = this.add.graphics();
             barFill.fillStyle(COLORS.warning, 1);
             const fillWidth = Math.max(barHeight, barWidth * progress);
-            barFill.fillRoundedRect(cx - barWidth / 2, barY, fillWidth, barHeight, RADIUS.sm);
+            barFill.fillRoundedRect(cx - barWidth / 2, barY, fillWidth, barHeight, RADIUS.md);
         }
 
-        // Progress text on bar
+        // Progress text - larger, more readable
         const nextCoinCost = getCurrencyForNextCoin();
-        this.add.text(cx, barY + barHeight / 2, `${formatNumber(PlayerData.currency)} / ${formatNumber(nextCoinCost)}`, {
-            fontSize: FONT_SIZE.base,
-            color: COLORS.text.white,
+        this.add.text(cx, barY + barHeight / 2, `💰 ${formatNumber(PlayerData.currency)} / ${formatNumber(nextCoinCost)}`, {
+            fontSize: FONT_SIZE.lg,
+            color: '#ffffff',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Prestige button
-        const btnY = barY + 50;
-        const canPrestige = potential > 0;
+        // PRESTIGE BUTTON - prominent
+        const btnY = barY + 55;
 
         new Button(this, {
             x: cx,
             y: btnY,
-            width: W - 80,
-            height: 50,
-            text: canPrestige ? `⚡ ПРЕСТИЖ +${potential}👑` : '⚡ ПРЕСТИЖ',
+            width: W - 60,
+            height: 54,
+            text: canPrestige ? `⚡ ПРЕСТИЖ  +${potential} 👑` : '⚡ ПРЕСТИЖ',
             style: canPrestige ? 'warning' : 'disabled',
             radius: RADIUS.xl,
             fontSize: FONT_SIZE['2xl'],
@@ -159,15 +170,12 @@ export class PrestigeScene extends Phaser.Scene {
     }
 
     createTabs(W, padding) {
-        const tabY = 195;
+        const tabY = 240;
         const tabWidth = (W - padding * 2 - 30) / 2;
-        const tabHeight = 44;
+        const tabHeight = 46;
         const gap = 10;
 
-        // Tab 1: Upgrades
         this.createTabButton(padding + 10, tabY, tabWidth, tabHeight, '⬆️ Улучшения', 0);
-
-        // Tab 2: Auto-buy
         this.createTabButton(padding + 10 + tabWidth + gap, tabY, tabWidth, tabHeight, '🤖 Авто', 1);
     }
 
@@ -183,7 +191,7 @@ export class PrestigeScene extends Phaser.Scene {
             btn.strokeRoundedRect(x, y, width, height, RADIUS.lg);
         }
 
-        const hitArea = this.add.rectangle(x + width / 2, y + height / 2, width, height, 0x000000, 0)
+        this.add.rectangle(x + width / 2, y + height / 2, width, height, 0x000000, 0)
             .setInteractive({ useHandCursor: true })
             .on('pointerdown', () => {
                 if (this.currentTab !== tabIndex) {
@@ -193,19 +201,19 @@ export class PrestigeScene extends Phaser.Scene {
             });
 
         this.add.text(x + width / 2, y + height / 2, label, {
-            fontSize: FONT_SIZE.xl,
-            color: isActive ? COLORS.text.dark : COLORS.text.light,
+            fontSize: FONT_SIZE['2xl'],
+            color: isActive ? '#000000' : '#ffffff',
             fontStyle: 'bold'
         }).setOrigin(0.5);
     }
 
     createUpgradesTab(W, padding) {
-        const startY = 255;
+        const startY = 302;
         const gap = 12;
         const cols = 3;
         const contentWidth = W - padding * 2 - 20;
         const btnWidth = Math.floor((contentWidth - gap * (cols - 1)) / cols);
-        const btnHeight = 90;
+        const btnHeight = 95;
 
         const upgrades = getPrestigeUpgrades();
 
@@ -235,33 +243,27 @@ export class PrestigeScene extends Phaser.Scene {
             bg.strokeRoundedRect(x, y, width, height, RADIUS.lg);
         }
 
-        // Name
-        this.add.text(x + width / 2, y + 18, upgrade.getName(), {
-            fontSize: FONT_SIZE.lg,
-            color: COLORS.text.white,
+        // Name - larger
+        this.add.text(x + width / 2, y + 20, upgrade.getName(), {
+            fontSize: FONT_SIZE.xl,
+            color: '#ffffff',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Value
-        this.add.text(x + width / 2, y + 42, upgrade.getValue(), {
-            fontSize: FONT_SIZE['2xl'],
-            color: COLORS.text.green,
+        // Value - prominent, bright
+        this.add.text(x + width / 2, y + 48, upgrade.getValue(), {
+            fontSize: FONT_SIZE['3xl'],
+            color: '#55efc4', // bright cyan-green
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Cost / Level
+        // Cost
         const costText = isMaxed ? 'MAX' : `${cost}👑`;
-        this.add.text(x + width / 2, y + 68, costText, {
-            fontSize: FONT_SIZE.lg,
-            color: isMaxed ? COLORS.text.muted : (canAfford ? COLORS.text.gold : COLORS.text.goldDark),
+        this.add.text(x + width / 2, y + 76, costText, {
+            fontSize: FONT_SIZE.xl,
+            color: isMaxed ? '#666666' : (canAfford ? '#ffd700' : '#997700'),
             fontStyle: 'bold'
         }).setOrigin(0.5);
-
-        // Level indicator (small)
-        this.add.text(x + width - 8, y + height - 8, upgrade.getLevel(), {
-            fontSize: FONT_SIZE.sm,
-            color: COLORS.text.muted
-        }).setOrigin(1, 1);
 
         // Hit area
         if (!isMaxed) {
@@ -276,12 +278,12 @@ export class PrestigeScene extends Phaser.Scene {
     }
 
     createAutoBuyTab(W, padding) {
-        const startY = 255;
+        const startY = 302;
         const gap = 10;
         const cols = 2;
         const contentWidth = W - padding * 2 - 20;
         const btnWidth = Math.floor((contentWidth - gap * (cols - 1)) / cols);
-        const btnHeight = 70;
+        const btnHeight = 75;
 
         const autoBuys = getAutoBuyItems();
 
@@ -305,7 +307,7 @@ export class PrestigeScene extends Phaser.Scene {
 
         if (isOwned) {
             bgColor = COLORS.success;
-            alpha = 0.7;
+            alpha = 0.8;
         } else {
             bgColor = canAfford ? COLORS.bgButton : COLORS.bgDisabledDark;
         }
@@ -318,18 +320,18 @@ export class PrestigeScene extends Phaser.Scene {
             bg.strokeRoundedRect(x, y, width, height, RADIUS.lg);
         }
 
-        // Name
-        this.add.text(x + width / 2, y + 22, item.name, {
-            fontSize: FONT_SIZE.xl,
-            color: isOwned ? COLORS.text.green : COLORS.text.white,
+        // Name - larger
+        this.add.text(x + width / 2, y + 25, item.name, {
+            fontSize: FONT_SIZE['2xl'],
+            color: isOwned ? '#55efc4' : '#ffffff',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Status
-        const statusText = isOwned ? '✓ КУПЛЕНО' : `${item.cost}👑`;
-        this.add.text(x + width / 2, y + 48, statusText, {
-            fontSize: FONT_SIZE.lg,
-            color: isOwned ? COLORS.text.green : (canAfford ? COLORS.text.gold : COLORS.text.goldDark),
+        // Status - clearer
+        const statusText = isOwned ? '✓ ВКЛ' : `${item.cost} 👑`;
+        this.add.text(x + width / 2, y + 52, statusText, {
+            fontSize: FONT_SIZE.xl,
+            color: isOwned ? '#55efc4' : (canAfford ? '#ffd700' : '#997700'),
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
