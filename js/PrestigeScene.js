@@ -1,7 +1,20 @@
 import {
     PlayerData,
     getPrestigeCoinsFromCurrency,
-    getProgressToNextCoin
+    getProgressToNextCoin,
+    getMoneyMultiplier,
+    getBoardSize,
+    getColorCount,
+    getUnlockedTiers,
+    getPrestigeMoneyMultCost,
+    upgradePrestigeMoneyMult,
+    getPrestigeTiersCost,
+    upgradePrestigeTiers,
+    getPrestigeColorsCost,
+    upgradePrestigeColors,
+    getPrestigeArenaCost,
+    upgradePrestigeArena,
+    performPrestige
 } from './config.js';
 
 export class PrestigeScene extends Phaser.Scene {
@@ -92,6 +105,49 @@ export class PrestigeScene extends Phaser.Scene {
             }).setOrigin(0.5);
             console.log('[PrestigeScene] progress text done');
 
+            // Upgrade rows
+            let upgradeY = 420;
+            console.log('[PrestigeScene] starting upgrade rows');
+
+            // Money multiplier upgrade
+            upgradeY = this.createUpgradeRow(upgradeY, '💰', 'Множитель',
+                `x${getMoneyMultiplier()}`,
+                getPrestigeMoneyMultCost(),
+                () => {
+                    if (upgradePrestigeMoneyMult()) this.scene.restart();
+                });
+            console.log('[PrestigeScene] row 1 done');
+
+            // Tiers upgrade
+            const maxTiers = PlayerData.prestigeTiers >= 4;
+            upgradeY = this.createUpgradeRow(upgradeY, '⭐', 'Тиры гемов',
+                `${getUnlockedTiers()}/7`,
+                maxTiers ? 'MAX' : getPrestigeTiersCost(),
+                maxTiers ? null : () => {
+                    if (upgradePrestigeTiers()) this.scene.restart();
+                });
+            console.log('[PrestigeScene] row 2 done');
+
+            // Colors upgrade
+            const maxColors = PlayerData.prestigeColors >= 3;
+            upgradeY = this.createUpgradeRow(upgradeY, '🎨', 'Цветов',
+                `${getColorCount()}`,
+                maxColors ? 'MAX' : getPrestigeColorsCost(),
+                maxColors ? null : () => {
+                    if (upgradePrestigeColors()) this.scene.restart();
+                });
+            console.log('[PrestigeScene] row 3 done');
+
+            // Arena size upgrade
+            const maxArena = PlayerData.prestigeArena >= 4;
+            upgradeY = this.createUpgradeRow(upgradeY, '📐', 'Размер поля',
+                `${getBoardSize()}x${getBoardSize()}`,
+                maxArena ? 'MAX' : getPrestigeArenaCost(),
+                maxArena ? null : () => {
+                    if (upgradePrestigeArena()) this.scene.restart();
+                });
+            console.log('[PrestigeScene] row 4 done');
+
             // Close button
             this.createCloseButton();
             console.log('[PrestigeScene] create() END - success');
@@ -123,5 +179,57 @@ export class PrestigeScene extends Phaser.Scene {
             fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
         console.log('[PrestigeScene] createCloseButton() END');
+    }
+
+    createUpgradeRow(y, icon, name, value, cost, onBuy) {
+        const W = this.cameras.main.width;
+        const cx = W / 2;
+        const rowHeight = 45;
+
+        // Row background
+        const rowBg = this.add.graphics();
+        rowBg.fillStyle(0x2a2a3e, 0.5);
+        rowBg.fillRoundedRect(25, y, W - 50, rowHeight, 8);
+
+        // Icon and name
+        this.add.text(35, y + rowHeight / 2, icon, { fontSize: '18px' }).setOrigin(0, 0.5);
+        this.add.text(60, y + rowHeight / 2, name, {
+            fontSize: '14px', color: '#ffffff'
+        }).setOrigin(0, 0.5);
+
+        // Value
+        this.add.text(160, y + rowHeight / 2, value, {
+            fontSize: '14px', color: '#55efc4', fontStyle: 'bold'
+        }).setOrigin(0, 0.5);
+
+        // Cost or MAX
+        const costStr = typeof cost === 'number' ? `${cost}👑` : cost;
+        const canAfford = typeof cost === 'number' && PlayerData.prestigeCurrency >= cost;
+
+        this.add.text(220, y + rowHeight / 2, costStr, {
+            fontSize: '12px', color: canAfford ? '#f1c40f' : '#888888'
+        }).setOrigin(0, 0.5);
+
+        // Buy button (if not maxed)
+        if (onBuy) {
+            const btnX = W - 55;
+            const btnSize = 35;
+
+            const btn = this.add.graphics();
+            btn.fillStyle(canAfford ? 0x27ae60 : 0x555555, 1);
+            btn.fillRoundedRect(btnX - btnSize / 2, y + rowHeight / 2 - btnSize / 2, btnSize, btnSize, 6);
+
+            this.add.rectangle(btnX, y + rowHeight / 2, btnSize, btnSize, 0x000000, 0)
+                .setInteractive({ useHandCursor: canAfford })
+                .on('pointerdown', () => {
+                    if (canAfford) onBuy();
+                });
+
+            this.add.text(btnX, y + rowHeight / 2, '+', {
+                fontSize: '20px', color: '#ffffff', fontStyle: 'bold'
+            }).setOrigin(0.5);
+        }
+
+        return y + rowHeight + 5;
     }
 }
