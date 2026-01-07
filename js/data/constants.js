@@ -47,7 +47,7 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.117-js';
+export const JS_VERSION = '0.0.118-js';
 
 // Format large numbers with scientific notation (>1000)
 export function formatNumber(n) {

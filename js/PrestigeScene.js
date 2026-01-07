@@ -35,8 +35,8 @@ export class PrestigeScene extends Phaser.Scene {
         panel.lineStyle(2, COLORS.warning, 0.8);
         panel.strokeRoundedRect(padding, 15, W - padding * 2, H - 30, RADIUS['2xl']);
 
-        // === HEADER: Title + Close ===
-        this.createHeader(W, padding);
+        // === HEADER: Title ===
+        this.createHeader(W, cx);
 
         // === COINS SECTION (most important!) ===
         this.createCoinsSection(W, cx);
@@ -60,59 +60,41 @@ export class PrestigeScene extends Phaser.Scene {
         this.lastCurrency = PlayerData.currency;
     }
 
-    createHeader(W, padding) {
-        // Title left
-        this.add.text(padding + 15, 38, '👑 ПРЕСТИЖ', {
+    createHeader(W, cx) {
+        // Title centered
+        this.add.text(cx, 38, '👑 ПРЕСТИЖ', {
             fontSize: FONT_SIZE['3xl'],
             fontFamily: 'Arial Black',
             color: COLORS.text.gold
-        }).setOrigin(0, 0.5);
-
-        // Close X button
-        const closeX = this.add.text(W - padding - 18, 38, '✕', {
-            fontSize: FONT_SIZE['3xl'],
-            color: COLORS.text.muted,
-            fontStyle: 'bold'
-        }).setOrigin(1, 0.5).setInteractive({ useHandCursor: true });
-
-        closeX.on('pointerover', () => closeX.setColor('#ffffff'));
-        closeX.on('pointerout', () => closeX.setColor(COLORS.text.muted));
-        closeX.on('pointerdown', () => this.scene.stop());
+        }).setOrigin(0.5);
     }
 
     createCoinsSection(W, cx) {
-        const y = 75;
+        const y = 80;
         const potential = getPrestigeCoinsFromCurrency(PlayerData.currency);
         const multiplier = getMoneyMultiplier();
 
         // Background card for coins
         const cardBg = this.add.graphics();
         cardBg.fillStyle(0x2a1a4a, 1); // dark purple
-        cardBg.fillRoundedRect(25, y - 5, W - 50, 60, RADIUS.lg);
+        cardBg.fillRoundedRect(25, y - 10, W - 50, 55, RADIUS.lg);
         cardBg.lineStyle(2, 0x9b59b6, 0.6);
-        cardBg.strokeRoundedRect(25, y - 5, W - 50, 60, RADIUS.lg);
+        cardBg.strokeRoundedRect(25, y - 10, W - 50, 55, RADIUS.lg);
 
-        // Current coins - BIG
-        this.add.text(cx - 80, y + 12, '👑', { fontSize: '36px' }).setOrigin(0.5);
+        // Build coins text - centered
+        const coinsText = potential > 0
+            ? `👑 ${PlayerData.prestigeCurrency}  +${potential}`
+            : `👑 ${PlayerData.prestigeCurrency}`;
 
-        this.add.text(cx - 40, y + 12, `${PlayerData.prestigeCurrency}`, {
+        this.add.text(cx, y + 8, coinsText, {
             fontSize: FONT_SIZE['4xl'],
             color: '#e056fd', // bright purple
             fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
+        }).setOrigin(0.5);
 
-        // Potential gain - highlighted
-        if (potential > 0) {
-            this.add.text(cx + 60, y + 12, `+${potential}`, {
-                fontSize: FONT_SIZE['3xl'],
-                color: '#55efc4', // bright green
-                fontStyle: 'bold'
-            }).setOrigin(0, 0.5);
-        }
-
-        // Multiplier - smaller, bottom right of card
-        this.add.text(W - 35, y + 40, `x${multiplier}`, {
-            fontSize: FONT_SIZE.xl,
+        // Multiplier - bottom right of card
+        this.add.text(W - 35, y + 30, `x${multiplier}`, {
+            fontSize: FONT_SIZE.lg,
             color: COLORS.text.gold,
             fontStyle: 'bold'
         }).setOrigin(1, 0.5);
