@@ -1,5 +1,5 @@
 // FallManager.js - Handles gem falling, gravity, and spawning
-import { GameSettings, BOARD_OFFSET_Y, GEM_STATE } from './config.js';
+import { GameSettings, GEM_STATE } from './config.js';
 import { getCellSize } from './utils.js'; // used in spawnNewGems
 
 /**
@@ -129,7 +129,7 @@ export class FallManager {
 
                     if (canSpawn) {
                         const gemType = Phaser.Math.Between(0, GameSettings.colorCount - 1);
-                        const startY = BOARD_OFFSET_Y - cellSize / 2 - gap;
+                        const startY = scene.layout.boardOffsetY - cellSize / 2 - gap;
                         const gem = scene.createGem(0, col, gemType, startY);
 
                         board[0][col] = gemType;

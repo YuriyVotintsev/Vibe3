@@ -3,8 +3,6 @@
 import {
     GameSettings,
     BOARD_TOTAL_SIZE,
-    BOARD_OFFSET_X,
-    BOARD_OFFSET_Y,
     GEM_STATE,
     PlayerData,
     loadPlayerData,
@@ -14,7 +12,7 @@ import {
     rollEnhancement,
     processAutoBuys
 } from './config.js';
-import { getCellSize } from './utils.js';
+import { getCellSize, getLayout } from './utils.js';
 import { findValidMoves, getValidColors, shuffleArray } from './BoardLogic.js';
 import { createGemTextures } from './GemRenderer.js';
 import { FallManager } from './FallManager.js';
@@ -59,20 +57,23 @@ export class MainScene extends Phaser.Scene {
     create() {
         const boardSize = GameSettings.boardSize;
 
+        // Calculate adaptive layout
+        this.layout = getLayout(this.cameras.main.width, this.cameras.main.height);
+
         // Background
         this.add.rectangle(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            this.cameras.main.width,
-            this.cameras.main.height,
+            this.layout.centerX,
+            this.layout.canvasHeight / 2,
+            this.layout.canvasWidth,
+            this.layout.canvasHeight,
             COLORS.bgDark
         );
 
         // Board background
         const boardBgSize = BOARD_TOTAL_SIZE + 20;
         this.add.rectangle(
-            BOARD_OFFSET_X + BOARD_TOTAL_SIZE / 2,
-            BOARD_OFFSET_Y + BOARD_TOTAL_SIZE / 2,
+            this.layout.boardOffsetX + BOARD_TOTAL_SIZE / 2,
+            this.layout.boardOffsetY + BOARD_TOTAL_SIZE / 2,
             boardBgSize,
             boardBgSize,
             COLORS.bgOverlay,
@@ -82,8 +83,8 @@ export class MainScene extends Phaser.Scene {
         // Gem mask
         const maskShape = this.make.graphics();
         maskShape.fillRect(
-            BOARD_OFFSET_X - 10,
-            BOARD_OFFSET_Y - 10,
+            this.layout.boardOffsetX - 10,
+            this.layout.boardOffsetY - 10,
             BOARD_TOTAL_SIZE + 20,
             BOARD_TOTAL_SIZE + 20
         );
@@ -195,8 +196,8 @@ export class MainScene extends Phaser.Scene {
         const cellSize = getCellSize();
         const gap = GameSettings.gap;
         return {
-            x: BOARD_OFFSET_X + col * (cellSize + gap) + cellSize / 2,
-            y: BOARD_OFFSET_Y + row * (cellSize + gap) + cellSize / 2
+            x: this.layout.boardOffsetX + col * (cellSize + gap) + cellSize / 2,
+            y: this.layout.boardOffsetY + row * (cellSize + gap) + cellSize / 2
         };
     }
 

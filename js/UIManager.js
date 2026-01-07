@@ -1,8 +1,6 @@
 // UIManager.js - Handles UI elements for MainScene
 
 import {
-    BOARD_TOTAL_SIZE,
-    BOARD_OFFSET_Y,
     JS_VERSION,
     PlayerData,
     ENHANCEMENT,
@@ -45,27 +43,27 @@ export class UIManager {
      * Create all UI elements
      */
     create() {
-        const scene = this.scene;
-        const cx = scene.cameras.main.width / 2;
+        const layout = this.scene.layout;
 
-        this.createHeader(cx);
-        this.createMessageText(cx);
-        this.createButtons(cx);
-        this.createVersionText();
+        this.createHeader(layout);
+        this.createMessageText(layout);
+        this.createButtons(layout);
+        this.createVersionText(layout);
     }
 
     /**
      * Create header panel with currency
      */
-    createHeader(cx) {
+    createHeader(layout) {
         const scene = this.scene;
+        const cx = layout.centerX;
 
         // Header panel background
         const headerBg = scene.add.graphics();
         headerBg.fillStyle(COLORS.bgHeader, 0.95);
-        headerBg.fillRoundedRect(10, 8, scene.cameras.main.width - 20, 100, 15);
+        headerBg.fillRoundedRect(10, 8, layout.canvasWidth - 20, 100, 15);
         headerBg.lineStyle(2, COLORS.secondary, 0.5);
-        headerBg.strokeRoundedRect(10, 8, scene.cameras.main.width - 20, 100, 15);
+        headerBg.strokeRoundedRect(10, 8, layout.canvasWidth - 20, 100, 15);
 
         // Title
         scene.add.text(cx, 35, 'MATCH-3', {
@@ -93,8 +91,8 @@ export class UIManager {
     /**
      * Create message text area
      */
-    createMessageText(cx) {
-        this.messageText = this.scene.add.text(cx, BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 25, '', {
+    createMessageText(layout) {
+        this.messageText = this.scene.add.text(layout.centerX, layout.messageY, '', {
             fontSize: FONT_SIZE.xl,
             color: COLORS.text.green,
             fontStyle: 'bold'
@@ -104,9 +102,10 @@ export class UIManager {
     /**
      * Create bottom panel buttons
      */
-    createButtons(cx) {
+    createButtons(layout) {
         const scene = this.scene;
-        const btnY = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 70;
+        const cx = layout.centerX;
+        const btnY = layout.buttonsY;
         const btnWidth = 100;
         const btnHeight = 48;
         const btnSpacing = 110;
@@ -164,8 +163,8 @@ export class UIManager {
     /**
      * Create version text
      */
-    createVersionText() {
-        this.scene.add.text(10, this.scene.cameras.main.height - 10, JS_VERSION, {
+    createVersionText(layout) {
+        this.scene.add.text(10, layout.canvasHeight - 10, JS_VERSION, {
             fontSize: FONT_SIZE.base,
             color: COLORS.text.muted,
             fontStyle: 'bold'
