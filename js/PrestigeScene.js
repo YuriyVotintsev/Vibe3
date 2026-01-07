@@ -1,5 +1,6 @@
 import {
     PlayerData,
+    formatNumber,
     getPrestigeCoinsFromCurrency,
     getProgressToNextCoin,
     getMoneyMultiplier,

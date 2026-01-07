@@ -1,5 +1,6 @@
 import {
     PlayerData,
+    formatNumber,
     getAutoMoveUpgradeCost,
     getAutoMoveStep,
     upgradeAutoMove,
@@ -70,7 +71,7 @@ export class UpgradesScene extends Phaser.Scene {
         currencyBg.fillStyle(0xf39c12, 0.3);
         currencyBg.fillRoundedRect(cx - 100, 85, 200, 50, 12);
         this.add.text(cx - 60, 110, '💰', { fontSize: '28px' }).setOrigin(0.5);
-        this.currencyText = this.add.text(cx + 10, 110, `${PlayerData.currency}`, {
+        this.currencyText = this.add.text(cx + 10, 110, formatNumber(PlayerData.currency), {
             fontSize: '28px', color: '#f1c40f', fontStyle: 'bold'
         }).setOrigin(0, 0.5);
 
@@ -102,7 +103,7 @@ export class UpgradesScene extends Phaser.Scene {
         // Live update when currency changes (game runs in background)
         if (PlayerData.currency !== this.lastCurrency) {
             this.lastCurrency = PlayerData.currency;
-            this.currencyText.setText(`${PlayerData.currency}`);
+            this.currencyText.setText(formatNumber(PlayerData.currency));
             this.refreshAllRows();
         }
     }
@@ -120,7 +121,7 @@ export class UpgradesScene extends Phaser.Scene {
             return `${seconds}с`;
         }, () => {
             const atMin = PlayerData.autoMoveDelay <= 100;
-            return atMin ? 'MAX' : `${getAutoMoveUpgradeCost()}💰`;
+            return atMin ? 'MAX' : `${formatNumber(getAutoMoveUpgradeCost())}💰`;
         }, () => {
             const step = getAutoMoveStep();
             return `-${step / 1000}с`;
@@ -134,7 +135,7 @@ export class UpgradesScene extends Phaser.Scene {
             return `${PlayerData.bombChance}%`;
         }, () => {
             const atMax = PlayerData.bombChance >= 50;
-            return atMax ? 'MAX' : `${getBombChanceUpgradeCost()}💰`;
+            return atMax ? 'MAX' : `${formatNumber(getBombChanceUpgradeCost())}💰`;
         }, () => '+5%', () => {
             const atMax = PlayerData.bombChance >= 50;
             return !atMax && PlayerData.currency >= getBombChanceUpgradeCost();
@@ -145,7 +146,7 @@ export class UpgradesScene extends Phaser.Scene {
             return `${PlayerData.bombRadius}`;
         }, () => {
             const atMax = PlayerData.bombRadius >= 3;
-            return atMax ? 'MAX' : `${getBombRadiusUpgradeCost()}💰`;
+            return atMax ? 'MAX' : `${formatNumber(getBombRadiusUpgradeCost())}💰`;
         }, () => '+1', () => {
             const atMax = PlayerData.bombRadius >= 3;
             return !atMax && PlayerData.currency >= getBombRadiusUpgradeCost();
@@ -165,7 +166,7 @@ export class UpgradesScene extends Phaser.Scene {
                 return `${PlayerData.bronzeChance}%`;
             }, () => {
                 const atMax = PlayerData.bronzeChance >= 100;
-                return atMax ? 'MAX' : `${getBronzeUpgradeCost()}💰`;
+                return atMax ? 'MAX' : `${formatNumber(getBronzeUpgradeCost())}💰`;
             }, () => '+5%', () => {
                 const atMax = PlayerData.bronzeChance >= 100;
                 return !atMax && PlayerData.currency >= getBronzeUpgradeCost();
@@ -178,7 +179,7 @@ export class UpgradesScene extends Phaser.Scene {
                 return `${PlayerData.silverChance}%`;
             }, () => {
                 const atMax = PlayerData.silverChance >= 100;
-                return atMax ? 'MAX' : `${getSilverUpgradeCost()}💰`;
+                return atMax ? 'MAX' : `${formatNumber(getSilverUpgradeCost())}💰`;
             }, () => '+4%', () => {
                 const atMax = PlayerData.silverChance >= 100;
                 return !atMax && PlayerData.currency >= getSilverUpgradeCost();
@@ -191,7 +192,7 @@ export class UpgradesScene extends Phaser.Scene {
                 return `${PlayerData.goldChance}%`;
             }, () => {
                 const atMax = PlayerData.goldChance >= 100;
-                return atMax ? 'MAX' : `${getGoldUpgradeCost()}💰`;
+                return atMax ? 'MAX' : `${formatNumber(getGoldUpgradeCost())}💰`;
             }, () => '+3%', () => {
                 const atMax = PlayerData.goldChance >= 100;
                 return !atMax && PlayerData.currency >= getGoldUpgradeCost();
@@ -204,7 +205,7 @@ export class UpgradesScene extends Phaser.Scene {
                 return `${PlayerData.crystalChance}%`;
             }, () => {
                 const atMax = PlayerData.crystalChance >= 100;
-                return atMax ? 'MAX' : `${getCrystalUpgradeCost()}💰`;
+                return atMax ? 'MAX' : `${formatNumber(getCrystalUpgradeCost())}💰`;
             }, () => '+2%', () => {
                 const atMax = PlayerData.crystalChance >= 100;
                 return !atMax && PlayerData.currency >= getCrystalUpgradeCost();
@@ -217,7 +218,7 @@ export class UpgradesScene extends Phaser.Scene {
                 return `${PlayerData.rainbowChance}%`;
             }, () => {
                 const atMax = PlayerData.rainbowChance >= 100;
-                return atMax ? 'MAX' : `${getRainbowUpgradeCost()}💰`;
+                return atMax ? 'MAX' : `${formatNumber(getRainbowUpgradeCost())}💰`;
             }, () => '+1%', () => {
                 const atMax = PlayerData.rainbowChance >= 100;
                 return !atMax && PlayerData.currency >= getRainbowUpgradeCost();
@@ -230,7 +231,7 @@ export class UpgradesScene extends Phaser.Scene {
                 return `${PlayerData.prismaticChance}%`;
             }, () => {
                 const atMax = PlayerData.prismaticChance >= 100;
-                return atMax ? 'MAX' : `${getPrismaticUpgradeCost()}💰`;
+                return atMax ? 'MAX' : `${formatNumber(getPrismaticUpgradeCost())}💰`;
             }, () => '+1%', () => {
                 const atMax = PlayerData.prismaticChance >= 100;
                 return !atMax && PlayerData.currency >= getPrismaticUpgradeCost();
@@ -243,7 +244,7 @@ export class UpgradesScene extends Phaser.Scene {
                 return `${PlayerData.celestialChance}%`;
             }, () => {
                 const atMax = PlayerData.celestialChance >= 100;
-                return atMax ? 'MAX' : `${getCelestialUpgradeCost()}💰`;
+                return atMax ? 'MAX' : `${formatNumber(getCelestialUpgradeCost())}💰`;
             }, () => '+1%', () => {
                 const atMax = PlayerData.celestialChance >= 100;
                 return !atMax && PlayerData.currency >= getCelestialUpgradeCost();
@@ -309,7 +310,7 @@ export class UpgradesScene extends Phaser.Scene {
             })
             .on('pointerdown', () => {
                 if (canAfford() && onBuy()) {
-                    this.currencyText.setText(`${PlayerData.currency}`);
+                    this.currencyText.setText(formatNumber(PlayerData.currency));
                     this.refreshAllRows();
                 }
             });

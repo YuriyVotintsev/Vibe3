@@ -30,6 +30,15 @@ export const COLOR_NAMES = [
     'Небесный', 'Алый'
 ];
 
+// Format large numbers with scientific notation (>10000)
+export function formatNumber(n) {
+    if (n < 10000) return Math.floor(n).toString();
+    if (n < 1e6) return (n / 1e3).toFixed(1) + 'K';
+    if (n < 1e9) return (n / 1e6).toFixed(2) + 'M';
+    if (n < 1e12) return (n / 1e9).toFixed(2) + 'B';
+    return n.toExponential(2);
+}
+
 // Player persistent data
 export const PlayerData = {
     currency: 0,          // earned from matches, spent on upgrades
@@ -152,7 +161,7 @@ export function getBronzeLevel() {
 
 export function getBronzeUpgradeCost() {
     const level = getBronzeLevel();
-    return Math.floor(50 * Math.pow(1.10, level) * GameSettings.priceMultiplier);
+    return Math.floor(100 * Math.pow(1.15, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeBronze() {
@@ -173,7 +182,7 @@ export function getSilverLevel() {
 
 export function getSilverUpgradeCost() {
     const level = getSilverLevel();
-    return Math.floor(50 * Math.pow(1.10, level) * GameSettings.priceMultiplier);
+    return Math.floor(150 * Math.pow(1.18, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeSilver() {
@@ -194,7 +203,7 @@ export function getGoldLevel() {
 
 export function getGoldUpgradeCost() {
     const level = getGoldLevel();
-    return Math.floor(50 * Math.pow(1.10, level) * GameSettings.priceMultiplier);
+    return Math.floor(250 * Math.pow(1.20, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeGold() {
@@ -215,7 +224,7 @@ export function getCrystalLevel() {
 
 export function getCrystalUpgradeCost() {
     const level = getCrystalLevel();
-    return Math.floor(50 * Math.pow(1.10, level) * GameSettings.priceMultiplier);
+    return Math.floor(500 * Math.pow(1.22, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeCrystal() {
@@ -236,7 +245,7 @@ export function getRainbowLevel() {
 
 export function getRainbowUpgradeCost() {
     const level = getRainbowLevel();
-    return Math.floor(50 * Math.pow(1.10, level) * GameSettings.priceMultiplier);
+    return Math.floor(1000 * Math.pow(1.25, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeRainbow() {
@@ -257,7 +266,7 @@ export function getPrismaticLevel() {
 
 export function getPrismaticUpgradeCost() {
     const level = getPrismaticLevel();
-    return Math.floor(50 * Math.pow(1.10, level) * GameSettings.priceMultiplier);
+    return Math.floor(2500 * Math.pow(1.28, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradePrismatic() {
@@ -278,7 +287,7 @@ export function getCelestialLevel() {
 
 export function getCelestialUpgradeCost() {
     const level = getCelestialLevel();
-    return Math.floor(50 * Math.pow(1.10, level) * GameSettings.priceMultiplier);
+    return Math.floor(5000 * Math.pow(1.30, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeCelestial() {
@@ -304,7 +313,7 @@ export function getAutoMoveLevel() {
 
 export function getAutoMoveUpgradeCost() {
     const level = getAutoMoveLevel();
-    return Math.floor(200 * Math.pow(1.8, level) * GameSettings.priceMultiplier);
+    return Math.floor(500 * Math.pow(2.0, level) * GameSettings.priceMultiplier);
 }
 
 export function getAutoMoveStep() {
@@ -331,7 +340,7 @@ export function getBombChanceLevel() {
 
 export function getBombChanceUpgradeCost() {
     const level = getBombChanceLevel();
-    return Math.floor(300 * Math.pow(1.6, level) * GameSettings.priceMultiplier);
+    return Math.floor(600 * Math.pow(1.8, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeBombChance() {
@@ -352,7 +361,7 @@ export function getBombRadiusLevel() {
 
 export function getBombRadiusUpgradeCost() {
     const level = getBombRadiusLevel();
-    return Math.floor(500 * Math.pow(2.5, level) * GameSettings.priceMultiplier);
+    return Math.floor(1500 * Math.pow(3.0, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeBombRadius() {
@@ -384,20 +393,20 @@ export function getColorCount() {
 }
 
 // Calculate how many prestige coins you can get from a currency amount
-// Coins require: 1st=100, 2nd=200, 3rd=300... Nth=N*100
-// Total for N coins = 100 * N * (N+1) / 2
+// Coins require: 1st=500, 2nd=1000, 3rd=1500... Nth=N*500
+// Total for N coins = 500 * N * (N+1) / 2
 export function getPrestigeCoinsFromCurrency(currency) {
-    // Solve: 100 * N * (N+1) / 2 <= currency
-    // N^2 + N - currency/50 <= 0
-    // N = floor((-1 + sqrt(1 + currency/12.5)) / 2)
-    if (currency < 100) return 0;
-    const n = Math.floor((-1 + Math.sqrt(1 + currency / 12.5)) / 2);
+    // Solve: 500 * N * (N+1) / 2 <= currency
+    // N^2 + N - currency/250 <= 0
+    // N = floor((-1 + sqrt(1 + currency/62.5)) / 2)
+    if (currency < 500) return 0;
+    const n = Math.floor((-1 + Math.sqrt(1 + currency / 62.5)) / 2);
     return Math.max(0, n);
 }
 
 // Get total currency required for N prestige coins
 export function getCurrencyForCoins(n) {
-    return 100 * n * (n + 1) / 2;
+    return 500 * n * (n + 1) / 2;
 }
 
 // Get currency needed for the next prestige coin from current amount
@@ -586,4 +595,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.82-js';
+export const JS_VERSION = '0.0.83-js';

@@ -5,7 +5,8 @@ import {
     JS_VERSION,
     PlayerData,
     ENHANCEMENT,
-    getPrestigeCoinsFromCurrency
+    getPrestigeCoinsFromCurrency,
+    formatNumber
 } from './config.js';
 
 /**
@@ -53,7 +54,7 @@ export class UIManager {
             .fillStyle(0xf39c12, 0.25)
             .fillRoundedRect(cx - statWidth / 2, statY - 22, statWidth, 44, 10);
         scene.add.text(cx - 50, statY, '💰', { fontSize: '28px' }).setOrigin(0.5);
-        this.currencyText = scene.add.text(cx + 5, statY, `${PlayerData.currency}`, {
+        this.currencyText = scene.add.text(cx + 5, statY, formatNumber(PlayerData.currency), {
             fontSize: '26px', color: '#f1c40f', fontStyle: 'bold'
         }).setOrigin(0, 0.5);
 
@@ -147,7 +148,7 @@ export class UIManager {
      * Update currency display
      */
     updateCurrency() {
-        this.currencyText.setText(`${PlayerData.currency}`);
+        this.currencyText.setText(formatNumber(PlayerData.currency));
         // Don't update prestige button during matches - it can cause issues
         // Prestige text updates when scene is opened
     }
@@ -202,7 +203,7 @@ export class UIManager {
             fontSize = '34px';
         }
 
-        const text = this.scene.add.text(x, y, `+${amount}💰`, {
+        const text = this.scene.add.text(x, y, `+${formatNumber(amount)}💰`, {
             fontSize: fontSize,
             color: color,
             fontStyle: 'bold',
