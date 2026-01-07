@@ -22,19 +22,25 @@ function emit(event, data) {
 
 // ========== DEFAULT VALUES ==========
 
+// === BALANCE v3: Active play focus ===
+// Key insight: Player makes ~60 moves/min manually = 240 currency/min BASE
+// Auto-move (5000ms) is backup, not primary income source
+// All bonuses start at ZERO — player earns everything
+//
+// Timeline: First prestige ~10min, Gold ~25min, Endgame ~120min
 const DEFAULTS = {
     // Currency
     currency: 0,
     totalEarned: 0,
 
-    // Regular upgrades
-    autoMoveDelay: 5000,
-    bombChance: 10,
+    // Regular upgrades — conservative start
+    autoMoveDelay: 5000,    // v3: back to 5000, active play is primary
+    bombChance: 0,          // v3: ZERO — bombs are earned!
     bombRadius: 1,
 
-    // Enhancement chances
-    bronzeChance: 5,
-    silverChance: 1,
+    // Enhancement chances — ALL start at zero!
+    bronzeChance: 0,        // v3: earn your multipliers
+    silverChance: 0,        // v3: no freebies
     goldChance: 0,
     crystalChance: 0,
     rainbowChance: 0,

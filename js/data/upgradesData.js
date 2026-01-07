@@ -17,7 +17,7 @@ import {
     upgradePrestigeColors,
     getPrestigeArenaCost,
     upgradePrestigeArena,
-    AUTO_BUY_COST,
+    getAutoBuyCost,
     buyAutoBuyAutoMove,
     buyAutoBuyBombChance,
     buyAutoBuyBombRadius,
@@ -123,17 +123,19 @@ const AUTO_BUY_ITEMS = [
 /**
  * Get auto-buy items for PrestigeScene
  * Returns "Tell, Don't Ask" style objects
+ * v3: Each auto-buy has different cost based on usefulness
  */
 export function getAutoBuyItems() {
     return AUTO_BUY_ITEMS.map(item => {
         const autoBuyKey = AUTO_BUY_KEYS[item.key];
+        const cost = getAutoBuyCost(autoBuyKey);
         return {
             key: item.key,
             name: item.name,
-            cost: AUTO_BUY_COST,
+            cost: cost,  // v3: variable cost per item
             // Tell, Don't Ask methods
             isOwned: () => PlayerData[autoBuyKey],
-            canAfford: () => !PlayerData[autoBuyKey] && PlayerData.prestigeCurrency >= AUTO_BUY_COST,
+            canAfford: () => !PlayerData[autoBuyKey] && PlayerData.prestigeCurrency >= cost,
             onBuy: item.buy
         };
     });

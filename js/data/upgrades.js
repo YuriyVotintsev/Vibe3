@@ -9,47 +9,52 @@ import { ENHANCEMENT } from './enhancements.js';
 // Configuration for all upgrades
 // property: PlayerData key, name: UI display, unit: value suffix
 // enhancement: required tier (null = always visible)
+// === UPGRADE BALANCE v3: Active play economy ===
+// Base income: ~240 currency/min (60 moves × 4 gems × 1 currency)
+// First upgrade (Bronze) in ~5 seconds = 20 currency
+// Everything starts at ZERO — player earns all bonuses
 const UPGRADE_CONFIGS = {
     autoMove: {
         property: 'autoMoveDelay',
         name: 'Авто-ход',
         unit: 'с',
         enhancement: null,
-        baseCost: 500,
-        growthRate: 2.0,
-        step: null, // special: variable step
-        min: 100,
-        max: 5000,
+        baseCost: 200,      // v3: not priority for active player
+        growthRate: 1.6,    // v3: moderate growth
+        step: null,         // special: variable step
+        min: 100,           // v3: back to 100ms minimum
+        max: 5000,          // v3: back to 5000ms start
         getValue: () => (PlayerData.autoMoveDelay / 1000).toFixed(1),
         getLevel: () => {
+            // 5000 -> 500 (9 steps of 500ms), then 500 -> 100 (4 steps of 100ms)
             if (PlayerData.autoMoveDelay >= 500) {
                 return Math.round((5000 - PlayerData.autoMoveDelay) / 500);
             }
             return 9 + Math.round((500 - PlayerData.autoMoveDelay) / 100);
         },
-        getMaxLevel: () => 49
+        getMaxLevel: () => 13
     },
     bombChance: {
         property: 'bombChance',
         name: 'Шанс бомбы',
         unit: '%',
         enhancement: null,
-        baseCost: 600,
-        growthRate: 1.8,
+        baseCost: 150,      // v3: medium priority, unlocks fun mechanic
+        growthRate: 1.4,    // v3: accessible growth
         step: 5,
-        min: 10,
+        min: 0,             // v3: starts at ZERO!
         max: 50,
         getValue: () => PlayerData.bombChance,
-        getLevel: () => (PlayerData.bombChance - 10) / 5,
-        getMaxLevel: () => (50 - 10) / 5
+        getLevel: () => PlayerData.bombChance / 5,
+        getMaxLevel: () => 50 / 5
     },
     bombRadius: {
         property: 'bombRadius',
         name: 'Радиус',
         unit: '',
         enhancement: null,
-        baseCost: 1500,
-        growthRate: 3.0,
+        baseCost: 800,      // v3: expensive, powerful upgrade
+        growthRate: 2.5,    // v3: steep, only 2 levels
         step: 1,
         min: 1,
         max: 3,
@@ -62,36 +67,36 @@ const UPGRADE_CONFIGS = {
         name: 'Бронза',
         unit: '%',
         enhancement: ENHANCEMENT.BRONZE,
-        baseCost: 100,
-        growthRate: 1.15,
-        step: 5,
-        min: 5,
+        baseCost: 20,       // v3: first buy in ~5 seconds!
+        growthRate: 1.12,   // v3: gentle curve, many levels
+        step: 5,            // v3: +5% per upgrade
+        min: 0,             // v3: starts at ZERO!
         max: 100,
         getValue: () => PlayerData.bronzeChance,
-        getLevel: () => (PlayerData.bronzeChance - 5) / 5,
-        getMaxLevel: () => (100 - 5) / 5
+        getLevel: () => PlayerData.bronzeChance / 5,
+        getMaxLevel: () => 100 / 5
     },
     silver: {
         property: 'silverChance',
         name: 'Серебро',
         unit: '%',
         enhancement: ENHANCEMENT.SILVER,
-        baseCost: 150,
-        growthRate: 1.18,
+        baseCost: 50,       // v3: unlocks after some bronze
+        growthRate: 1.15,   // v3: slightly steeper
         step: 4,
-        min: 1,
+        min: 0,             // v3: starts at ZERO!
         max: 100,
         getValue: () => PlayerData.silverChance,
-        getLevel: () => Math.floor((PlayerData.silverChance - 1) / 4),
-        getMaxLevel: () => Math.ceil((100 - 1) / 4)
+        getLevel: () => Math.floor(PlayerData.silverChance / 4),
+        getMaxLevel: () => 100 / 4
     },
     gold: {
         property: 'goldChance',
         name: 'Золото',
         unit: '%',
         enhancement: ENHANCEMENT.GOLD,
-        baseCost: 250,
-        growthRate: 1.20,
+        baseCost: 100,      // v3: mid-game unlock
+        growthRate: 1.18,
         step: 3,
         min: 0,
         max: 100,
@@ -104,8 +109,8 @@ const UPGRADE_CONFIGS = {
         name: 'Кристалл',
         unit: '%',
         enhancement: ENHANCEMENT.CRYSTAL,
-        baseCost: 500,
-        growthRate: 1.22,
+        baseCost: 200,      // v3: late-early game
+        growthRate: 1.20,
         step: 2,
         min: 0,
         max: 100,
@@ -118,22 +123,22 @@ const UPGRADE_CONFIGS = {
         name: 'Радуга',
         unit: '%',
         enhancement: ENHANCEMENT.RAINBOW,
-        baseCost: 1000,
-        growthRate: 1.25,
-        step: 1,
+        baseCost: 400,      // v3: mid-game
+        growthRate: 1.22,
+        step: 2,
         min: 0,
         max: 100,
         getValue: () => PlayerData.rainbowChance,
-        getLevel: () => PlayerData.rainbowChance,
-        getMaxLevel: () => 100
+        getLevel: () => Math.floor(PlayerData.rainbowChance / 2),
+        getMaxLevel: () => 100 / 2
     },
     prismatic: {
         property: 'prismaticChance',
         name: 'Призма',
         unit: '%',
         enhancement: ENHANCEMENT.PRISMATIC,
-        baseCost: 2500,
-        growthRate: 1.28,
+        baseCost: 800,      // v3: late game
+        growthRate: 1.25,
         step: 1,
         min: 0,
         max: 100,
@@ -146,8 +151,8 @@ const UPGRADE_CONFIGS = {
         name: 'Небесный',
         unit: '%',
         enhancement: ENHANCEMENT.CELESTIAL,
-        baseCost: 5000,
-        growthRate: 1.30,
+        baseCost: 1500,     // v3: endgame
+        growthRate: 1.28,
         step: 1,
         min: 0,
         max: 100,
@@ -182,6 +187,7 @@ function performUpgrade(config) {
 
     // Special handling for autoMove (decreases instead of increases)
     if (config.property === 'autoMoveDelay') {
+        // v3: 5000->500 in 500ms steps, then 500->100 in 100ms steps
         const step = PlayerData.autoMoveDelay > 500 ? 500 : 100;
         PlayerData.autoMoveDelay = Math.max(config.min, PlayerData.autoMoveDelay - step);
     } else {
@@ -257,7 +263,7 @@ export const upgradeBombRadius = () => performUpgrade(UPGRADE_CONFIGS.bombRadius
 
 export const getAutoMoveLevel = () => UPGRADE_CONFIGS.autoMove.getLevel();
 export const getAutoMoveUpgradeCost = () => getUpgradeCost(UPGRADE_CONFIGS.autoMove);
-export const getAutoMoveStep = () => PlayerData.autoMoveDelay > 500 ? 500 : 100;
+export const getAutoMoveStep = () => PlayerData.autoMoveDelay > 500 ? 500 : 100; // v3: standard steps
 export const upgradeAutoMove = () => performUpgrade(UPGRADE_CONFIGS.autoMove);
 
 // ========== AUTO-BUY PROCESSOR ==========

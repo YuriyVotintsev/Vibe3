@@ -16,17 +16,32 @@ export function getColorCount() {
     return Math.max(3, 6 - PlayerData.prestigeColors);
 }
 
-// Calculate prestige coins from currency
-// Coins require: 1st=10K, 2nd=20K, 3rd=30K... Nth=N*10K
-// Total for N coins = 10000 * N * (N+1) / 2
+// === PRESTIGE BALANCE v3: Active play economy ===
+// IMPORTANT: Currency resets to 0 after each prestige!
+// Coins are earned fresh each run, not cumulative.
+//
+// Coin costs (cumulative within single run):
+//   1 coin: 3000, 2 coins: 9000, 3 coins: 18000
+//
+// Prestige progression (currency resets each time):
+//   Prestige 1: mult=0→1, ~240/min, earn 1 coin in ~12 min
+//   Prestige 2: mult=1 (2x), ~400/min, earn 1-2 coins in ~12 min
+//   Prestige 3: mult=2 (4x), ~800/min, earn 2-3 coins in ~12 min
+//   Prestige 5: mult=4 (16x), earn 3-4 coins per run
+//   Prestige 10: mult=8+ (256x+), earn 5-6 coins per run
+//
+// Total coins over 2 hours: ~50-60 coins
+// Enough for: all tiers, arena, colors, several auto-buys, high mult
 export function getPrestigeCoinsFromCurrency(currency) {
-    if (currency < 10000) return 0;
-    const n = Math.floor((-1 + Math.sqrt(1 + currency / 1250)) / 2);
+    if (currency < 3000) return 0;
+    // Derived from: 3000 * n * (n+1) / 2 = currency
+    // n = (-1 + sqrt(1 + 4*currency/3000)) / 2
+    const n = Math.floor((-1 + Math.sqrt(1 + currency / 375)) / 2);
     return Math.max(0, n);
 }
 
 export function getCurrencyForCoins(n) {
-    return 10000 * n * (n + 1) / 2;
+    return 3000 * n * (n + 1) / 2;
 }
 
 export function getCurrencyForNextCoin() {
@@ -63,7 +78,7 @@ export function performPrestige() {
 
 // ========== PRESTIGE UPGRADES ==========
 
-// Upgrade configurations
+// Upgrade configurations (balanced for ~2 hour completion)
 const PRESTIGE_UPGRADE_CONFIGS = {
     moneyMult: {
         property: 'prestigeMoneyMult',
@@ -72,17 +87,17 @@ const PRESTIGE_UPGRADE_CONFIGS = {
     },
     tiers: {
         property: 'prestigeTiers',
-        getCost: () => (PlayerData.prestigeTiers + 1) * 2,
+        getCost: () => PlayerData.prestigeTiers + 1, // was *2, now linear
         maxLevel: 4
     },
     colors: {
         property: 'prestigeColors',
-        getCost: () => (PlayerData.prestigeColors + 1) * 3,
+        getCost: () => (PlayerData.prestigeColors + 1) * 2, // was *3, now *2
         maxLevel: 3
     },
     arena: {
         property: 'prestigeArena',
-        getCost: () => (PlayerData.prestigeArena + 1) * 2,
+        getCost: () => PlayerData.prestigeArena + 1, // was *2, now linear
         maxLevel: 4
     }
 };
@@ -113,12 +128,32 @@ export const upgradePrestigeColors = () => performPrestigeUpgrade(PRESTIGE_UPGRA
 export const upgradePrestigeArena = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.arena);
 
 // ========== AUTO-BUY UNLOCKS ==========
+// v3: Different costs based on when player needs them
+// Early game (Bronze/Silver): cheap, needed soon
+// Mid game (Gold/Crystal/Bombs): moderate
+// Late game (Rainbow/Prismatic/Celestial): expensive luxury
 
-export const AUTO_BUY_COST = 5;
+const AUTO_BUY_COSTS = {
+    autoBuyBronze: 2,       // Essential, buy early
+    autoBuySilver: 2,       // Essential, buy early
+    autoBuyGold: 3,         // Mid-game
+    autoBuyCrystal: 3,      // Mid-game
+    autoBuyBombChance: 3,   // Mid-game QoL
+    autoBuyBombRadius: 4,   // Late-mid, powerful
+    autoBuyRainbow: 4,      // Late game
+    autoBuyAutoMove: 4,     // Late game (active players don't need early)
+    autoBuyPrismatic: 5,    // Endgame luxury
+    autoBuyCelestial: 5     // Endgame luxury
+};
+
+export function getAutoBuyCost(property) {
+    return AUTO_BUY_COSTS[property] || 3;
+}
 
 function buyAutoBuy(property) {
-    if (!PlayerData[property] && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
-        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+    const cost = getAutoBuyCost(property);
+    if (!PlayerData[property] && PlayerData.prestigeCurrency >= cost) {
+        PlayerData.prestigeCurrency -= cost;
         PlayerData[property] = true;
         savePlayerData();
         return true;
@@ -136,3 +171,6 @@ export const buyAutoBuyCrystal = () => buyAutoBuy('autoBuyCrystal');
 export const buyAutoBuyRainbow = () => buyAutoBuy('autoBuyRainbow');
 export const buyAutoBuyPrismatic = () => buyAutoBuy('autoBuyPrismatic');
 export const buyAutoBuyCelestial = () => buyAutoBuy('autoBuyCelestial');
+
+// Export costs for UI
+export { AUTO_BUY_COSTS };
