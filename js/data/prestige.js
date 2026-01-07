@@ -30,8 +30,9 @@ const COIN_BASE = 5000;
 export function getPrestigeCoinsFromCurrency(currency) {
     if (currency < COIN_BASE) return 0;
     // Derived from: COIN_BASE * n * (n+1) / 2 = currency
-    // n = (-1 + sqrt(1 + 4*currency/COIN_BASE)) / 2
-    const n = Math.floor((-1 + Math.sqrt(1 + currency / (COIN_BASE / 4))) / 2);
+    // n^2 + n - 2*currency/COIN_BASE = 0
+    // n = (-1 + sqrt(1 + 8*currency/COIN_BASE)) / 2
+    const n = Math.floor((-1 + Math.sqrt(1 + 8 * currency / COIN_BASE)) / 2);
     return Math.max(0, n);
 }
 

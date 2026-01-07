@@ -157,7 +157,10 @@ export class MainScene extends Phaser.Scene {
         gem.setData('enhancement', enh);
 
         if (enh !== ENHANCEMENT.NONE) {
-            const overlay = this.add.image(gem.x, gem.y, `overlay_${enh}`);
+            const cellSize = getCellSize();
+            const cornerOffset = cellSize * 0.25; // offset to bottom-right corner
+            const overlay = this.add.image(gem.x + cornerOffset, gem.y + cornerOffset, `overlay_${enh}`);
+            overlay.setScale(0.7); // slightly smaller
             overlay.setMask(this.gemMask);
             gem.setData('overlay', overlay);
         }

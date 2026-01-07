@@ -1,6 +1,7 @@
 // SwapHandler.js - Handles gem selection and swapping (click and swipe)
 import { GameSettings, SWAP_DURATION, GEM_STATE } from './config.js';
 import { checkMatchAt } from './BoardLogic.js';
+import { getCellSize } from './utils.js';
 
 /**
  * Manages gem selection and swap operations:
@@ -191,21 +192,30 @@ export class SwapHandler {
         // Get overlays if they exist
         const overlay1 = gem1.getData('overlay');
         const overlay2 = gem2.getData('overlay');
+        const cornerOffset = getCellSize() * 0.25;
 
-        // Animate gem1 (and its overlay)
-        const targets1 = overlay1 ? [gem1, overlay1] : gem1;
+        // Animate gem1
         scene.tweens.add({
-            targets: targets1,
+            targets: gem1,
             x: pos2.x,
             y: pos2.y,
             duration: SWAP_DURATION,
             ease: 'Power2'
         });
+        // Animate overlay1 to corner offset position
+        if (overlay1) {
+            scene.tweens.add({
+                targets: overlay1,
+                x: pos2.x + cornerOffset,
+                y: pos2.y + cornerOffset,
+                duration: SWAP_DURATION,
+                ease: 'Power2'
+            });
+        }
 
-        // Animate gem2 (and its overlay) and use pre-calculated match result
-        const targets2 = overlay2 ? [gem2, overlay2] : gem2;
+        // Animate gem2 and use pre-calculated match result
         scene.tweens.add({
-            targets: targets2,
+            targets: gem2,
             x: pos1.x,
             y: pos1.y,
             duration: SWAP_DURATION,
@@ -230,6 +240,16 @@ export class SwapHandler {
                 }
             }
         });
+        // Animate overlay2 to corner offset position
+        if (overlay2) {
+            scene.tweens.add({
+                targets: overlay2,
+                x: pos1.x + cornerOffset,
+                y: pos1.y + cornerOffset,
+                duration: SWAP_DURATION,
+                ease: 'Power2'
+            });
+        }
     }
 
     /**
@@ -252,19 +272,29 @@ export class SwapHandler {
         // Get overlays if they exist
         const overlay1 = gem1.getData('overlay');
         const overlay2 = gem2.getData('overlay');
+        const cornerOffset = getCellSize() * 0.25;
 
-        const targets1 = overlay1 ? [gem1, overlay1] : gem1;
+        // Animate gem1
         scene.tweens.add({
-            targets: targets1,
+            targets: gem1,
             x: pos1.x,
             y: pos1.y,
             duration: SWAP_DURATION,
             ease: 'Power2'
         });
+        if (overlay1) {
+            scene.tweens.add({
+                targets: overlay1,
+                x: pos1.x + cornerOffset,
+                y: pos1.y + cornerOffset,
+                duration: SWAP_DURATION,
+                ease: 'Power2'
+            });
+        }
 
-        const targets2 = overlay2 ? [gem2, overlay2] : gem2;
+        // Animate gem2
         scene.tweens.add({
-            targets: targets2,
+            targets: gem2,
             x: pos2.x,
             y: pos2.y,
             duration: SWAP_DURATION,
@@ -277,6 +307,15 @@ export class SwapHandler {
                 scene.isAutoMoving = false;
             }
         });
+        if (overlay2) {
+            scene.tweens.add({
+                targets: overlay2,
+                x: pos2.x + cornerOffset,
+                y: pos2.y + cornerOffset,
+                duration: SWAP_DURATION,
+                ease: 'Power2'
+            });
+        }
 
         if (!wasAutoMove) {
             scene.uiManager.showMessage('Нет совпадений!');

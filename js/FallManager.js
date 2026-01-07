@@ -56,10 +56,11 @@ export class FallManager {
                     if (gem.y < targetY) {
                         gem.y = Math.min(gem.y + fallAmount, targetY);
 
-                        // Move overlay with gem
+                        // Move overlay with gem (maintain corner offset)
                         const overlay = gem.getData('overlay');
                         if (overlay) {
-                            overlay.y = gem.y;
+                            const cornerOffset = getCellSize() * 0.25;
+                            overlay.y = gem.y + cornerOffset;
                         }
 
                         if (gem.y >= targetY) {
