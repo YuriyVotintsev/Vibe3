@@ -3,6 +3,7 @@ import {
     formatNumber,
     getPrestigeCoinsFromCurrency,
     getProgressToNextCoin,
+    getCurrencyForNextCoin,
     getMoneyMultiplier,
     getBoardSize,
     getColorCount,
@@ -81,7 +82,8 @@ export class PrestigeScene extends Phaser.Scene {
             barFill.fillRoundedRect(cx - barWidth / 2, barY, barWidth * progress, barHeight, 6);
         }
 
-        this.add.text(cx, barY + barHeight + 12, `${Math.floor(progress * 100)}% до след. монеты`, {
+        const nextCoinCost = getCurrencyForNextCoin();
+        this.add.text(cx, barY + barHeight + 12, `${formatNumber(PlayerData.currency)} / ${formatNumber(nextCoinCost)} 💰`, {
             fontSize: '12px', color: '#888888'
         }).setOrigin(0.5);
 
