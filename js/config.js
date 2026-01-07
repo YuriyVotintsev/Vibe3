@@ -30,9 +30,9 @@ export const COLOR_NAMES = [
     'Небесный', 'Алый'
 ];
 
-// Format large numbers with scientific notation (>10000)
+// Format large numbers with scientific notation (>1000)
 export function formatNumber(n) {
-    if (n < 10000) return Math.floor(n).toString();
+    if (n < 1000) return Math.floor(n).toString();
     if (n < 1e6) return (n / 1e3).toFixed(1) + 'K';
     if (n < 1e9) return (n / 1e6).toFixed(2) + 'M';
     if (n < 1e12) return (n / 1e9).toFixed(2) + 'B';
@@ -595,4 +595,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.83-js';
+export const JS_VERSION = '0.0.84-js';
