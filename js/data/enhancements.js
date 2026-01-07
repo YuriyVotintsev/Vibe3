@@ -25,18 +25,18 @@ export const ENHANCEMENT_TIER = {
     [ENHANCEMENT.CELESTIAL]: 6
 };
 
-// === MULTIPLIER BALANCE v2 ===
-// Designed for satisfying power curve and endgame WOW factor
-// Each tier roughly 3-5x previous for good "upgrade feel"
+// === MULTIPLIER BALANCE v3 ===
+// Power curve: each tier roughly 3-4x previous
+// Celestial is the ultimate endgame reward
 export const ENHANCEMENT_MULTIPLIERS = {
     [ENHANCEMENT.NONE]: 1,
-    [ENHANCEMENT.BRONZE]: 2,        // common, +100%
+    [ENHANCEMENT.BRONZE]: 2,        // +100% — common early boost
     [ENHANCEMENT.SILVER]: 5,        // 2.5x bronze
     [ENHANCEMENT.GOLD]: 15,         // 3x silver
     [ENHANCEMENT.CRYSTAL]: 50,      // ~3x gold
-    [ENHANCEMENT.RAINBOW]: 200,     // 4x crystal
-    [ENHANCEMENT.PRISMATIC]: 1000,  // 5x rainbow
-    [ENHANCEMENT.CELESTIAL]: 10000  // 10x prismatic — ENDGAME WOW!
+    [ENHANCEMENT.RAINBOW]: 150,     // 3x crystal
+    [ENHANCEMENT.PRISMATIC]: 500,   // ~3x rainbow
+    [ENHANCEMENT.CELESTIAL]: 2000   // 4x prismatic — endgame crown
 };
 
 // Display names for enhancements

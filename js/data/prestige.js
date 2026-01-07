@@ -16,27 +16,29 @@ export function getColorCount() {
     return Math.max(3, 6 - PlayerData.prestigeColors);
 }
 
-// === PRESTIGE BALANCE v2 ===
-// Coins require: 1st=500, 2nd=1000, 3rd=1500... Nth=N*500
-// Total for N coins = 500 * N * (N+1) / 2
+// === PRESTIGE BALANCE v3: Active play economy ===
+// Base income: ~240 currency/min (active) + upgrades
+// Coins require: 1st=3000, 2nd=6000, 3rd=9000... Nth=N*3000
+// Total for N coins = 3000 * N * (N+1) / 2
 //
-// Progression timeline:
-//   Coin 1: 500 currency (~8-10 min)
-//   Coin 2: 1500 total (~15-18 min)
-//   Coin 3: 3000 total (~22-25 min)
-//   Coin 5: 7500 total (~35 min)
-//   Coin 10: 27500 total (~55 min)
-//   Coin 20: 105000 total (~90 min)
+// Progression timeline (with upgrades accelerating income):
+//   Coin 1: 3000 currency (~8-10 min active play)
+//   Coin 2: 9000 total (~18-20 min, has 2x mult)
+//   Coin 3: 18000 total (~28-30 min)
+//   Coin 5: 45000 total (~45-50 min)
+//   Coin 10: 165000 total (~75-80 min)
+//   Coin 15: 360000 total (~100-110 min)
+//   Coin 20: 630000 total (~120 min = endgame)
 export function getPrestigeCoinsFromCurrency(currency) {
-    if (currency < 500) return 0;
-    // Derived from: 500 * n * (n+1) / 2 = currency
-    // n = (-1 + sqrt(1 + 4*currency/500)) / 2
-    const n = Math.floor((-1 + Math.sqrt(1 + currency / 62.5)) / 2);
+    if (currency < 3000) return 0;
+    // Derived from: 3000 * n * (n+1) / 2 = currency
+    // n = (-1 + sqrt(1 + 4*currency/3000)) / 2
+    const n = Math.floor((-1 + Math.sqrt(1 + currency / 375)) / 2);
     return Math.max(0, n);
 }
 
 export function getCurrencyForCoins(n) {
-    return 500 * n * (n + 1) / 2;
+    return 3000 * n * (n + 1) / 2;
 }
 
 export function getCurrencyForNextCoin() {
@@ -124,7 +126,7 @@ export const upgradePrestigeArena = () => performPrestigeUpgrade(PRESTIGE_UPGRAD
 
 // ========== AUTO-BUY UNLOCKS ==========
 
-export const AUTO_BUY_COST = 2; // v2: even cheaper, QoL should come early
+export const AUTO_BUY_COST = 3; // v3: reasonable for active economy
 
 function buyAutoBuy(property) {
     if (!PlayerData[property] && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {

@@ -22,21 +22,25 @@ function emit(event, data) {
 
 // ========== DEFAULT VALUES ==========
 
-// === BALANCE v2: Target 2-hour completion ===
-// First prestige: ~10 min, Gold unlock: ~25 min, Endgame: ~100-120 min
+// === BALANCE v3: Active play focus ===
+// Key insight: Player makes ~60 moves/min manually = 240 currency/min BASE
+// Auto-move (5000ms) is backup, not primary income source
+// All bonuses start at ZERO — player earns everything
+//
+// Timeline: First prestige ~10min, Gold ~25min, Endgame ~120min
 const DEFAULTS = {
     // Currency
     currency: 0,
     totalEarned: 0,
 
-    // Regular upgrades — faster start!
-    autoMoveDelay: 3000,    // was 5000 — game feels snappier
-    bombChance: 15,         // was 10 — more explosions = more fun
+    // Regular upgrades — conservative start
+    autoMoveDelay: 5000,    // v3: back to 5000, active play is primary
+    bombChance: 0,          // v3: ZERO — bombs are earned!
     bombRadius: 1,
 
-    // Enhancement chances — much higher for visible progress
-    bronzeChance: 15,       // was 8 — bronze should be common
-    silverChance: 8,        // was 2 — silver actually appears now
+    // Enhancement chances — ALL start at zero!
+    bronzeChance: 0,        // v3: earn your multipliers
+    silverChance: 0,        // v3: no freebies
     goldChance: 0,
     crystalChance: 0,
     rainbowChance: 0,
