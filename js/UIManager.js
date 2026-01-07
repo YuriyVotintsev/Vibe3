@@ -37,6 +37,7 @@ export class UIManager {
         this.currencyText = null;
         this.messageText = null;
         this.prestigeText = null;
+        this.fullscreenBtn = null;
     }
 
     /**
@@ -86,6 +87,31 @@ export class UIManager {
             color: COLORS.text.gold,
             fontStyle: 'bold'
         }).setOrigin(0, 0.5);
+
+        // Fullscreen toggle button (right side of header)
+        this.fullscreenBtn = new Button(scene, {
+            x: layout.canvasWidth - 45,
+            y: 58,
+            width: 44,
+            height: 44,
+            text: '⛶',
+            style: 'secondary',
+            fontSize: FONT_SIZE['2xl'],
+            onClick: () => this.toggleFullscreen()
+        });
+    }
+
+    /**
+     * Toggle fullscreen mode
+     */
+    toggleFullscreen() {
+        if (this.scene.scale.isFullscreen) {
+            this.scene.scale.stopFullscreen();
+            this.fullscreenBtn.setText('⛶');
+        } else {
+            this.scene.scale.startFullscreen();
+            this.fullscreenBtn.setText('✕');
+        }
     }
 
     /**
