@@ -1,4 +1,5 @@
 // UIManager.js - Handles UI elements for MainScene
+
 import {
     BOARD_TOTAL_SIZE,
     BOARD_OFFSET_Y,
@@ -8,6 +9,20 @@ import {
     getPrestigeCoinsFromCurrency,
     formatNumber
 } from './config.js';
+import { COLORS, FONT_SIZE, RADIUS, DURATION } from './styles.js';
+import { Button } from './ui/Button.js';
+
+// Enhancement color mapping for floating text
+const ENHANCEMENT_TEXT_STYLES = {
+    [ENHANCEMENT.NONE]: { color: COLORS.text.white, fontSize: FONT_SIZE.base },
+    [ENHANCEMENT.BRONZE]: { color: COLORS.text.bronze, fontSize: FONT_SIZE.lg },
+    [ENHANCEMENT.SILVER]: { color: COLORS.text.silver, fontSize: FONT_SIZE.lg },
+    [ENHANCEMENT.GOLD]: { color: COLORS.text.goldGem, fontSize: FONT_SIZE.xl },
+    [ENHANCEMENT.CRYSTAL]: { color: COLORS.text.crystal, fontSize: FONT_SIZE['2xl'] },
+    [ENHANCEMENT.RAINBOW]: { color: COLORS.text.rainbow, fontSize: FONT_SIZE['3xl'] },
+    [ENHANCEMENT.PRISMATIC]: { color: COLORS.text.prismatic, fontSize: FONT_SIZE['4xl'] },
+    [ENHANCEMENT.CELESTIAL]: { color: COLORS.text.celestial, fontSize: FONT_SIZE['6xl'] }
+};
 
 /**
  * Manages UI elements:
@@ -33,94 +48,128 @@ export class UIManager {
         const scene = this.scene;
         const cx = scene.cameras.main.width / 2;
 
+        this.createHeader(cx);
+        this.createMessageText(cx);
+        this.createButtons(cx);
+        this.createVersionText();
+    }
+
+    /**
+     * Create header panel with currency
+     */
+    createHeader(cx) {
+        const scene = this.scene;
+
         // Header panel background
         const headerBg = scene.add.graphics();
-        headerBg.fillStyle(0x16213e, 0.95);
+        headerBg.fillStyle(COLORS.bgHeader, 0.95);
         headerBg.fillRoundedRect(10, 8, scene.cameras.main.width - 20, 100, 15);
-        headerBg.lineStyle(2, 0x3498db, 0.5);
+        headerBg.lineStyle(2, COLORS.secondary, 0.5);
         headerBg.strokeRoundedRect(10, 8, scene.cameras.main.width - 20, 100, 15);
 
         // Title
         scene.add.text(cx, 35, 'MATCH-3', {
-            fontSize: '32px',
+            fontSize: FONT_SIZE['5xl'],
             fontFamily: 'Arial Black',
-            color: '#ffffff'
+            color: COLORS.text.white
         }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
 
-        // Currency stat card (centered)
+        // Currency stat card
         const statY = 80;
         const statWidth = 180;
         scene.add.graphics()
-            .fillStyle(0xf39c12, 0.25)
-            .fillRoundedRect(cx - statWidth / 2, statY - 22, statWidth, 44, 10);
-        scene.add.text(cx - 50, statY, '💰', { fontSize: '28px' }).setOrigin(0.5);
-        this.currencyText = scene.add.text(cx + 5, statY, formatNumber(PlayerData.currency), {
-            fontSize: '26px', color: '#f1c40f', fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
+            .fillStyle(COLORS.warning, 0.25)
+            .fillRoundedRect(cx - statWidth / 2, statY - 22, statWidth, 44, RADIUS.lg);
 
-        // Message text
-        this.messageText = scene.add.text(cx, BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 25, '', {
-            fontSize: '18px',
-            color: '#55efc4',
+        scene.add.text(cx - 50, statY, '💰', { fontSize: FONT_SIZE['4xl'] }).setOrigin(0.5);
+
+        this.currencyText = scene.add.text(cx + 5, statY, formatNumber(PlayerData.currency), {
+            fontSize: FONT_SIZE['3xl'],
+            color: COLORS.text.gold,
+            fontStyle: 'bold'
+        }).setOrigin(0, 0.5);
+    }
+
+    /**
+     * Create message text area
+     */
+    createMessageText(cx) {
+        this.messageText = this.scene.add.text(cx, BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 25, '', {
+            fontSize: FONT_SIZE.xl,
+            color: COLORS.text.green,
             fontStyle: 'bold'
         }).setOrigin(0.5);
-
-        // Bottom buttons
-        this.createButtons();
-
-        // Version text
-        scene.add.text(10, scene.cameras.main.height - 10, JS_VERSION, {
-            fontSize: '14px', color: '#888888', fontStyle: 'bold'
-        }).setOrigin(0, 1);
     }
 
     /**
      * Create bottom panel buttons
      */
-    createButtons() {
+    createButtons(cx) {
         const scene = this.scene;
-        const cx = scene.cameras.main.width / 2;
         const btnY = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 70;
         const btnWidth = 100;
         const btnHeight = 48;
-        const btnSpacing = 110; // space between button centers
+        const btnSpacing = 110;
 
-        const createButton = (x, color, hoverColor, label, callback) => {
-            const bg = scene.add.graphics();
-            bg.fillStyle(color, 1);
-            bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
-
-            scene.add.rectangle(x, btnY, btnWidth, btnHeight, 0x000000, 0)
-                .setInteractive({ useHandCursor: true })
-                .on('pointerover', () => {
-                    bg.clear();
-                    bg.fillStyle(hoverColor, 1);
-                    bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
-                })
-                .on('pointerout', () => {
-                    bg.clear();
-                    bg.fillStyle(color, 1);
-                    bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
-                })
-                .on('pointerdown', callback);
-
-            const txt = scene.add.text(x, btnY, label, {
-                fontSize: '14px', color: '#ffffff', fontStyle: 'bold'
-            }).setOrigin(0.5);
-
-            return txt;
-        };
-
-        // Three buttons in a row (with duplicate launch protection)
-        createButton(cx - btnSpacing, 0x9b59b6, 0x8e44ad, '⬆️ Апгрейд', () => {
-            if (!scene.scene.isActive('UpgradesScene')) scene.scene.launch('UpgradesScene');
+        // Upgrades button
+        new Button(scene, {
+            x: cx - btnSpacing,
+            y: btnY,
+            width: btnWidth,
+            height: btnHeight,
+            text: '⬆️ Апгрейд',
+            style: 'primary',
+            fontSize: FONT_SIZE.base,
+            onClick: () => {
+                if (!scene.scene.isActive('UpgradesScene')) {
+                    scene.scene.launch('UpgradesScene');
+                }
+            }
         });
-        this.prestigeText = createButton(cx, 0xf39c12, 0xe67e22, this.getPrestigeButtonText(), () => {
-            if (!scene.scene.isActive('PrestigeScene')) scene.scene.launch('PrestigeScene');
+
+        // Prestige button
+        const prestigeBtn = new Button(scene, {
+            x: cx,
+            y: btnY,
+            width: btnWidth,
+            height: btnHeight,
+            text: this.getPrestigeButtonText(),
+            style: 'warning',
+            fontSize: FONT_SIZE.base,
+            onClick: () => {
+                if (!scene.scene.isActive('PrestigeScene')) {
+                    scene.scene.launch('PrestigeScene');
+                }
+            }
         });
-        createButton(cx + btnSpacing, 0x3498db, 0x2980b9, '⚙️ Опции', () => {
-            if (!scene.scene.isActive('SettingsScene')) scene.scene.launch('SettingsScene');
+        this.prestigeText = prestigeBtn.label;
+
+        // Settings button
+        new Button(scene, {
+            x: cx + btnSpacing,
+            y: btnY,
+            width: btnWidth,
+            height: btnHeight,
+            text: '⚙️ Опции',
+            style: 'secondary',
+            fontSize: FONT_SIZE.base,
+            onClick: () => {
+                if (!scene.scene.isActive('SettingsScene')) {
+                    scene.scene.launch('SettingsScene');
+                }
+            }
         });
+    }
+
+    /**
+     * Create version text
+     */
+    createVersionText() {
+        this.scene.add.text(10, this.scene.cameras.main.height - 10, JS_VERSION, {
+            fontSize: FONT_SIZE.base,
+            color: COLORS.text.muted,
+            fontStyle: 'bold'
+        }).setOrigin(0, 1);
     }
 
     /**
@@ -149,8 +198,6 @@ export class UIManager {
      */
     updateCurrency() {
         this.currencyText.setText(formatNumber(PlayerData.currency));
-        // Don't update prestige button during matches - it can cause issues
-        // Prestige text updates when scene is opened
     }
 
     /**
@@ -164,7 +211,7 @@ export class UIManager {
         this.scene.tweens.add({
             targets: this.messageText,
             alpha: 0,
-            delay: 1000,
+            delay: DURATION.message,
             duration: 500
         });
     }
@@ -177,35 +224,11 @@ export class UIManager {
      * @param {string} enhancement - Enhancement type
      */
     showFloatingCurrency(x, y, amount, enhancement = ENHANCEMENT.NONE) {
-        // Color based on enhancement
-        let color = '#ffffff';
-        let fontSize = '14px';
-        if (enhancement === ENHANCEMENT.BRONZE) {
-            color = '#cd7f32';
-            fontSize = '15px';
-        } else if (enhancement === ENHANCEMENT.SILVER) {
-            color = '#c0c0c0';
-            fontSize = '16px';
-        } else if (enhancement === ENHANCEMENT.GOLD) {
-            color = '#ffd700';
-            fontSize = '18px';
-        } else if (enhancement === ENHANCEMENT.CRYSTAL) {
-            color = '#88ffff';
-            fontSize = '22px';
-        } else if (enhancement === ENHANCEMENT.RAINBOW) {
-            color = '#ff88ff';
-            fontSize = '26px';
-        } else if (enhancement === ENHANCEMENT.PRISMATIC) {
-            color = '#ffff88';
-            fontSize = '30px';
-        } else if (enhancement === ENHANCEMENT.CELESTIAL) {
-            color = '#aaddff';
-            fontSize = '34px';
-        }
+        const style = ENHANCEMENT_TEXT_STYLES[enhancement] || ENHANCEMENT_TEXT_STYLES[ENHANCEMENT.NONE];
 
         const text = this.scene.add.text(x, y, `+${formatNumber(amount)}💰`, {
-            fontSize: fontSize,
-            color: color,
+            fontSize: style.fontSize,
+            color: style.color,
             fontStyle: 'bold',
             stroke: '#000000',
             strokeThickness: 3

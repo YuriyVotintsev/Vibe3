@@ -1,4 +1,6 @@
 import { GameSettings, resetPlayerData } from './config.js';
+import { Button } from './ui/Button.js';
+import { COLORS, FONT_SIZE, RADIUS, FONT_FAMILY } from './styles.js';
 
 export class SettingsScene extends Phaser.Scene {
     constructor() {
@@ -24,20 +26,20 @@ export class SettingsScene extends Phaser.Scene {
         const panelHeight = panelBottom - panelTop;
 
         // Dark overlay (covers entire screen)
-        this.add.rectangle(cx, H / 2, W, H, 0x000000, 0.85);
+        this.add.rectangle(cx, H / 2, W, H, COLORS.bgOverlay, 0.85);
 
         // Panel (smaller, doesn't include buttons)
         const panel = this.add.graphics();
-        panel.fillStyle(0x1e1e2e, 1);
-        panel.fillRoundedRect(15, panelTop, W - 30, panelHeight, 16);
-        panel.lineStyle(3, 0xe94560, 1);
-        panel.strokeRoundedRect(15, panelTop, W - 30, panelHeight, 16);
+        panel.fillStyle(COLORS.bgPanel, 1);
+        panel.fillRoundedRect(15, panelTop, W - 30, panelHeight, RADIUS['2xl']);
+        panel.lineStyle(3, COLORS.danger, 1);
+        panel.strokeRoundedRect(15, panelTop, W - 30, panelHeight, RADIUS['2xl']);
 
         // Title
         this.add.text(cx, 55, 'НАСТРОЙКИ', {
-            fontSize: '28px',
-            fontFamily: 'Arial Black',
-            color: '#ffffff'
+            fontSize: FONT_SIZE['4xl'],
+            fontFamily: FONT_FAMILY.bold,
+            color: COLORS.text.white
         }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
 
         // Settings rows - fixed positions inside panel
@@ -62,13 +64,13 @@ export class SettingsScene extends Phaser.Scene {
 
         // Row background
         const rowBg = this.add.graphics();
-        rowBg.fillStyle(0x2a2a3e, 0.5);
-        rowBg.fillRoundedRect(25, y - 5, W - 50, 80, 10);
+        rowBg.fillStyle(COLORS.bgButton, 0.5);
+        rowBg.fillRoundedRect(25, y - 5, W - 50, 80, RADIUS.lg);
 
         // Label at top
         this.add.text(cx, y + 12, label, {
-            fontSize: '18px',
-            color: '#ffffff',
+            fontSize: FONT_SIZE.xl,
+            color: COLORS.text.white,
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
@@ -82,56 +84,38 @@ export class SettingsScene extends Phaser.Scene {
 
         // Value text (center)
         const valueText = this.add.text(cx, controlY, format(value), {
-            fontSize: '28px',
-            color: '#55efc4',
+            fontSize: FONT_SIZE['4xl'],
+            color: COLORS.text.green,
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
         // Minus button (left of center)
-        this.createControlButton(cx - spacing, controlY, btnSize, '−', () => {
-            let newVal = parseFloat(valueText.text) - step;
-            newVal = Math.round(newVal * 10) / 10;
-            if (newVal >= min - 0.001) {
-                valueText.setText(format(newVal));
-                onChange(newVal);
+        new Button(this, {
+            x: cx - spacing, y: controlY, width: btnSize, height: btnSize,
+            text: '−', style: 'default', fontSize: FONT_SIZE['5xl'],
+            onClick: () => {
+                let newVal = parseFloat(valueText.text) - step;
+                newVal = Math.round(newVal * 10) / 10;
+                if (newVal >= min - 0.001) {
+                    valueText.setText(format(newVal));
+                    onChange(newVal);
+                }
             }
         });
 
         // Plus button (right of center)
-        this.createControlButton(cx + spacing, controlY, btnSize, '+', () => {
-            let newVal = parseFloat(valueText.text) + step;
-            newVal = Math.round(newVal * 10) / 10;
-            if (newVal <= max + 0.001) {
-                valueText.setText(format(newVal));
-                onChange(newVal);
+        new Button(this, {
+            x: cx + spacing, y: controlY, width: btnSize, height: btnSize,
+            text: '+', style: 'default', fontSize: FONT_SIZE['5xl'],
+            onClick: () => {
+                let newVal = parseFloat(valueText.text) + step;
+                newVal = Math.round(newVal * 10) / 10;
+                if (newVal <= max + 0.001) {
+                    valueText.setText(format(newVal));
+                    onChange(newVal);
+                }
             }
         });
-    }
-
-    createControlButton(x, y, size, text, onClick) {
-        const btn = this.add.graphics();
-        btn.fillStyle(0x555555, 1);
-        btn.fillRoundedRect(x - size / 2, y - size / 2, size, size, 12);
-
-        this.add.rectangle(x, y, size, size, 0x000000, 0)
-            .setInteractive({ useHandCursor: true })
-            .on('pointerover', () => {
-                btn.clear();
-                btn.fillStyle(0x777777, 1);
-                btn.fillRoundedRect(x - size / 2, y - size / 2, size, size, 12);
-            })
-            .on('pointerout', () => {
-                btn.clear();
-                btn.fillStyle(0x555555, 1);
-                btn.fillRoundedRect(x - size / 2, y - size / 2, size, size, 12);
-            })
-            .on('pointerdown', onClick);
-
-        this.add.text(x, y, text, {
-            fontSize: '32px',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
     }
 
     createBottomButtons() {
@@ -141,41 +125,26 @@ export class SettingsScene extends Phaser.Scene {
         const btnWidth = W - 60;
         const btnHeight = 50;
 
-        // Apply button (outside panel)
-        const applyY = H - 170;
-        this.createActionButton(cx, applyY, btnWidth, btnHeight, '✓ ПРИМЕНИТЬ', 0x27ae60, 0x2ecc71, () => {
-            this.applySettings();
+        // Apply button
+        new Button(this, {
+            x: cx, y: H - 170, width: btnWidth, height: btnHeight,
+            text: '✓ ПРИМЕНИТЬ', style: 'success', fontSize: FONT_SIZE.xl,
+            onClick: () => this.applySettings()
         });
 
-        // Cancel button (outside panel)
-        const cancelY = H - 110;
-        this.createActionButton(cx, cancelY, btnWidth, btnHeight, '✕ ОТМЕНА', 0xe74c3c, 0xc0392b, () => {
-            this.cancelSettings();
+        // Cancel button
+        new Button(this, {
+            x: cx, y: H - 110, width: btnWidth, height: btnHeight,
+            text: '✕ ОТМЕНА', style: 'danger', fontSize: FONT_SIZE.xl,
+            onClick: () => this.cancelSettings()
         });
 
-        // Reset button (outside panel)
-        const resetY = H - 50;
+        // Reset button with two-click confirmation
         this.resetConfirm = false;
-
-        const resetBtn = this.add.graphics();
-        resetBtn.fillStyle(0x666666, 1);
-        resetBtn.fillRoundedRect(cx - btnWidth / 2, resetY - btnHeight / 2, btnWidth, btnHeight, 12);
-
-        const resetText = this.add.text(cx, resetY, '🗑️ СБРОСИТЬ ПРОГРЕСС', {
-            fontSize: '16px', color: '#ffffff', fontStyle: 'bold'
-        }).setOrigin(0.5);
-
-        this.add.rectangle(cx, resetY, btnWidth, btnHeight, 0x000000, 0)
-            .setInteractive({ useHandCursor: true })
-            .on('pointerover', () => {
-                const color = this.resetConfirm ? 0xc0392b : 0x888888;
-                resetBtn.clear().fillStyle(color, 1).fillRoundedRect(cx - btnWidth / 2, resetY - btnHeight / 2, btnWidth, btnHeight, 12);
-            })
-            .on('pointerout', () => {
-                const color = this.resetConfirm ? 0xe74c3c : 0x666666;
-                resetBtn.clear().fillStyle(color, 1).fillRoundedRect(cx - btnWidth / 2, resetY - btnHeight / 2, btnWidth, btnHeight, 12);
-            })
-            .on('pointerdown', () => {
+        const resetBtn = new Button(this, {
+            x: cx, y: H - 50, width: btnWidth, height: btnHeight,
+            text: '🗑️ СБРОСИТЬ ПРОГРЕСС', style: 'default', fontSize: FONT_SIZE.lg,
+            onClick: () => {
                 if (this.resetConfirm) {
                     resetPlayerData();
                     this.scene.stop();
@@ -183,37 +152,18 @@ export class SettingsScene extends Phaser.Scene {
                     this.scene.start('MainScene');
                 } else {
                     this.resetConfirm = true;
-                    resetBtn.clear().fillStyle(0xe74c3c, 1).fillRoundedRect(cx - btnWidth / 2, resetY - btnHeight / 2, btnWidth, btnHeight, 12);
-                    resetText.setText('⚠️ НАЖМИТЕ ЕЩЁ РАЗ');
+                    resetBtn.setStyle('danger');
+                    resetBtn.setText('⚠️ НАЖМИТЕ ЕЩЁ РАЗ');
                     this.time.delayedCall(3000, () => {
                         if (this.resetConfirm) {
                             this.resetConfirm = false;
-                            resetBtn.clear().fillStyle(0x666666, 1).fillRoundedRect(cx - btnWidth / 2, resetY - btnHeight / 2, btnWidth, btnHeight, 12);
-                            resetText.setText('🗑️ СБРОСИТЬ ПРОГРЕСС');
+                            resetBtn.setStyle('default');
+                            resetBtn.setText('🗑️ СБРОСИТЬ ПРОГРЕСС');
                         }
                     });
                 }
-            });
-    }
-
-    createActionButton(x, y, width, height, text, color, hoverColor, onClick) {
-        const btn = this.add.graphics();
-        btn.fillStyle(color, 1);
-        btn.fillRoundedRect(x - width / 2, y - height / 2, width, height, 12);
-
-        this.add.rectangle(x, y, width, height, 0x000000, 0)
-            .setInteractive({ useHandCursor: true })
-            .on('pointerover', () => {
-                btn.clear().fillStyle(hoverColor, 1).fillRoundedRect(x - width / 2, y - height / 2, width, height, 12);
-            })
-            .on('pointerout', () => {
-                btn.clear().fillStyle(color, 1).fillRoundedRect(x - width / 2, y - height / 2, width, height, 12);
-            })
-            .on('pointerdown', onClick);
-
-        this.add.text(x, y, text, {
-            fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
-        }).setOrigin(0.5);
+            }
+        });
     }
 
     applySettings() {
