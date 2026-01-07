@@ -4,7 +4,9 @@ import {
     BOARD_OFFSET_Y,
     JS_VERSION,
     PlayerData,
-    ENHANCEMENT
+    ENHANCEMENT,
+    getPrestigeCoinsFromCurrency,
+    formatNumber
 } from './config.js';
 
 /**
@@ -21,6 +23,7 @@ export class UIManager {
         this.scene = scene;
         this.currencyText = null;
         this.messageText = null;
+        this.prestigeText = null;
     }
 
     /**
@@ -51,7 +54,7 @@ export class UIManager {
             .fillStyle(0xf39c12, 0.25)
             .fillRoundedRect(cx - statWidth / 2, statY - 22, statWidth, 44, 10);
         scene.add.text(cx - 50, statY, '💰', { fontSize: '28px' }).setOrigin(0.5);
-        this.currencyText = scene.add.text(cx + 5, statY, `${PlayerData.currency}`, {
+        this.currencyText = scene.add.text(cx + 5, statY, formatNumber(PlayerData.currency), {
             fontSize: '26px', color: '#f1c40f', fontStyle: 'bold'
         }).setOrigin(0, 0.5);
 
@@ -78,9 +81,9 @@ export class UIManager {
         const scene = this.scene;
         const cx = scene.cameras.main.width / 2;
         const btnY = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 70;
-        const btnWidth = 140;
+        const btnWidth = 100;
         const btnHeight = 48;
-        const btnSpacing = 80;
+        const btnSpacing = 110; // space between button centers
 
         const createButton = (x, color, hoverColor, label, callback) => {
             const bg = scene.add.graphics();
@@ -101,20 +104,53 @@ export class UIManager {
                 })
                 .on('pointerdown', callback);
 
-            scene.add.text(x, btnY, label, {
-                fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
+            const txt = scene.add.text(x, btnY, label, {
+                fontSize: '14px', color: '#ffffff', fontStyle: 'bold'
             }).setOrigin(0.5);
+
+            return txt;
         };
 
-        createButton(cx - btnSpacing, 0x9b59b6, 0x8e44ad, '⬆️ Апгрейд', () => scene.scene.launch('UpgradesScene'));
-        createButton(cx + btnSpacing, 0x3498db, 0x2980b9, '⚙️ Опции', () => scene.scene.launch('SettingsScene'));
+        // Three buttons in a row (with duplicate launch protection)
+        createButton(cx - btnSpacing, 0x9b59b6, 0x8e44ad, '⬆️ Апгрейд', () => {
+            if (!scene.scene.isActive('UpgradesScene')) scene.scene.launch('UpgradesScene');
+        });
+        this.prestigeText = createButton(cx, 0xf39c12, 0xe67e22, this.getPrestigeButtonText(), () => {
+            if (!scene.scene.isActive('PrestigeScene')) scene.scene.launch('PrestigeScene');
+        });
+        createButton(cx + btnSpacing, 0x3498db, 0x2980b9, '⚙️ Опции', () => {
+            if (!scene.scene.isActive('SettingsScene')) scene.scene.launch('SettingsScene');
+        });
+    }
+
+    /**
+     * Get prestige button text showing coins and potential gain
+     */
+    getPrestigeButtonText() {
+        const current = PlayerData.prestigeCurrency;
+        const potential = getPrestigeCoinsFromCurrency(PlayerData.currency);
+        if (potential > 0) {
+            return `👑 ${current}(+${potential})`;
+        }
+        return `👑 ${current}`;
+    }
+
+    /**
+     * Update prestige button text
+     */
+    updatePrestige() {
+        if (this.prestigeText) {
+            this.prestigeText.setText(this.getPrestigeButtonText());
+        }
     }
 
     /**
      * Update currency display
      */
     updateCurrency() {
-        this.currencyText.setText(`${PlayerData.currency}`);
+        this.currencyText.setText(formatNumber(PlayerData.currency));
+        // Don't update prestige button during matches - it can cause issues
+        // Prestige text updates when scene is opened
     }
 
     /**
@@ -144,7 +180,10 @@ export class UIManager {
         // Color based on enhancement
         let color = '#ffffff';
         let fontSize = '14px';
-        if (enhancement === ENHANCEMENT.SILVER) {
+        if (enhancement === ENHANCEMENT.BRONZE) {
+            color = '#cd7f32';
+            fontSize = '15px';
+        } else if (enhancement === ENHANCEMENT.SILVER) {
             color = '#c0c0c0';
             fontSize = '16px';
         } else if (enhancement === ENHANCEMENT.GOLD) {
@@ -153,9 +192,18 @@ export class UIManager {
         } else if (enhancement === ENHANCEMENT.CRYSTAL) {
             color = '#88ffff';
             fontSize = '22px';
+        } else if (enhancement === ENHANCEMENT.RAINBOW) {
+            color = '#ff88ff';
+            fontSize = '26px';
+        } else if (enhancement === ENHANCEMENT.PRISMATIC) {
+            color = '#ffff88';
+            fontSize = '30px';
+        } else if (enhancement === ENHANCEMENT.CELESTIAL) {
+            color = '#aaddff';
+            fontSize = '34px';
         }
 
-        const text = this.scene.add.text(x, y, `+${amount}💰`, {
+        const text = this.scene.add.text(x, y, `+${formatNumber(amount)}💰`, {
             fontSize: fontSize,
             color: color,
             fontStyle: 'bold',

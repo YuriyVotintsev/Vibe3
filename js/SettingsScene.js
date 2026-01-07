@@ -10,8 +10,6 @@ export class SettingsScene extends Phaser.Scene {
 
         // Store original values
         this.originalSettings = {
-            boardSize: GameSettings.boardSize,
-            colorCount: GameSettings.colorCount,
             fallSpeed: GameSettings.fallSpeed,
             priceMultiplier: GameSettings.priceMultiplier
         };
@@ -44,22 +42,14 @@ export class SettingsScene extends Phaser.Scene {
 
         // Settings rows - fixed positions inside panel
         const ROW_HEIGHT = 90;
-        const START_Y = 100;
+        const START_Y = 120;
 
-        // Row 1: Board size
-        this.createSettingRow(START_Y, 'Размер поля', 4, 12, GameSettings.boardSize, 1, false,
-            val => { GameSettings.boardSize = val; });
-
-        // Row 2: Color count
-        this.createSettingRow(START_Y + ROW_HEIGHT, 'Кол-во цветов', 3, 20, GameSettings.colorCount, 1, false,
-            val => { GameSettings.colorCount = val; });
-
-        // Row 3: Fall speed
-        this.createSettingRow(START_Y + ROW_HEIGHT * 2, 'Скорость', 1, 20, GameSettings.fallSpeed, 1, false,
+        // Row 1: Fall speed
+        this.createSettingRow(START_Y, 'Скорость', 1, 20, GameSettings.fallSpeed, 1, false,
             val => { GameSettings.fallSpeed = val; });
 
-        // Row 4: Price multiplier
-        this.createSettingRow(START_Y + ROW_HEIGHT * 3, 'Множитель цен', 0.1, 1, GameSettings.priceMultiplier, 0.1, true,
+        // Row 2: Price multiplier
+        this.createSettingRow(START_Y + ROW_HEIGHT, 'Множитель цен', 0.1, 1, GameSettings.priceMultiplier, 0.1, true,
             val => { GameSettings.priceMultiplier = val; });
 
         // Buttons outside panel (on overlay)
@@ -233,8 +223,6 @@ export class SettingsScene extends Phaser.Scene {
     }
 
     cancelSettings() {
-        GameSettings.boardSize = this.originalSettings.boardSize;
-        GameSettings.colorCount = this.originalSettings.colorCount;
         GameSettings.fallSpeed = this.originalSettings.fallSpeed;
         GameSettings.priceMultiplier = this.originalSettings.priceMultiplier;
         this.scene.resume('MainScene');

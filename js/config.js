@@ -30,113 +30,282 @@ export const COLOR_NAMES = [
     'Небесный', 'Алый'
 ];
 
+// Format large numbers with scientific notation (>1000)
+export function formatNumber(n) {
+    if (n < 1000) return Math.floor(n).toString();
+    if (n < 1e6) return (n / 1e3).toFixed(1) + 'K';
+    if (n < 1e9) return (n / 1e6).toFixed(2) + 'M';
+    if (n < 1e12) return (n / 1e9).toFixed(2) + 'B';
+    return n.toExponential(2);
+}
+
 // Player persistent data
 export const PlayerData = {
     currency: 0,          // earned from matches, spent on upgrades
     totalEarned: 0,       // lifetime currency earned
-    prestigeLevel: 0,     // future use
     autoMoveDelay: 5000,  // ms between auto-moves (starts at 5 seconds)
     bombChance: 10,       // % chance to spawn bomb on manual match (starts at 10%)
     bombRadius: 1,        // explosion radius (starts at 1)
-    // Enhanced gem spawn chances (in %)
-    silverChance: 5,      // chance for silver gem (x5)
-    goldChance: 1,        // chance for gold gem (x25)
-    crystalChance: 0      // chance for crystal gem (x125), starts at 0
+    // Enhanced gem spawn chances (in %) - CASCADING: each tier rolls from previous
+    bronzeChance: 5,      // chance for bronze gem (x2) - from normal
+    silverChance: 1,      // chance for silver gem (x5) - from bronze
+    goldChance: 0,        // chance for gold gem (x15) - from silver
+    crystalChance: 0,     // chance for crystal gem (x50) - from gold
+    rainbowChance: 0,     // chance for rainbow gem (x200) - from crystal
+    prismaticChance: 0,   // chance for prismatic gem (x1000) - from rainbow
+    celestialChance: 0,   // chance for celestial gem (x5000) - from prismatic
+    // Prestige system
+    prestigeCurrency: 0,  // prestige coins
+    prestigeMoneyMult: 0, // money multiplier level (2^level)
+    prestigeTiers: 0,     // unlocked tier levels (0=3 tiers, 4=7 tiers)
+    prestigeColors: 0,    // color reduction level (0=6 colors, 3=3 colors)
+    prestigeArena: 0,     // arena size level (0=5x5, 4=9x9)
+    // Auto-buy upgrades (prestige unlocks)
+    autoBuyAutoMove: false,
+    autoBuyBombChance: false,
+    autoBuyBombRadius: false,
+    autoBuyBronze: false,
+    autoBuySilver: false,
+    autoBuyGold: false,
+    autoBuyCrystal: false,
+    autoBuyRainbow: false,
+    autoBuyPrismatic: false,
+    autoBuyCelestial: false
 };
 
-// Enhanced gem types and multipliers
+// Enhanced gem types and multipliers (7 tiers total)
 export const ENHANCEMENT = {
     NONE: 'none',
+    BRONZE: 'bronze',
     SILVER: 'silver',
     GOLD: 'gold',
-    CRYSTAL: 'crystal'
+    CRYSTAL: 'crystal',
+    RAINBOW: 'rainbow',
+    PRISMATIC: 'prismatic',
+    CELESTIAL: 'celestial'
+};
+
+// Tier index for unlock checking (0-based)
+export const ENHANCEMENT_TIER = {
+    [ENHANCEMENT.BRONZE]: 0,
+    [ENHANCEMENT.SILVER]: 1,
+    [ENHANCEMENT.GOLD]: 2,
+    [ENHANCEMENT.CRYSTAL]: 3,
+    [ENHANCEMENT.RAINBOW]: 4,
+    [ENHANCEMENT.PRISMATIC]: 5,
+    [ENHANCEMENT.CELESTIAL]: 6
 };
 
 export const ENHANCEMENT_MULTIPLIERS = {
     [ENHANCEMENT.NONE]: 1,
+    [ENHANCEMENT.BRONZE]: 2,
     [ENHANCEMENT.SILVER]: 5,
-    [ENHANCEMENT.GOLD]: 25,
-    [ENHANCEMENT.CRYSTAL]: 125
+    [ENHANCEMENT.GOLD]: 15,
+    [ENHANCEMENT.CRYSTAL]: 50,
+    [ENHANCEMENT.RAINBOW]: 200,
+    [ENHANCEMENT.PRISMATIC]: 1000,
+    [ENHANCEMENT.CELESTIAL]: 5000
 };
 
 export const ENHANCEMENT_NAMES = {
+    [ENHANCEMENT.BRONZE]: 'Бронзовый',
     [ENHANCEMENT.SILVER]: 'Серебряный',
     [ENHANCEMENT.GOLD]: 'Золотой',
-    [ENHANCEMENT.CRYSTAL]: 'Кристальный'
+    [ENHANCEMENT.CRYSTAL]: 'Кристальный',
+    [ENHANCEMENT.RAINBOW]: 'Радужный',
+    [ENHANCEMENT.PRISMATIC]: 'Призматический',
+    [ENHANCEMENT.CELESTIAL]: 'Небесный'
 };
 
-// Roll for gem enhancement when spawning
-export function rollEnhancement() {
-    const roll = Phaser.Math.Between(1, 100);
-    if (PlayerData.crystalChance > 0 && roll <= PlayerData.crystalChance) {
-        return ENHANCEMENT.CRYSTAL;
-    }
-    if (roll <= PlayerData.crystalChance + PlayerData.goldChance) {
-        return ENHANCEMENT.GOLD;
-    }
-    if (roll <= PlayerData.crystalChance + PlayerData.goldChance + PlayerData.silverChance) {
-        return ENHANCEMENT.SILVER;
-    }
-    return ENHANCEMENT.NONE;
+// Get number of unlocked tiers (3 base + prestigeTiers upgrades, max 7)
+export function getUnlockedTiers() {
+    return Math.min(7, 3 + PlayerData.prestigeTiers);
 }
 
-// Silver chance upgrade (5% -> 10% -> 15% ... up to 30%)
+// Check if a tier is unlocked
+export function isTierUnlocked(tier) {
+    return ENHANCEMENT_TIER[tier] < getUnlockedTiers();
+}
+
+// Roll for gem enhancement when spawning (CASCADING system)
+// Each tier can only upgrade from the previous tier
+// e.g., if bronze=50%, silver=50%, actual silver chance = 25% (50% * 50%)
+export function rollEnhancement() {
+    const unlockedTiers = getUnlockedTiers();
+
+    // Roll for bronze (tier 0) - from normal gem
+    if (unlockedTiers < 1 || Phaser.Math.Between(1, 100) > PlayerData.bronzeChance) {
+        return ENHANCEMENT.NONE;
+    }
+    // Got bronze! Roll for silver upgrade (tier 1)
+    if (unlockedTiers < 2 || PlayerData.silverChance <= 0 || Phaser.Math.Between(1, 100) > PlayerData.silverChance) {
+        return ENHANCEMENT.BRONZE;
+    }
+    // Got silver! Roll for gold upgrade (tier 2)
+    if (unlockedTiers < 3 || PlayerData.goldChance <= 0 || Phaser.Math.Between(1, 100) > PlayerData.goldChance) {
+        return ENHANCEMENT.SILVER;
+    }
+    // Got gold! Roll for crystal upgrade (tier 3)
+    if (unlockedTiers < 4 || PlayerData.crystalChance <= 0 || Phaser.Math.Between(1, 100) > PlayerData.crystalChance) {
+        return ENHANCEMENT.GOLD;
+    }
+    // Got crystal! Roll for rainbow upgrade (tier 4)
+    if (unlockedTiers < 5 || PlayerData.rainbowChance <= 0 || Phaser.Math.Between(1, 100) > PlayerData.rainbowChance) {
+        return ENHANCEMENT.CRYSTAL;
+    }
+    // Got rainbow! Roll for prismatic upgrade (tier 5)
+    if (unlockedTiers < 6 || PlayerData.prismaticChance <= 0 || Phaser.Math.Between(1, 100) > PlayerData.prismaticChance) {
+        return ENHANCEMENT.RAINBOW;
+    }
+    // Got prismatic! Roll for celestial upgrade (tier 6)
+    if (unlockedTiers < 7 || PlayerData.celestialChance <= 0 || Phaser.Math.Between(1, 100) > PlayerData.celestialChance) {
+        return ENHANCEMENT.PRISMATIC;
+    }
+    // Got celestial!
+    return ENHANCEMENT.CELESTIAL;
+}
+
+// Bronze chance upgrade (5% -> 100%, +5% per upgrade = 19 upgrades)
+export function getBronzeLevel() {
+    return (PlayerData.bronzeChance - 5) / 5;
+}
+
+export function getBronzeUpgradeCost() {
+    const level = getBronzeLevel();
+    return Math.floor(100 * Math.pow(1.15, level) * GameSettings.priceMultiplier);
+}
+
+export function upgradeBronze() {
+    const cost = getBronzeUpgradeCost();
+    if (PlayerData.currency >= cost && PlayerData.bronzeChance < 100) {
+        PlayerData.currency -= cost;
+        PlayerData.bronzeChance += 5;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Silver chance upgrade (1% -> 100%, +4% per upgrade = 25 upgrades)
 export function getSilverLevel() {
-    return (PlayerData.silverChance - 5) / 5;
+    return Math.floor((PlayerData.silverChance - 1) / 4);
 }
 
 export function getSilverUpgradeCost() {
     const level = getSilverLevel();
-    return Math.floor(150 * Math.pow(1.6, level) * GameSettings.priceMultiplier);
+    return Math.floor(150 * Math.pow(1.18, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeSilver() {
     const cost = getSilverUpgradeCost();
-    if (PlayerData.currency >= cost && PlayerData.silverChance < 30) {
+    if (PlayerData.currency >= cost && PlayerData.silverChance < 100) {
         PlayerData.currency -= cost;
-        PlayerData.silverChance += 5;
+        PlayerData.silverChance = Math.min(100, PlayerData.silverChance + 4);
         savePlayerData();
         return true;
     }
     return false;
 }
 
-// Gold chance upgrade (1% -> 2% -> 3% ... up to 10%)
+// Gold chance upgrade (0% -> 100%, +3% per upgrade = 34 upgrades)
 export function getGoldLevel() {
-    return PlayerData.goldChance - 1;
+    return Math.floor(PlayerData.goldChance / 3);
 }
 
 export function getGoldUpgradeCost() {
     const level = getGoldLevel();
-    return Math.floor(500 * Math.pow(1.8, level) * GameSettings.priceMultiplier);
+    return Math.floor(250 * Math.pow(1.20, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeGold() {
     const cost = getGoldUpgradeCost();
-    if (PlayerData.currency >= cost && PlayerData.goldChance < 10) {
+    if (PlayerData.currency >= cost && PlayerData.goldChance < 100) {
         PlayerData.currency -= cost;
-        PlayerData.goldChance += 1;
+        PlayerData.goldChance = Math.min(100, PlayerData.goldChance + 3);
         savePlayerData();
         return true;
     }
     return false;
 }
 
-// Crystal chance upgrade (0% -> 0.5% -> 1% ... up to 3%)
+// Crystal chance upgrade (0% -> 100%, +2% per upgrade = 50 upgrades)
 export function getCrystalLevel() {
-    return PlayerData.crystalChance * 2; // 0, 1, 2, 3, 4, 5, 6
+    return Math.floor(PlayerData.crystalChance / 2);
 }
 
 export function getCrystalUpgradeCost() {
     const level = getCrystalLevel();
-    return Math.floor(2000 * Math.pow(2, level) * GameSettings.priceMultiplier);
+    return Math.floor(500 * Math.pow(1.22, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeCrystal() {
     const cost = getCrystalUpgradeCost();
-    if (PlayerData.currency >= cost && PlayerData.crystalChance < 3) {
+    if (PlayerData.currency >= cost && PlayerData.crystalChance < 100) {
         PlayerData.currency -= cost;
-        PlayerData.crystalChance += 0.5;
+        PlayerData.crystalChance = Math.min(100, PlayerData.crystalChance + 2);
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Rainbow chance upgrade (0% -> 100%, +1% per upgrade = 100 upgrades)
+export function getRainbowLevel() {
+    return PlayerData.rainbowChance;
+}
+
+export function getRainbowUpgradeCost() {
+    const level = getRainbowLevel();
+    return Math.floor(1000 * Math.pow(1.25, level) * GameSettings.priceMultiplier);
+}
+
+export function upgradeRainbow() {
+    const cost = getRainbowUpgradeCost();
+    if (PlayerData.currency >= cost && PlayerData.rainbowChance < 100) {
+        PlayerData.currency -= cost;
+        PlayerData.rainbowChance = Math.min(100, PlayerData.rainbowChance + 1);
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Prismatic chance upgrade (0% -> 100%, +1% per upgrade = 100 upgrades)
+export function getPrismaticLevel() {
+    return PlayerData.prismaticChance;
+}
+
+export function getPrismaticUpgradeCost() {
+    const level = getPrismaticLevel();
+    return Math.floor(2500 * Math.pow(1.28, level) * GameSettings.priceMultiplier);
+}
+
+export function upgradePrismatic() {
+    const cost = getPrismaticUpgradeCost();
+    if (PlayerData.currency >= cost && PlayerData.prismaticChance < 100) {
+        PlayerData.currency -= cost;
+        PlayerData.prismaticChance = Math.min(100, PlayerData.prismaticChance + 1);
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Celestial chance upgrade (0% -> 100%, +1% per upgrade = 100 upgrades)
+export function getCelestialLevel() {
+    return PlayerData.celestialChance;
+}
+
+export function getCelestialUpgradeCost() {
+    const level = getCelestialLevel();
+    return Math.floor(5000 * Math.pow(1.30, level) * GameSettings.priceMultiplier);
+}
+
+export function upgradeCelestial() {
+    const cost = getCelestialUpgradeCost();
+    if (PlayerData.currency >= cost && PlayerData.celestialChance < 100) {
+        PlayerData.currency -= cost;
+        PlayerData.celestialChance = Math.min(100, PlayerData.celestialChance + 1);
         savePlayerData();
         return true;
     }
@@ -155,7 +324,7 @@ export function getAutoMoveLevel() {
 
 export function getAutoMoveUpgradeCost() {
     const level = getAutoMoveLevel();
-    return Math.floor(200 * Math.pow(1.8, level) * GameSettings.priceMultiplier);
+    return Math.floor(500 * Math.pow(2.0, level) * GameSettings.priceMultiplier);
 }
 
 export function getAutoMoveStep() {
@@ -182,7 +351,7 @@ export function getBombChanceLevel() {
 
 export function getBombChanceUpgradeCost() {
     const level = getBombChanceLevel();
-    return Math.floor(300 * Math.pow(1.6, level) * GameSettings.priceMultiplier);
+    return Math.floor(600 * Math.pow(1.8, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeBombChance() {
@@ -203,7 +372,7 @@ export function getBombRadiusLevel() {
 
 export function getBombRadiusUpgradeCost() {
     const level = getBombRadiusLevel();
-    return Math.floor(500 * Math.pow(2.5, level) * GameSettings.priceMultiplier);
+    return Math.floor(1500 * Math.pow(3.0, level) * GameSettings.priceMultiplier);
 }
 
 export function upgradeBombRadius() {
@@ -216,6 +385,333 @@ export function upgradeBombRadius() {
     }
     return false;
 }
+
+// ========== PRESTIGE SYSTEM ==========
+
+// Get money multiplier from prestige (2^level, min 1)
+export function getMoneyMultiplier() {
+    return Math.pow(2, PlayerData.prestigeMoneyMult);
+}
+
+// Get current board size (5 + prestigeArena, max 9)
+export function getBoardSize() {
+    return Math.min(9, 5 + PlayerData.prestigeArena);
+}
+
+// Get current color count (6 - prestigeColors, min 3)
+export function getColorCount() {
+    return Math.max(3, 6 - PlayerData.prestigeColors);
+}
+
+// Calculate how many prestige coins you can get from a currency amount
+// Coins require: 1st=10K, 2nd=20K, 3rd=30K... Nth=N*10K
+// Total for N coins = 10000 * N * (N+1) / 2
+export function getPrestigeCoinsFromCurrency(currency) {
+    // Solve: 10000 * N * (N+1) / 2 <= currency
+    // N^2 + N - currency/5000 <= 0
+    // N = floor((-1 + sqrt(1 + currency/1250)) / 2)
+    if (currency < 10000) return 0;
+    const n = Math.floor((-1 + Math.sqrt(1 + currency / 1250)) / 2);
+    return Math.max(0, n);
+}
+
+// Get total currency required for N prestige coins
+export function getCurrencyForCoins(n) {
+    return 10000 * n * (n + 1) / 2;
+}
+
+// Get currency needed for the next prestige coin from current amount
+export function getCurrencyForNextCoin() {
+    const currentCoins = getPrestigeCoinsFromCurrency(PlayerData.currency);
+    const nextCoinTotal = getCurrencyForCoins(currentCoins + 1);
+    return nextCoinTotal;
+}
+
+// Get progress towards next prestige coin (0-1)
+export function getProgressToNextCoin() {
+    const currentCoins = getPrestigeCoinsFromCurrency(PlayerData.currency);
+    const currentThreshold = getCurrencyForCoins(currentCoins);
+    const nextThreshold = getCurrencyForCoins(currentCoins + 1);
+    const range = nextThreshold - currentThreshold;
+    const progress = PlayerData.currency - currentThreshold;
+    return Math.min(1, progress / range);
+}
+
+// Perform prestige: reset game, gain prestige coins
+export function performPrestige() {
+    const coinsToGain = getPrestigeCoinsFromCurrency(PlayerData.currency);
+    if (coinsToGain <= 0) return false;
+
+    // Add prestige coins
+    PlayerData.prestigeCurrency += coinsToGain;
+
+    // Reset regular progress (but keep prestige upgrades)
+    PlayerData.currency = 0;
+    PlayerData.totalEarned = 0;
+    PlayerData.autoMoveDelay = 5000;
+    PlayerData.bombChance = 10;
+    PlayerData.bombRadius = 1;
+    PlayerData.bronzeChance = 5;
+    PlayerData.silverChance = 1;
+    PlayerData.goldChance = 0;
+    PlayerData.crystalChance = 0;
+    PlayerData.rainbowChance = 0;
+    PlayerData.prismaticChance = 0;
+    PlayerData.celestialChance = 0;
+
+    savePlayerData();
+    return true;
+}
+
+// Prestige upgrade costs (in prestige coins)
+export function getPrestigeMoneyMultCost() {
+    return PlayerData.prestigeMoneyMult + 1; // 1, 2, 3, 4...
+}
+
+export function getPrestigeTiersCost() {
+    return (PlayerData.prestigeTiers + 1) * 2; // 2, 4, 6, 8
+}
+
+export function getPrestigeColorsCost() {
+    return (PlayerData.prestigeColors + 1) * 3; // 3, 6, 9
+}
+
+export function getPrestigeArenaCost() {
+    return (PlayerData.prestigeArena + 1) * 2; // 2, 4, 6, 8
+}
+
+// Upgrade prestige: money multiplier (infinite)
+export function upgradePrestigeMoneyMult() {
+    const cost = getPrestigeMoneyMultCost();
+    if (PlayerData.prestigeCurrency >= cost) {
+        PlayerData.prestigeCurrency -= cost;
+        PlayerData.prestigeMoneyMult += 1;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Upgrade prestige: unlock tiers (max 4 upgrades = 7 tiers)
+export function upgradePrestigeTiers() {
+    const cost = getPrestigeTiersCost();
+    if (PlayerData.prestigeCurrency >= cost && PlayerData.prestigeTiers < 4) {
+        PlayerData.prestigeCurrency -= cost;
+        PlayerData.prestigeTiers += 1;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Upgrade prestige: reduce colors (max 3 upgrades = 3 colors)
+export function upgradePrestigeColors() {
+    const cost = getPrestigeColorsCost();
+    if (PlayerData.prestigeCurrency >= cost && PlayerData.prestigeColors < 3) {
+        PlayerData.prestigeCurrency -= cost;
+        PlayerData.prestigeColors += 1;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Upgrade prestige: increase arena (max 4 upgrades = 9x9)
+export function upgradePrestigeArena() {
+    const cost = getPrestigeArenaCost();
+    if (PlayerData.prestigeCurrency >= cost && PlayerData.prestigeArena < 4) {
+        PlayerData.prestigeCurrency -= cost;
+        PlayerData.prestigeArena += 1;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// ========== AUTO-BUY PRESTIGE UPGRADES ==========
+
+// Auto-buy costs (one-time purchase, 5 coins each)
+export const AUTO_BUY_COST = 5;
+
+// Auto-buy upgrade functions
+export function buyAutoBuyAutoMove() {
+    if (!PlayerData.autoBuyAutoMove && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyAutoMove = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyBombChance() {
+    if (!PlayerData.autoBuyBombChance && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyBombChance = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyBombRadius() {
+    if (!PlayerData.autoBuyBombRadius && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyBombRadius = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyBronze() {
+    if (!PlayerData.autoBuyBronze && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyBronze = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuySilver() {
+    if (!PlayerData.autoBuySilver && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuySilver = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyGold() {
+    if (!PlayerData.autoBuyGold && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyGold = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyCrystal() {
+    if (!PlayerData.autoBuyCrystal && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyCrystal = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyRainbow() {
+    if (!PlayerData.autoBuyRainbow && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyRainbow = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyPrismatic() {
+    if (!PlayerData.autoBuyPrismatic && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyPrismatic = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyCelestial() {
+    if (!PlayerData.autoBuyCelestial && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyCelestial = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Process all auto-buys (call this periodically)
+export function processAutoBuys() {
+    let purchased = false;
+
+    if (PlayerData.autoBuyAutoMove && PlayerData.autoMoveDelay > 100) {
+        if (PlayerData.currency >= getAutoMoveUpgradeCost()) {
+            upgradeAutoMove();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyBombChance && PlayerData.bombChance < 50) {
+        if (PlayerData.currency >= getBombChanceUpgradeCost()) {
+            upgradeBombChance();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyBombRadius && PlayerData.bombRadius < 3) {
+        if (PlayerData.currency >= getBombRadiusUpgradeCost()) {
+            upgradeBombRadius();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyBronze && PlayerData.bronzeChance < 100) {
+        if (PlayerData.currency >= getBronzeUpgradeCost()) {
+            upgradeBronze();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuySilver && PlayerData.silverChance < 100) {
+        if (PlayerData.currency >= getSilverUpgradeCost()) {
+            upgradeSilver();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyGold && PlayerData.goldChance < 100) {
+        if (PlayerData.currency >= getGoldUpgradeCost()) {
+            upgradeGold();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyCrystal && PlayerData.crystalChance < 100) {
+        if (PlayerData.currency >= getCrystalUpgradeCost()) {
+            upgradeCrystal();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyRainbow && PlayerData.rainbowChance < 100) {
+        if (PlayerData.currency >= getRainbowUpgradeCost()) {
+            upgradeRainbow();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyPrismatic && PlayerData.prismaticChance < 100) {
+        if (PlayerData.currency >= getPrismaticUpgradeCost()) {
+            upgradePrismatic();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyCelestial && PlayerData.celestialChance < 100) {
+        if (PlayerData.currency >= getCelestialUpgradeCost()) {
+            upgradeCelestial();
+            purchased = true;
+        }
+    }
+
+    return purchased;
+}
+
+// ========== SAVE/LOAD ==========
 
 // Save/Load player data to localStorage
 export function savePlayerData() {
@@ -236,28 +732,53 @@ export function loadPlayerData() {
     if (!PlayerData.bombChance) PlayerData.bombChance = 10;
     if (!PlayerData.bombRadius) PlayerData.bombRadius = 1;
     // Ensure enhanced gem properties have valid values
-    if (PlayerData.silverChance === undefined) PlayerData.silverChance = 5;
-    if (PlayerData.goldChance === undefined) PlayerData.goldChance = 1;
+    if (PlayerData.bronzeChance === undefined) PlayerData.bronzeChance = 5;
+    if (PlayerData.silverChance === undefined) PlayerData.silverChance = 1;
+    if (PlayerData.goldChance === undefined) PlayerData.goldChance = 0;
     if (PlayerData.crystalChance === undefined) PlayerData.crystalChance = 0;
+    if (PlayerData.rainbowChance === undefined) PlayerData.rainbowChance = 0;
+    if (PlayerData.prismaticChance === undefined) PlayerData.prismaticChance = 0;
+    if (PlayerData.celestialChance === undefined) PlayerData.celestialChance = 0;
+    // Ensure prestige properties have valid values
+    if (PlayerData.prestigeCurrency === undefined) PlayerData.prestigeCurrency = 0;
+    if (PlayerData.prestigeMoneyMult === undefined) PlayerData.prestigeMoneyMult = 0;
+    if (PlayerData.prestigeTiers === undefined) PlayerData.prestigeTiers = 0;
+    if (PlayerData.prestigeColors === undefined) PlayerData.prestigeColors = 0;
+    if (PlayerData.prestigeArena === undefined) PlayerData.prestigeArena = 0;
+    // Ensure auto-buy properties have valid values
+    if (PlayerData.autoBuyAutoMove === undefined) PlayerData.autoBuyAutoMove = false;
+    if (PlayerData.autoBuyBombChance === undefined) PlayerData.autoBuyBombChance = false;
+    if (PlayerData.autoBuyBombRadius === undefined) PlayerData.autoBuyBombRadius = false;
+    if (PlayerData.autoBuyBronze === undefined) PlayerData.autoBuyBronze = false;
+    if (PlayerData.autoBuySilver === undefined) PlayerData.autoBuySilver = false;
+    if (PlayerData.autoBuyGold === undefined) PlayerData.autoBuyGold = false;
+    if (PlayerData.autoBuyCrystal === undefined) PlayerData.autoBuyCrystal = false;
+    if (PlayerData.autoBuyRainbow === undefined) PlayerData.autoBuyRainbow = false;
+    if (PlayerData.autoBuyPrismatic === undefined) PlayerData.autoBuyPrismatic = false;
+    if (PlayerData.autoBuyCelestial === undefined) PlayerData.autoBuyCelestial = false;
 }
 
 export function resetPlayerData() {
     PlayerData.currency = 0;
     PlayerData.totalEarned = 0;
-    PlayerData.prestigeLevel = 0;
     PlayerData.autoMoveDelay = 5000;
     PlayerData.bombChance = 10;
     PlayerData.bombRadius = 1;
-    PlayerData.silverChance = 5;
-    PlayerData.goldChance = 1;
+    PlayerData.bronzeChance = 5;
+    PlayerData.silverChance = 1;
+    PlayerData.goldChance = 0;
     PlayerData.crystalChance = 0;
+    PlayerData.rainbowChance = 0;
+    PlayerData.prismaticChance = 0;
+    PlayerData.celestialChance = 0;
+    // Note: prestige upgrades are NOT reset
     savePlayerData();
 }
 
-// Game settings (mutable)
+// Game settings (mutable) - boardSize and colorCount are dynamic via prestige
 export const GameSettings = {
-    boardSize: 8,
-    colorCount: 6,
+    get boardSize() { return getBoardSize(); },
+    get colorCount() { return getColorCount(); },
     fallSpeed: 8,  // cells per second
     gap: 4,
     spawnDelay: 80,
@@ -279,4 +800,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.63-js';
+export const JS_VERSION = '0.0.87-js';
