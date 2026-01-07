@@ -66,40 +66,23 @@ export {
     buyAutoBuyCelestial
 } from './prestige.js';
 
-// Upgrades
+// Upgrades - configs and factories
 export {
-    getBronzeLevel,
-    getBronzeUpgradeCost,
-    upgradeBronze,
-    getSilverLevel,
-    getSilverUpgradeCost,
-    upgradeSilver,
-    getGoldLevel,
-    getGoldUpgradeCost,
-    upgradeGold,
-    getCrystalLevel,
-    getCrystalUpgradeCost,
-    upgradeCrystal,
-    getRainbowLevel,
-    getRainbowUpgradeCost,
-    upgradeRainbow,
-    getPrismaticLevel,
-    getPrismaticUpgradeCost,
-    upgradePrismatic,
-    getCelestialLevel,
-    getCelestialUpgradeCost,
-    upgradeCelestial,
-    getAutoMoveLevel,
-    getAutoMoveUpgradeCost,
-    getAutoMoveStep,
-    upgradeAutoMove,
-    getBombChanceLevel,
-    getBombChanceUpgradeCost,
-    upgradeBombChance,
-    getBombRadiusLevel,
-    getBombRadiusUpgradeCost,
-    upgradeBombRadius,
-    processAutoBuys
+    UPGRADE_CONFIGS,
+    AUTO_BUY_KEYS,
+    createUpgradeForUI,
+    processAutoBuys,
+    // Backward compatible exports
+    getBronzeLevel, getBronzeUpgradeCost, upgradeBronze,
+    getSilverLevel, getSilverUpgradeCost, upgradeSilver,
+    getGoldLevel, getGoldUpgradeCost, upgradeGold,
+    getCrystalLevel, getCrystalUpgradeCost, upgradeCrystal,
+    getRainbowLevel, getRainbowUpgradeCost, upgradeRainbow,
+    getPrismaticLevel, getPrismaticUpgradeCost, upgradePrismatic,
+    getCelestialLevel, getCelestialUpgradeCost, upgradeCelestial,
+    getAutoMoveLevel, getAutoMoveUpgradeCost, getAutoMoveStep, upgradeAutoMove,
+    getBombChanceLevel, getBombChanceUpgradeCost, upgradeBombChance,
+    getBombRadiusLevel, getBombRadiusUpgradeCost, upgradeBombRadius
 } from './upgrades.js';
 
 // Upgrade data configurations

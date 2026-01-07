@@ -6,8 +6,7 @@ import {
     getPrestigeCoinsFromCurrency,
     getProgressToNextCoin,
     getCurrencyForNextCoin,
-    performPrestige,
-    AUTO_BUY_COST
+    performPrestige
 } from './config.js';
 import { getPrestigeUpgrades, getAutoBuyItems } from './data/upgradesData.js';
 import { COLORS, FONT_SIZE, RADIUS, SPACING } from './styles.js';
@@ -222,22 +221,11 @@ export class PrestigeScene extends Phaser.Scene {
             const x = padding + col * (btnWidth + gap);
             const y = startY + row * (btnHeight + gap);
 
-            const item = autoBuys[i];
-
+            // Tell, Don't Ask: pass item object, button queries it
             new AutoBuyButton(this, {
-                x,
-                y,
-                width: btnWidth,
-                height: btnHeight,
-                name: item.name,
-                isOwned: item.isOwned(),
-                cost: AUTO_BUY_COST,
-                canAfford: item.canAfford(),
-                onBuy: () => {
-                    if (item.buy()) {
-                        this.scene.restart();
-                    }
-                }
+                x, y, width: btnWidth, height: btnHeight,
+                item: autoBuys[i],
+                onPurchase: () => this.scene.restart()
             });
         }
     }
