@@ -22,20 +22,21 @@ function emit(event, data) {
 
 // ========== DEFAULT VALUES ==========
 
-// Balanced for ~2 hour full completion
+// === BALANCE v2: Target 2-hour completion ===
+// First prestige: ~10 min, Gold unlock: ~25 min, Endgame: ~100-120 min
 const DEFAULTS = {
     // Currency
     currency: 0,
     totalEarned: 0,
 
-    // Regular upgrades
-    autoMoveDelay: 5000,
-    bombChance: 10,
+    // Regular upgrades — faster start!
+    autoMoveDelay: 3000,    // was 5000 — game feels snappier
+    bombChance: 15,         // was 10 — more explosions = more fun
     bombRadius: 1,
 
-    // Enhancement chances (improved starting values)
-    bronzeChance: 8,    // was 5
-    silverChance: 2,    // was 1
+    // Enhancement chances — much higher for visible progress
+    bronzeChance: 15,       // was 8 — bronze should be common
+    silverChance: 8,        // was 2 — silver actually appears now
     goldChance: 0,
     crystalChance: 0,
     rainbowChance: 0,

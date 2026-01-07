@@ -16,18 +16,27 @@ export function getColorCount() {
     return Math.max(3, 6 - PlayerData.prestigeColors);
 }
 
-// Calculate prestige coins from currency
-// Coins require: 1st=5K, 2nd=10K, 3rd=15K... Nth=N*5K
-// Total for N coins = 5000 * N * (N+1) / 2
-// Balanced for ~2 hour full completion
+// === PRESTIGE BALANCE v2 ===
+// Coins require: 1st=500, 2nd=1000, 3rd=1500... Nth=N*500
+// Total for N coins = 500 * N * (N+1) / 2
+//
+// Progression timeline:
+//   Coin 1: 500 currency (~8-10 min)
+//   Coin 2: 1500 total (~15-18 min)
+//   Coin 3: 3000 total (~22-25 min)
+//   Coin 5: 7500 total (~35 min)
+//   Coin 10: 27500 total (~55 min)
+//   Coin 20: 105000 total (~90 min)
 export function getPrestigeCoinsFromCurrency(currency) {
-    if (currency < 5000) return 0;
-    const n = Math.floor((-1 + Math.sqrt(1 + currency / 625)) / 2);
+    if (currency < 500) return 0;
+    // Derived from: 500 * n * (n+1) / 2 = currency
+    // n = (-1 + sqrt(1 + 4*currency/500)) / 2
+    const n = Math.floor((-1 + Math.sqrt(1 + currency / 62.5)) / 2);
     return Math.max(0, n);
 }
 
 export function getCurrencyForCoins(n) {
-    return 5000 * n * (n + 1) / 2;
+    return 500 * n * (n + 1) / 2;
 }
 
 export function getCurrencyForNextCoin() {
@@ -115,7 +124,7 @@ export const upgradePrestigeArena = () => performPrestigeUpgrade(PRESTIGE_UPGRAD
 
 // ========== AUTO-BUY UNLOCKS ==========
 
-export const AUTO_BUY_COST = 3; // was 5, reduced for better QoL progression
+export const AUTO_BUY_COST = 2; // v2: even cheaper, QoL should come early
 
 function buyAutoBuy(property) {
     if (!PlayerData[property] && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
