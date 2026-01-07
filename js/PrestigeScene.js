@@ -113,8 +113,9 @@ export class PrestigeScene extends Phaser.Scene {
 
         const nextCoinCost = getCurrencyForNextCoin();
         this.add.text(cx, barY + barHeight + 12, `${formatNumber(PlayerData.currency)} / ${formatNumber(nextCoinCost)} 💰`, {
-            fontSize: FONT_SIZE.md,
-            color: COLORS.text.muted
+            fontSize: FONT_SIZE.lg,
+            color: '#ffff00',  // bright yellow
+            fontStyle: 'bold'
         }).setOrigin(0.5);
     }
 
