@@ -73,9 +73,14 @@ export class PrestigeScene extends Phaser.Scene {
     createPrestigeCoinsDisplay(cx) {
         const coinsBg = this.add.graphics();
         coinsBg.fillStyle(COLORS.primary, 0.2);
-        coinsBg.fillRoundedRect(cx - 80, 80, 160, 40, RADIUS.lg);
+        coinsBg.fillRoundedRect(cx - 100, 80, 200, 40, RADIUS.lg);
 
-        this.add.text(cx, 100, `👑 ${PlayerData.prestigeCurrency}`, {
+        const potential = getPrestigeCoinsFromCurrency(PlayerData.currency);
+        const displayText = potential > 0
+            ? `👑 ${PlayerData.prestigeCurrency} (+${potential})`
+            : `👑 ${PlayerData.prestigeCurrency}`;
+
+        this.add.text(cx, 100, displayText, {
             fontSize: FONT_SIZE['3xl'],
             color: COLORS.text.purple,
             fontStyle: 'bold'
@@ -115,21 +120,20 @@ export class PrestigeScene extends Phaser.Scene {
 
     createPrestigeButton(cx) {
         const potential = getPrestigeCoinsFromCurrency(PlayerData.currency);
-        if (potential <= 0) return;
-
         const prestigeBtnY = 225;
+        const canPrestige = potential > 0;
 
         new Button(this, {
             x: cx,
             y: prestigeBtnY,
-            width: 200,
-            height: 36,
-            text: `ПРЕСТИЖ +${potential}👑`,
-            style: 'primary',
+            width: 220,
+            height: 40,
+            text: canPrestige ? `ПРЕСТИЖ (+${potential}👑)` : 'ПРЕСТИЖ',
+            style: canPrestige ? 'warning' : 'disabled',
             radius: RADIUS.lg,
-            fontSize: FONT_SIZE.lg,
+            fontSize: FONT_SIZE.xl,
             onClick: () => {
-                if (performPrestige()) {
+                if (canPrestige && performPrestige()) {
                     this.scene.stop();
                     this.scene.stop('MainScene');
                     this.scene.start('MainScene');

@@ -180,6 +180,9 @@ export class MainScene extends Phaser.Scene {
 
         for (let row = 0; row < boardSize; row++) {
             for (let col = 0; col < boardSize; col++) {
+                // Skip bombs - they should not be modified
+                if (this.board[row][col] === 'bomb') continue;
+
                 const validColors = getValidColors(this.board, row, col, colorCount);
 
                 if (validColors.length > 0) {
