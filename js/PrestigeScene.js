@@ -205,11 +205,12 @@ export class PrestigeScene extends Phaser.Scene {
         const btnWidth = Math.floor((W - padding * 2 - gap * (cols - 1)) / cols);
         const btnHeight = 70;
 
-        // Prestige upgrades
+        // Prestige upgrades with level info
         const upgrades = [
             {
                 name: 'Множитель',
                 getValue: () => `x${getMoneyMultiplier()}`,
+                getLevel: () => `${PlayerData.prestigeMoneyMult}/∞`,
                 getCost: () => getPrestigeMoneyMultCost(),
                 canAfford: () => PlayerData.prestigeCurrency >= getPrestigeMoneyMultCost(),
                 onBuy: () => upgradePrestigeMoneyMult()
@@ -217,6 +218,7 @@ export class PrestigeScene extends Phaser.Scene {
             {
                 name: 'Тиры гемов',
                 getValue: () => `${getUnlockedTiers()}/7`,
+                getLevel: () => `${PlayerData.prestigeTiers}/4`,
                 getCost: () => PlayerData.prestigeTiers >= 4 ? null : getPrestigeTiersCost(),
                 canAfford: () => PlayerData.prestigeTiers < 4 && PlayerData.prestigeCurrency >= getPrestigeTiersCost(),
                 onBuy: () => upgradePrestigeTiers()
@@ -224,6 +226,7 @@ export class PrestigeScene extends Phaser.Scene {
             {
                 name: 'Цветов',
                 getValue: () => `${getColorCount()}`,
+                getLevel: () => `${PlayerData.prestigeColors}/3`,
                 getCost: () => PlayerData.prestigeColors >= 3 ? null : getPrestigeColorsCost(),
                 canAfford: () => PlayerData.prestigeColors < 3 && PlayerData.prestigeCurrency >= getPrestigeColorsCost(),
                 onBuy: () => upgradePrestigeColors()
@@ -231,6 +234,7 @@ export class PrestigeScene extends Phaser.Scene {
             {
                 name: 'Размер поля',
                 getValue: () => `${getBoardSize()}x${getBoardSize()}`,
+                getLevel: () => `${PlayerData.prestigeArena}/4`,
                 getCost: () => PlayerData.prestigeArena >= 4 ? null : getPrestigeArenaCost(),
                 canAfford: () => PlayerData.prestigeArena < 4 && PlayerData.prestigeCurrency >= getPrestigeArenaCost(),
                 onBuy: () => upgradePrestigeArena()
@@ -243,7 +247,7 @@ export class PrestigeScene extends Phaser.Scene {
             const x = padding + col * (btnWidth + gap);
             const y = startY + row * (btnHeight + gap);
 
-            this.createUpgradeButton(x, y, btnWidth, btnHeight, upgrades[i], true);
+            this.createUpgradeButton(x, y, btnWidth, btnHeight, upgrades[i]);
         }
     }
 
@@ -282,8 +286,8 @@ export class PrestigeScene extends Phaser.Scene {
         }
     }
 
-    createUpgradeButton(x, y, width, height, upgrade, isPrestige = false) {
-        const { name, getValue, getCost, canAfford, onBuy } = upgrade;
+    createUpgradeButton(x, y, width, height, upgrade) {
+        const { name, getValue, getLevel, getCost, canAfford, onBuy } = upgrade;
         const cost = getCost();
         const isMaxed = cost === null;
         const affordable = !isMaxed && canAfford();
@@ -299,19 +303,24 @@ export class PrestigeScene extends Phaser.Scene {
         }
 
         // Name
-        this.add.text(x + width / 2, y + 14, name, {
-            fontSize: '11px', color: '#ffffff', fontStyle: 'bold'
+        this.add.text(x + width / 2, y + 12, name, {
+            fontSize: '10px', color: '#ffffff', fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        // Level
+        this.add.text(x + width / 2, y + 25, getLevel(), {
+            fontSize: '9px', color: '#aaaaaa'
         }).setOrigin(0.5);
 
         // Value
-        this.add.text(x + width / 2, y + 34, getValue(), {
-            fontSize: '16px', color: '#55efc4', fontStyle: 'bold'
+        this.add.text(x + width / 2, y + 42, getValue(), {
+            fontSize: '14px', color: '#55efc4', fontStyle: 'bold'
         }).setOrigin(0.5);
 
         // Cost
         const costStr = isMaxed ? 'MAX' : `${cost}👑`;
-        this.add.text(x + width / 2, y + 55, costStr, {
-            fontSize: '11px', color: isMaxed ? '#888888' : (affordable ? '#f1c40f' : '#888888')
+        this.add.text(x + width / 2, y + 58, costStr, {
+            fontSize: '10px', color: isMaxed ? '#888888' : (affordable ? '#f1c40f' : '#888888')
         }).setOrigin(0.5);
 
         // Hit area

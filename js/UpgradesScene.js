@@ -123,12 +123,17 @@ export class UpgradesScene extends Phaser.Scene {
         // Collect all upgrades
         const upgrades = [];
 
-        // Basic upgrades
+        // Auto-move: 5000ms -> 100ms, step varies (500ms until 500ms, then 100ms)
+        // Levels: 0-9 (500ms steps) + 0-4 (100ms steps) = ~13 max
         upgrades.push({
             name: 'Авто-ход',
             getValue: () => {
                 const seconds = (PlayerData.autoMoveDelay / 1000).toFixed(1);
                 return `${seconds}с`;
+            },
+            getLevel: () => {
+                const current = Math.round((5000 - PlayerData.autoMoveDelay) / 100);
+                return `${current}/49`;
             },
             getCost: () => {
                 const atMin = PlayerData.autoMoveDelay <= 100;
@@ -141,9 +146,14 @@ export class UpgradesScene extends Phaser.Scene {
             onBuy: () => upgradeAutoMove()
         });
 
+        // Bomb chance: 10% -> 50%, +5% per level = 8 levels
         upgrades.push({
             name: 'Шанс бомбы',
             getValue: () => `${PlayerData.bombChance}%`,
+            getLevel: () => {
+                const current = (PlayerData.bombChance - 10) / 5;
+                return `${current}/8`;
+            },
             getCost: () => {
                 const atMax = PlayerData.bombChance >= 50;
                 return atMax ? null : getBombChanceUpgradeCost();
@@ -155,9 +165,14 @@ export class UpgradesScene extends Phaser.Scene {
             onBuy: () => upgradeBombChance()
         });
 
+        // Bomb radius: 1 -> 3 = 2 levels
         upgrades.push({
             name: 'Радиус',
             getValue: () => `${PlayerData.bombRadius}`,
+            getLevel: () => {
+                const current = PlayerData.bombRadius - 1;
+                return `${current}/2`;
+            },
             getCost: () => {
                 const atMax = PlayerData.bombRadius >= 3;
                 return atMax ? null : getBombRadiusUpgradeCost();
@@ -169,71 +184,96 @@ export class UpgradesScene extends Phaser.Scene {
             onBuy: () => upgradeBombRadius()
         });
 
-        // Enhanced gems
+        // Bronze: 5% -> 100%, +5% = 19 levels
         if (isTierUnlocked(ENHANCEMENT.BRONZE)) {
             upgrades.push({
                 name: 'Бронза',
                 getValue: () => `${PlayerData.bronzeChance}%`,
+                getLevel: () => {
+                    const current = (PlayerData.bronzeChance - 5) / 5;
+                    return `${current}/19`;
+                },
                 getCost: () => PlayerData.bronzeChance >= 100 ? null : getBronzeUpgradeCost(),
                 canAfford: () => PlayerData.bronzeChance < 100 && PlayerData.currency >= getBronzeUpgradeCost(),
                 onBuy: () => upgradeBronze()
             });
         }
 
+        // Silver: 0% -> 100%, +4% = 25 levels
         if (isTierUnlocked(ENHANCEMENT.SILVER)) {
             upgrades.push({
                 name: 'Серебро',
                 getValue: () => `${PlayerData.silverChance}%`,
+                getLevel: () => {
+                    const current = Math.floor(PlayerData.silverChance / 4);
+                    return `${current}/25`;
+                },
                 getCost: () => PlayerData.silverChance >= 100 ? null : getSilverUpgradeCost(),
                 canAfford: () => PlayerData.silverChance < 100 && PlayerData.currency >= getSilverUpgradeCost(),
                 onBuy: () => upgradeSilver()
             });
         }
 
+        // Gold: 0% -> 100%, +3% = 34 levels
         if (isTierUnlocked(ENHANCEMENT.GOLD)) {
             upgrades.push({
                 name: 'Золото',
                 getValue: () => `${PlayerData.goldChance}%`,
+                getLevel: () => {
+                    const current = Math.floor(PlayerData.goldChance / 3);
+                    return `${current}/34`;
+                },
                 getCost: () => PlayerData.goldChance >= 100 ? null : getGoldUpgradeCost(),
                 canAfford: () => PlayerData.goldChance < 100 && PlayerData.currency >= getGoldUpgradeCost(),
                 onBuy: () => upgradeGold()
             });
         }
 
+        // Crystal: 0% -> 100%, +2% = 50 levels
         if (isTierUnlocked(ENHANCEMENT.CRYSTAL)) {
             upgrades.push({
                 name: 'Кристалл',
                 getValue: () => `${PlayerData.crystalChance}%`,
+                getLevel: () => {
+                    const current = Math.floor(PlayerData.crystalChance / 2);
+                    return `${current}/50`;
+                },
                 getCost: () => PlayerData.crystalChance >= 100 ? null : getCrystalUpgradeCost(),
                 canAfford: () => PlayerData.crystalChance < 100 && PlayerData.currency >= getCrystalUpgradeCost(),
                 onBuy: () => upgradeCrystal()
             });
         }
 
+        // Rainbow: 0% -> 100%, +1% = 100 levels
         if (isTierUnlocked(ENHANCEMENT.RAINBOW)) {
             upgrades.push({
                 name: 'Радуга',
                 getValue: () => `${PlayerData.rainbowChance}%`,
+                getLevel: () => `${PlayerData.rainbowChance}/100`,
                 getCost: () => PlayerData.rainbowChance >= 100 ? null : getRainbowUpgradeCost(),
                 canAfford: () => PlayerData.rainbowChance < 100 && PlayerData.currency >= getRainbowUpgradeCost(),
                 onBuy: () => upgradeRainbow()
             });
         }
 
+        // Prismatic: 0% -> 100%, +1% = 100 levels
         if (isTierUnlocked(ENHANCEMENT.PRISMATIC)) {
             upgrades.push({
                 name: 'Призма',
                 getValue: () => `${PlayerData.prismaticChance}%`,
+                getLevel: () => `${PlayerData.prismaticChance}/100`,
                 getCost: () => PlayerData.prismaticChance >= 100 ? null : getPrismaticUpgradeCost(),
                 canAfford: () => PlayerData.prismaticChance < 100 && PlayerData.currency >= getPrismaticUpgradeCost(),
                 onBuy: () => upgradePrismatic()
             });
         }
 
+        // Celestial: 0% -> 100%, +1% = 100 levels
         if (isTierUnlocked(ENHANCEMENT.CELESTIAL)) {
             upgrades.push({
                 name: 'Небесный',
                 getValue: () => `${PlayerData.celestialChance}%`,
+                getLevel: () => `${PlayerData.celestialChance}/100`,
                 getCost: () => PlayerData.celestialChance >= 100 ? null : getCelestialUpgradeCost(),
                 canAfford: () => PlayerData.celestialChance < 100 && PlayerData.currency >= getCelestialUpgradeCost(),
                 onBuy: () => upgradeCelestial()
@@ -255,7 +295,7 @@ export class UpgradesScene extends Phaser.Scene {
     }
 
     createUpgradeButton(x, y, width, height, upgrade) {
-        const { name, getValue, getCost, canAfford, onBuy } = upgrade;
+        const { name, getValue, getLevel, getCost, canAfford, onBuy } = upgrade;
         const cost = getCost();
         const isMaxed = cost === null;
         const affordable = !isMaxed && canAfford();
@@ -271,22 +311,28 @@ export class UpgradesScene extends Phaser.Scene {
         }
         this.scrollContainer.add(btn);
 
-        // Name
-        const nameText = this.add.text(x + width / 2, y + 14, name, {
-            fontSize: '11px', color: '#ffffff', fontStyle: 'bold'
+        // Name + Level on same line
+        const nameText = this.add.text(x + width / 2, y + 12, name, {
+            fontSize: '10px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
         this.scrollContainer.add(nameText);
 
+        // Level indicator
+        const levelText = this.add.text(x + width / 2, y + 25, getLevel(), {
+            fontSize: '9px', color: '#aaaaaa'
+        }).setOrigin(0.5);
+        this.scrollContainer.add(levelText);
+
         // Value
-        const valueText = this.add.text(x + width / 2, y + 34, getValue(), {
-            fontSize: '16px', color: '#55efc4', fontStyle: 'bold'
+        const valueText = this.add.text(x + width / 2, y + 42, getValue(), {
+            fontSize: '14px', color: '#55efc4', fontStyle: 'bold'
         }).setOrigin(0.5);
         this.scrollContainer.add(valueText);
 
         // Cost
         const costStr = isMaxed ? 'MAX' : formatNumber(cost) + '💰';
-        const costText = this.add.text(x + width / 2, y + 55, costStr, {
-            fontSize: '11px', color: isMaxed ? '#888888' : (affordable ? '#f1c40f' : '#888888')
+        const costText = this.add.text(x + width / 2, y + 58, costStr, {
+            fontSize: '10px', color: isMaxed ? '#888888' : (affordable ? '#f1c40f' : '#888888')
         }).setOrigin(0.5);
         this.scrollContainer.add(costText);
 
@@ -315,9 +361,9 @@ export class UpgradesScene extends Phaser.Scene {
         this.scrollContainer.add(hitArea);
 
         this.upgradeButtons.push({
-            btn, valueText, costText, hitArea,
+            btn, valueText, levelText, costText, hitArea,
             x, y, width, height,
-            getValue, getCost, canAfford
+            getValue, getLevel, getCost, canAfford
         });
     }
 
@@ -403,6 +449,7 @@ export class UpgradesScene extends Phaser.Scene {
     refreshAllButtons() {
         for (const b of this.upgradeButtons) {
             b.valueText.setText(b.getValue());
+            b.levelText.setText(b.getLevel());
             const cost = b.getCost();
             const isMaxed = cost === null;
             const affordable = !isMaxed && b.canAfford();
