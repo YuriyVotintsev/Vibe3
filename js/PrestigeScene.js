@@ -161,6 +161,18 @@ export class PrestigeScene extends Phaser.Scene {
 
         // Close button
         this.createCloseButton();
+
+        // Track currency for live updates
+        this.lastCurrency = PlayerData.currency;
+    }
+
+    update() {
+        // Live update when currency changes (game runs in background)
+        if (PlayerData.currency !== this.lastCurrency) {
+            this.lastCurrency = PlayerData.currency;
+            // Restart scene to refresh all values
+            this.scene.restart();
+        }
     }
 
     createCloseButton() {
