@@ -17,16 +17,17 @@ export function getColorCount() {
 }
 
 // Calculate prestige coins from currency
-// Coins require: 1st=10K, 2nd=20K, 3rd=30K... Nth=N*10K
-// Total for N coins = 10000 * N * (N+1) / 2
+// Coins require: 1st=5K, 2nd=10K, 3rd=15K... Nth=N*5K
+// Total for N coins = 5000 * N * (N+1) / 2
+// Balanced for ~2 hour full completion
 export function getPrestigeCoinsFromCurrency(currency) {
-    if (currency < 10000) return 0;
-    const n = Math.floor((-1 + Math.sqrt(1 + currency / 1250)) / 2);
+    if (currency < 5000) return 0;
+    const n = Math.floor((-1 + Math.sqrt(1 + currency / 625)) / 2);
     return Math.max(0, n);
 }
 
 export function getCurrencyForCoins(n) {
-    return 10000 * n * (n + 1) / 2;
+    return 5000 * n * (n + 1) / 2;
 }
 
 export function getCurrencyForNextCoin() {
@@ -63,7 +64,7 @@ export function performPrestige() {
 
 // ========== PRESTIGE UPGRADES ==========
 
-// Upgrade configurations
+// Upgrade configurations (balanced for ~2 hour completion)
 const PRESTIGE_UPGRADE_CONFIGS = {
     moneyMult: {
         property: 'prestigeMoneyMult',
@@ -72,17 +73,17 @@ const PRESTIGE_UPGRADE_CONFIGS = {
     },
     tiers: {
         property: 'prestigeTiers',
-        getCost: () => (PlayerData.prestigeTiers + 1) * 2,
+        getCost: () => PlayerData.prestigeTiers + 1, // was *2, now linear
         maxLevel: 4
     },
     colors: {
         property: 'prestigeColors',
-        getCost: () => (PlayerData.prestigeColors + 1) * 3,
+        getCost: () => (PlayerData.prestigeColors + 1) * 2, // was *3, now *2
         maxLevel: 3
     },
     arena: {
         property: 'prestigeArena',
-        getCost: () => (PlayerData.prestigeArena + 1) * 2,
+        getCost: () => PlayerData.prestigeArena + 1, // was *2, now linear
         maxLevel: 4
     }
 };
@@ -114,7 +115,7 @@ export const upgradePrestigeArena = () => performPrestigeUpgrade(PRESTIGE_UPGRAD
 
 // ========== AUTO-BUY UNLOCKS ==========
 
-export const AUTO_BUY_COST = 5;
+export const AUTO_BUY_COST = 3; // was 5, reduced for better QoL progression
 
 function buyAutoBuy(property) {
     if (!PlayerData[property] && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {

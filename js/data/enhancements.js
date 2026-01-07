@@ -25,16 +25,16 @@ export const ENHANCEMENT_TIER = {
     [ENHANCEMENT.CELESTIAL]: 6
 };
 
-// Multipliers for each enhancement tier
+// Multipliers for each enhancement tier (balanced for ~2 hour completion)
 export const ENHANCEMENT_MULTIPLIERS = {
     [ENHANCEMENT.NONE]: 1,
     [ENHANCEMENT.BRONZE]: 2,
     [ENHANCEMENT.SILVER]: 5,
     [ENHANCEMENT.GOLD]: 15,
-    [ENHANCEMENT.CRYSTAL]: 50,
-    [ENHANCEMENT.RAINBOW]: 200,
-    [ENHANCEMENT.PRISMATIC]: 1000,
-    [ENHANCEMENT.CELESTIAL]: 5000
+    [ENHANCEMENT.CRYSTAL]: 60,      // was 50, slightly higher
+    [ENHANCEMENT.RAINBOW]: 250,     // was 200
+    [ENHANCEMENT.PRISMATIC]: 1200,  // was 1000
+    [ENHANCEMENT.CELESTIAL]: 8000   // was 5000, endgame reward
 };
 
 // Display names for enhancements

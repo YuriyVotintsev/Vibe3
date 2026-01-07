@@ -22,6 +22,7 @@ function emit(event, data) {
 
 // ========== DEFAULT VALUES ==========
 
+// Balanced for ~2 hour full completion
 const DEFAULTS = {
     // Currency
     currency: 0,
@@ -32,9 +33,9 @@ const DEFAULTS = {
     bombChance: 10,
     bombRadius: 1,
 
-    // Enhancement chances
-    bronzeChance: 5,
-    silverChance: 1,
+    // Enhancement chances (improved starting values)
+    bronzeChance: 8,    // was 5
+    silverChance: 2,    // was 1
     goldChance: 0,
     crystalChance: 0,
     rainbowChance: 0,

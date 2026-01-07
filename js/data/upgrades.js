@@ -9,14 +9,15 @@ import { ENHANCEMENT } from './enhancements.js';
 // Configuration for all upgrades
 // property: PlayerData key, name: UI display, unit: value suffix
 // enhancement: required tier (null = always visible)
+// Balanced for ~2 hour full completion
 const UPGRADE_CONFIGS = {
     autoMove: {
         property: 'autoMoveDelay',
         name: 'Авто-ход',
         unit: 'с',
         enhancement: null,
-        baseCost: 500,
-        growthRate: 2.0,
+        baseCost: 300,      // was 500
+        growthRate: 1.7,    // was 2.0
         step: null, // special: variable step
         min: 100,
         max: 5000,
@@ -34,8 +35,8 @@ const UPGRADE_CONFIGS = {
         name: 'Шанс бомбы',
         unit: '%',
         enhancement: null,
-        baseCost: 600,
-        growthRate: 1.8,
+        baseCost: 400,      // was 600
+        growthRate: 1.6,    // was 1.8
         step: 5,
         min: 10,
         max: 50,
@@ -48,8 +49,8 @@ const UPGRADE_CONFIGS = {
         name: 'Радиус',
         unit: '',
         enhancement: null,
-        baseCost: 1500,
-        growthRate: 3.0,
+        baseCost: 1000,     // was 1500
+        growthRate: 2.5,    // was 3.0
         step: 1,
         min: 1,
         max: 3,
@@ -62,36 +63,36 @@ const UPGRADE_CONFIGS = {
         name: 'Бронза',
         unit: '%',
         enhancement: ENHANCEMENT.BRONZE,
-        baseCost: 100,
-        growthRate: 1.15,
+        baseCost: 50,       // was 100
+        growthRate: 1.12,   // was 1.15
         step: 5,
-        min: 5,
+        min: 8,             // was 5, start higher
         max: 100,
         getValue: () => PlayerData.bronzeChance,
-        getLevel: () => (PlayerData.bronzeChance - 5) / 5,
-        getMaxLevel: () => (100 - 5) / 5
+        getLevel: () => Math.floor((PlayerData.bronzeChance - 8) / 5),
+        getMaxLevel: () => Math.floor((100 - 8) / 5)
     },
     silver: {
         property: 'silverChance',
         name: 'Серебро',
         unit: '%',
         enhancement: ENHANCEMENT.SILVER,
-        baseCost: 150,
-        growthRate: 1.18,
+        baseCost: 80,       // was 150
+        growthRate: 1.14,   // was 1.18
         step: 4,
-        min: 1,
+        min: 2,             // was 1, start higher
         max: 100,
         getValue: () => PlayerData.silverChance,
-        getLevel: () => Math.floor((PlayerData.silverChance - 1) / 4),
-        getMaxLevel: () => Math.ceil((100 - 1) / 4)
+        getLevel: () => Math.floor((PlayerData.silverChance - 2) / 4),
+        getMaxLevel: () => Math.ceil((100 - 2) / 4)
     },
     gold: {
         property: 'goldChance',
         name: 'Золото',
         unit: '%',
         enhancement: ENHANCEMENT.GOLD,
-        baseCost: 250,
-        growthRate: 1.20,
+        baseCost: 150,      // was 250
+        growthRate: 1.16,   // was 1.20
         step: 3,
         min: 0,
         max: 100,
@@ -104,8 +105,8 @@ const UPGRADE_CONFIGS = {
         name: 'Кристалл',
         unit: '%',
         enhancement: ENHANCEMENT.CRYSTAL,
-        baseCost: 500,
-        growthRate: 1.22,
+        baseCost: 300,      // was 500
+        growthRate: 1.18,   // was 1.22
         step: 2,
         min: 0,
         max: 100,
@@ -118,8 +119,8 @@ const UPGRADE_CONFIGS = {
         name: 'Радуга',
         unit: '%',
         enhancement: ENHANCEMENT.RAINBOW,
-        baseCost: 1000,
-        growthRate: 1.25,
+        baseCost: 600,      // was 1000
+        growthRate: 1.20,   // was 1.25
         step: 1,
         min: 0,
         max: 100,
@@ -132,8 +133,8 @@ const UPGRADE_CONFIGS = {
         name: 'Призма',
         unit: '%',
         enhancement: ENHANCEMENT.PRISMATIC,
-        baseCost: 2500,
-        growthRate: 1.28,
+        baseCost: 1500,     // was 2500
+        growthRate: 1.22,   // was 1.28
         step: 1,
         min: 0,
         max: 100,
@@ -146,8 +147,8 @@ const UPGRADE_CONFIGS = {
         name: 'Небесный',
         unit: '%',
         enhancement: ENHANCEMENT.CELESTIAL,
-        baseCost: 5000,
-        growthRate: 1.30,
+        baseCost: 3000,     // was 5000
+        growthRate: 1.25,   // was 1.30
         step: 1,
         min: 0,
         max: 100,
