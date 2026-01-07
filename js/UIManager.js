@@ -115,14 +115,7 @@ export class UIManager {
             if (!scene.scene.isActive('UpgradesScene')) scene.scene.launch('UpgradesScene');
         });
         this.prestigeText = createButton(cx, 0xf39c12, 0xe67e22, this.getPrestigeButtonText(), () => {
-            // Delay launch slightly to avoid conflicts with active tweens
-            if (!scene.scene.isActive('PrestigeScene')) {
-                scene.time.delayedCall(100, () => {
-                    if (!scene.scene.isActive('PrestigeScene')) {
-                        scene.scene.launch('PrestigeScene');
-                    }
-                });
-            }
+            if (!scene.scene.isActive('PrestigeScene')) scene.scene.launch('PrestigeScene');
         });
         createButton(cx + btnSpacing, 0x3498db, 0x2980b9, '⚙️ Опции', () => {
             if (!scene.scene.isActive('SettingsScene')) scene.scene.launch('SettingsScene');

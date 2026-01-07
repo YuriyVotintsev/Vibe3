@@ -1,22 +1,4 @@
-import {
-    PlayerData,
-    getMoneyMultiplier,
-    getBoardSize,
-    getColorCount,
-    getUnlockedTiers,
-    getPrestigeMoneyMultCost,
-    upgradePrestigeMoneyMult,
-    getPrestigeTiersCost,
-    upgradePrestigeTiers,
-    getPrestigeColorsCost,
-    upgradePrestigeColors,
-    getPrestigeArenaCost,
-    upgradePrestigeArena,
-    getPrestigeCoinsFromCurrency,
-    getCurrencyForCoins,
-    getProgressToNextCoin,
-    performPrestige
-} from './config.js';
+import { PlayerData } from './config.js';
 
 export class PrestigeScene extends Phaser.Scene {
     constructor() {
