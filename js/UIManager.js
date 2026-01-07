@@ -110,10 +110,16 @@ export class UIManager {
             return txt;
         };
 
-        // Three buttons in a row
-        createButton(cx - btnSpacing, 0x9b59b6, 0x8e44ad, '⬆️ Апгрейд', () => scene.scene.launch('UpgradesScene'));
-        this.prestigeText = createButton(cx, 0xf39c12, 0xe67e22, this.getPrestigeButtonText(), () => scene.scene.launch('PrestigeScene'));
-        createButton(cx + btnSpacing, 0x3498db, 0x2980b9, '⚙️ Опции', () => scene.scene.launch('SettingsScene'));
+        // Three buttons in a row (with duplicate launch protection)
+        createButton(cx - btnSpacing, 0x9b59b6, 0x8e44ad, '⬆️ Апгрейд', () => {
+            if (!scene.scene.isActive('UpgradesScene')) scene.scene.launch('UpgradesScene');
+        });
+        this.prestigeText = createButton(cx, 0xf39c12, 0xe67e22, this.getPrestigeButtonText(), () => {
+            if (!scene.scene.isActive('PrestigeScene')) scene.scene.launch('PrestigeScene');
+        });
+        createButton(cx + btnSpacing, 0x3498db, 0x2980b9, '⚙️ Опции', () => {
+            if (!scene.scene.isActive('SettingsScene')) scene.scene.launch('SettingsScene');
+        });
     }
 
     /**
