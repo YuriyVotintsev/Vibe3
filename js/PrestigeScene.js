@@ -1,7 +1,5 @@
 import {
     PlayerData,
-    getNextPrestigeCoinCost,
-    buyPrestigeCoin,
     getMoneyMultiplier,
     getBoardSize,
     getColorCount,
@@ -13,7 +11,11 @@ import {
     getPrestigeColorsCost,
     upgradePrestigeColors,
     getPrestigeArenaCost,
-    upgradePrestigeArena
+    upgradePrestigeArena,
+    getPrestigeCoinsFromCurrency,
+    getCurrencyForCoins,
+    getProgressToNextCoin,
+    performPrestige
 } from './config.js';
 
 export class PrestigeScene extends Phaser.Scene {
@@ -22,6 +24,8 @@ export class PrestigeScene extends Phaser.Scene {
     }
 
     create() {
+        this.scene.pause('MainScene');
+
         const W = this.cameras.main.width;
         const H = this.cameras.main.height;
         const cx = W / 2;
@@ -35,7 +39,7 @@ export class PrestigeScene extends Phaser.Scene {
 
         // Panel background
         const panelTop = 20;
-        const panelBottom = H - 90;
+        const panelBottom = H - 130;
         const panelHeight = panelBottom - panelTop;
 
         const panel = this.add.graphics();
@@ -51,17 +55,20 @@ export class PrestigeScene extends Phaser.Scene {
             color: '#f1c40f'
         }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
 
-        // Currency displays
-        this.createCurrencyDisplays(cx);
+        // Prestige coins display
+        this.add.text(cx - 50, 85, '👑', { fontSize: '26px' }).setOrigin(0.5);
+        this.prestigeText = this.add.text(cx - 20, 85, `${PlayerData.prestigeCurrency}`, {
+            fontSize: '26px', color: '#e056fd', fontStyle: 'bold'
+        }).setOrigin(0, 0.5);
 
-        // Buy prestige coin section
-        this.createBuyCoinSection(cx);
+        // Progress bar section
+        this.createProgressBar(cx);
 
         // Prestige upgrades
         this.createUpgradeRows();
 
-        // Close button
-        this.createCloseButton();
+        // Bottom buttons
+        this.createBottomButtons();
     }
 
     update() {
@@ -69,97 +76,65 @@ export class PrestigeScene extends Phaser.Scene {
         if (PlayerData.currency !== this.lastCurrency || PlayerData.prestigeCurrency !== this.lastPrestige) {
             this.lastCurrency = PlayerData.currency;
             this.lastPrestige = PlayerData.prestigeCurrency;
-            this.currencyText.setText(`${PlayerData.currency}`);
             this.prestigeText.setText(`${PlayerData.prestigeCurrency}`);
-            this.updateBuyCoinButton();
+            this.updateProgressBar();
+            this.updatePrestigeButton();
             this.refreshAllRows();
         }
     }
 
-    createCurrencyDisplays(cx) {
-        // Regular currency
-        const currencyBg = this.add.graphics();
-        currencyBg.fillStyle(0xf39c12, 0.3);
-        currencyBg.fillRoundedRect(30, 80, 130, 40, 10);
-        this.add.text(45, 100, '💰', { fontSize: '22px' }).setOrigin(0.5);
-        this.currencyText = this.add.text(65, 100, `${PlayerData.currency}`, {
-            fontSize: '20px', color: '#f1c40f', fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-
-        // Prestige currency
-        const prestigeBg = this.add.graphics();
-        prestigeBg.fillStyle(0x9b59b6, 0.3);
-        prestigeBg.fillRoundedRect(180, 80, 130, 40, 10);
-        this.add.text(195, 100, '👑', { fontSize: '22px' }).setOrigin(0.5);
-        this.prestigeText = this.add.text(215, 100, `${PlayerData.prestigeCurrency}`, {
-            fontSize: '20px', color: '#e056fd', fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-    }
-
-    createBuyCoinSection(cx) {
-        const y = 140;
+    createProgressBar(cx) {
         const W = this.cameras.main.width;
+        const y = 125;
+        const barWidth = W - 80;
+        const barHeight = 24;
 
         // Background
-        const bg = this.add.graphics();
-        bg.fillStyle(0x2a2a3e, 0.8);
-        bg.fillRoundedRect(25, y, W - 50, 50, 10);
+        const bgGraphics = this.add.graphics();
+        bgGraphics.fillStyle(0x2a2a3e, 1);
+        bgGraphics.fillRoundedRect(cx - barWidth / 2, y, barWidth, barHeight, 8);
 
-        // Label
-        this.add.text(40, y + 25, 'Купить 👑', {
-            fontSize: '16px', color: '#e056fd', fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
+        // Progress fill
+        this.progressBarFill = this.add.graphics();
+        this.progressBarWidth = barWidth;
+        this.progressBarX = cx - barWidth / 2;
+        this.progressBarY = y;
+        this.progressBarHeight = barHeight;
 
-        // Cost
-        this.buyCoinCostText = this.add.text(150, y + 25, `${getNextPrestigeCoinCost()}💰`, {
-            fontSize: '14px', color: '#f1c40f'
-        }).setOrigin(0, 0.5);
+        this.updateProgressBar();
 
-        // Button
-        const btnX = W - 60;
-        const btnSize = 44;
-        const affordable = PlayerData.currency >= getNextPrestigeCoinCost();
-
-        this.buyCoinBtn = this.add.graphics();
-        this.buyCoinBtn.fillStyle(affordable ? 0x9b59b6 : 0x555555, 1);
-        this.buyCoinBtn.fillRoundedRect(btnX - btnSize / 2, y + 25 - btnSize / 2, btnSize, btnSize, 8);
-
-        this.add.text(btnX, y + 25, '+1', {
+        // Progress text
+        const currentCoins = getPrestigeCoinsFromCurrency(PlayerData.currency);
+        const nextThreshold = getCurrencyForCoins(currentCoins + 1);
+        this.progressText = this.add.text(cx, y + barHeight / 2, `${PlayerData.currency} / ${nextThreshold}`, {
             fontSize: '14px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        this.buyCoinHitArea = this.add.rectangle(btnX, y + 25, btnSize, btnSize, 0x000000, 0)
-            .setInteractive({ useHandCursor: affordable })
-            .on('pointerdown', () => {
-                if (buyPrestigeCoin()) {
-                    this.currencyText.setText(`${PlayerData.currency}`);
-                    this.prestigeText.setText(`${PlayerData.prestigeCurrency}`);
-                    this.updateBuyCoinButton();
-                    this.refreshAllRows();
-                }
-            });
-
-        this.buyCoinBtnX = btnX;
-        this.buyCoinBtnY = y + 25;
-        this.buyCoinBtnSize = btnSize;
+        // Label
+        this.add.text(cx, y - 15, 'До следующей монеты:', {
+            fontSize: '12px', color: '#aaaaaa'
+        }).setOrigin(0.5);
     }
 
-    updateBuyCoinButton() {
-        const affordable = PlayerData.currency >= getNextPrestigeCoinCost();
-        this.buyCoinCostText.setText(`${getNextPrestigeCoinCost()}💰`);
-        this.buyCoinBtn.clear();
-        this.buyCoinBtn.fillStyle(affordable ? 0x9b59b6 : 0x555555, 1);
-        this.buyCoinBtn.fillRoundedRect(
-            this.buyCoinBtnX - this.buyCoinBtnSize / 2,
-            this.buyCoinBtnY - this.buyCoinBtnSize / 2,
-            this.buyCoinBtnSize, this.buyCoinBtnSize, 8
-        );
-        this.buyCoinHitArea.setInteractive({ useHandCursor: affordable });
+    updateProgressBar() {
+        const progress = getProgressToNextCoin();
+        const fillWidth = Math.max(4, this.progressBarWidth * progress);
+
+        this.progressBarFill.clear();
+        this.progressBarFill.fillStyle(0xf1c40f, 1);
+        this.progressBarFill.fillRoundedRect(this.progressBarX, this.progressBarY, fillWidth, this.progressBarHeight, 8);
+
+        // Update text
+        const currentCoins = getPrestigeCoinsFromCurrency(PlayerData.currency);
+        const nextThreshold = getCurrencyForCoins(currentCoins + 1);
+        if (this.progressText) {
+            this.progressText.setText(`${PlayerData.currency} / ${nextThreshold}`);
+        }
     }
 
     createUpgradeRows() {
         const W = this.cameras.main.width;
-        let y = 205;
+        let y = 165;
 
         this.upgradeRows = [];
 
@@ -250,7 +225,6 @@ export class PrestigeScene extends Phaser.Scene {
             .setInteractive({ useHandCursor: affordable })
             .on('pointerdown', () => {
                 if (canAfford() && onBuy()) {
-                    this.currencyText.setText(`${PlayerData.currency}`);
                     this.prestigeText.setText(`${PlayerData.prestigeCurrency}`);
                     this.refreshAllRows();
                 }
@@ -275,30 +249,88 @@ export class PrestigeScene extends Phaser.Scene {
         }
     }
 
-    createCloseButton() {
+    createBottomButtons() {
         const W = this.cameras.main.width;
         const H = this.cameras.main.height;
         const cx = W / 2;
-        const btnY = H - 45;
-        const btnWidth = W - 60;
+        const btnWidth = (W - 80) / 2;
         const btnHeight = 50;
+        const btnY = H - 65;
 
-        const btn = this.add.graphics();
-        btn.fillStyle(0xe74c3c, 1);
-        btn.fillRoundedRect(cx - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
+        // Prestige button (left)
+        const coinsToGain = getPrestigeCoinsFromCurrency(PlayerData.currency);
+        const canPrestige = coinsToGain > 0;
 
-        this.add.rectangle(cx, btnY, btnWidth, btnHeight, 0x000000, 0)
-            .setInteractive({ useHandCursor: true })
+        this.prestigeBtn = this.add.graphics();
+        this.prestigeBtn.fillStyle(canPrestige ? 0x27ae60 : 0x555555, 1);
+        this.prestigeBtn.fillRoundedRect(30, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
+
+        const prestigeBtnX = 30 + btnWidth / 2;
+        this.prestigeBtnText = this.add.text(prestigeBtnX, btnY, this.getPrestigeButtonLabel(), {
+            fontSize: '16px', color: '#ffffff', fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        this.prestigeBtnHitArea = this.add.rectangle(prestigeBtnX, btnY, btnWidth, btnHeight, 0x000000, 0)
+            .setInteractive({ useHandCursor: canPrestige })
             .on('pointerover', () => {
-                btn.clear().fillStyle(0xc0392b, 1).fillRoundedRect(cx - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
+                if (getPrestigeCoinsFromCurrency(PlayerData.currency) > 0) {
+                    this.prestigeBtn.clear().fillStyle(0x2ecc71, 1).fillRoundedRect(30, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
+                }
             })
             .on('pointerout', () => {
-                btn.clear().fillStyle(0xe74c3c, 1).fillRoundedRect(cx - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
+                const canP = getPrestigeCoinsFromCurrency(PlayerData.currency) > 0;
+                this.prestigeBtn.clear().fillStyle(canP ? 0x27ae60 : 0x555555, 1).fillRoundedRect(30, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
             })
-            .on('pointerdown', () => this.scene.stop());
+            .on('pointerdown', () => {
+                if (performPrestige()) {
+                    // Restart game
+                    this.scene.stop();
+                    this.scene.stop('MainScene');
+                    this.scene.start('MainScene');
+                }
+            });
 
-        this.add.text(cx, btnY, '✕ ЗАКРЫТЬ', {
-            fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
+        this.prestigeBtnY = btnY;
+        this.prestigeBtnWidth = btnWidth;
+
+        // Close button (right)
+        const closeBtnX = W - 30 - btnWidth / 2;
+        const closeBtn = this.add.graphics();
+        closeBtn.fillStyle(0xe74c3c, 1);
+        closeBtn.fillRoundedRect(W - 30 - btnWidth, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
+
+        this.add.rectangle(closeBtnX, btnY, btnWidth, btnHeight, 0x000000, 0)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerover', () => {
+                closeBtn.clear().fillStyle(0xc0392b, 1).fillRoundedRect(W - 30 - btnWidth, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
+            })
+            .on('pointerout', () => {
+                closeBtn.clear().fillStyle(0xe74c3c, 1).fillRoundedRect(W - 30 - btnWidth, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
+            })
+            .on('pointerdown', () => {
+                this.scene.resume('MainScene');
+                this.scene.stop();
+            });
+
+        this.add.text(closeBtnX, btnY, '✕ ЗАКРЫТЬ', {
+            fontSize: '16px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
+    }
+
+    getPrestigeButtonLabel() {
+        const coins = getPrestigeCoinsFromCurrency(PlayerData.currency);
+        if (coins > 0) {
+            return `✓ ПРЕСТИЖ (+${coins}👑)`;
+        }
+        return '✓ ПРЕСТИЖ (0👑)';
+    }
+
+    updatePrestigeButton() {
+        const canPrestige = getPrestigeCoinsFromCurrency(PlayerData.currency) > 0;
+        this.prestigeBtn.clear();
+        this.prestigeBtn.fillStyle(canPrestige ? 0x27ae60 : 0x555555, 1);
+        this.prestigeBtn.fillRoundedRect(30, this.prestigeBtnY - 25, this.prestigeBtnWidth, 50, 12);
+        this.prestigeBtnText.setText(this.getPrestigeButtonLabel());
+        this.prestigeBtnHitArea.setInteractive({ useHandCursor: canPrestige });
     }
 }

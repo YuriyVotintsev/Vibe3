@@ -4,7 +4,8 @@ import {
     BOARD_OFFSET_Y,
     JS_VERSION,
     PlayerData,
-    ENHANCEMENT
+    ENHANCEMENT,
+    getPrestigeCoinsFromCurrency
 } from './config.js';
 
 /**
@@ -21,6 +22,7 @@ export class UIManager {
         this.scene = scene;
         this.currencyText = null;
         this.messageText = null;
+        this.prestigeText = null;
     }
 
     /**
@@ -77,37 +79,87 @@ export class UIManager {
     createButtons() {
         const scene = this.scene;
         const cx = scene.cameras.main.width / 2;
-        const btnY = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 70;
+        const btnY1 = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 55;
+        const btnY2 = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 110;
         const btnWidth = 140;
-        const btnHeight = 48;
+        const btnHeight = 44;
         const btnSpacing = 80;
 
-        const createButton = (x, color, hoverColor, label, callback) => {
+        const createButton = (x, y, color, hoverColor, label, callback, textRef = null) => {
             const bg = scene.add.graphics();
             bg.fillStyle(color, 1);
-            bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
+            bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 12);
 
-            scene.add.rectangle(x, btnY, btnWidth, btnHeight, 0x000000, 0)
+            scene.add.rectangle(x, y, btnWidth, btnHeight, 0x000000, 0)
                 .setInteractive({ useHandCursor: true })
                 .on('pointerover', () => {
                     bg.clear();
                     bg.fillStyle(hoverColor, 1);
-                    bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
+                    bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 12);
                 })
                 .on('pointerout', () => {
                     bg.clear();
                     bg.fillStyle(color, 1);
-                    bg.fillRoundedRect(x - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
+                    bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 12);
                 })
                 .on('pointerdown', callback);
 
-            scene.add.text(x, btnY, label, {
-                fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
+            const txt = scene.add.text(x, y, label, {
+                fontSize: '16px', color: '#ffffff', fontStyle: 'bold'
             }).setOrigin(0.5);
+
+            return txt;
         };
 
-        createButton(cx - btnSpacing, 0x9b59b6, 0x8e44ad, '⬆️ Апгрейд', () => scene.scene.launch('UpgradesScene'));
-        createButton(cx + btnSpacing, 0x3498db, 0x2980b9, '⚙️ Опции', () => scene.scene.launch('SettingsScene'));
+        // Row 1: Upgrade and Settings
+        createButton(cx - btnSpacing, btnY1, 0x9b59b6, 0x8e44ad, '⬆️ Апгрейд', () => scene.scene.launch('UpgradesScene'));
+        createButton(cx + btnSpacing, btnY1, 0x3498db, 0x2980b9, '⚙️ Опции', () => scene.scene.launch('SettingsScene'));
+
+        // Row 2: Prestige button (centered, wider)
+        const prestigeBtnWidth = btnWidth * 2 + 20;
+        const prestigeBg = scene.add.graphics();
+        prestigeBg.fillStyle(0xf39c12, 1);
+        prestigeBg.fillRoundedRect(cx - prestigeBtnWidth / 2, btnY2 - btnHeight / 2, prestigeBtnWidth, btnHeight, 12);
+
+        scene.add.rectangle(cx, btnY2, prestigeBtnWidth, btnHeight, 0x000000, 0)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerover', () => {
+                prestigeBg.clear();
+                prestigeBg.fillStyle(0xe67e22, 1);
+                prestigeBg.fillRoundedRect(cx - prestigeBtnWidth / 2, btnY2 - btnHeight / 2, prestigeBtnWidth, btnHeight, 12);
+            })
+            .on('pointerout', () => {
+                prestigeBg.clear();
+                prestigeBg.fillStyle(0xf39c12, 1);
+                prestigeBg.fillRoundedRect(cx - prestigeBtnWidth / 2, btnY2 - btnHeight / 2, prestigeBtnWidth, btnHeight, 12);
+            })
+            .on('pointerdown', () => scene.scene.launch('PrestigeScene'));
+
+        // Prestige button text (will be updated)
+        this.prestigeText = scene.add.text(cx, btnY2, this.getPrestigeButtonText(), {
+            fontSize: '16px', color: '#ffffff', fontStyle: 'bold'
+        }).setOrigin(0.5);
+    }
+
+    /**
+     * Get prestige button text showing coins and potential gain
+     */
+    getPrestigeButtonText() {
+        const current = PlayerData.prestigeCurrency;
+        const potential = getPrestigeCoinsFromCurrency(PlayerData.currency);
+        if (potential > 0) {
+            return `👑 Престиж: ${current} (+${potential})`;
+        }
+        return `👑 Престиж: ${current}`;
+    }
+
+    /**
+     * Update prestige button text
+     */
+    updatePrestige() {
+        if (this.prestigeText) {
+            this.prestigeText.setText(this.getPrestigeButtonText());
+        }
     }
 
     /**
@@ -115,6 +167,7 @@ export class UIManager {
      */
     updateCurrency() {
         this.currencyText.setText(`${PlayerData.currency}`);
+        this.updatePrestige();
     }
 
     /**

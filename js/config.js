@@ -383,23 +383,64 @@ export function getColorCount() {
     return Math.max(3, 6 - PlayerData.prestigeColors);
 }
 
-// Cost for next prestige coin: N * 100 (linear growth)
-// Total to get N coins: 100 * N * (N+1) / 2
-export function getNextPrestigeCoinCost() {
-    const nextCoin = PlayerData.prestigeCurrency + 1;
-    return nextCoin * 100;
+// Calculate how many prestige coins you can get from a currency amount
+// Coins require: 1st=100, 2nd=200, 3rd=300... Nth=N*100
+// Total for N coins = 100 * N * (N+1) / 2
+export function getPrestigeCoinsFromCurrency(currency) {
+    // Solve: 100 * N * (N+1) / 2 <= currency
+    // N^2 + N - currency/50 <= 0
+    // N = floor((-1 + sqrt(1 + currency/12.5)) / 2)
+    if (currency < 100) return 0;
+    const n = Math.floor((-1 + Math.sqrt(1 + currency / 12.5)) / 2);
+    return Math.max(0, n);
 }
 
-// Buy a prestige coin with regular currency
-export function buyPrestigeCoin() {
-    const cost = getNextPrestigeCoinCost();
-    if (PlayerData.currency >= cost) {
-        PlayerData.currency -= cost;
-        PlayerData.prestigeCurrency += 1;
-        savePlayerData();
-        return true;
-    }
-    return false;
+// Get total currency required for N prestige coins
+export function getCurrencyForCoins(n) {
+    return 100 * n * (n + 1) / 2;
+}
+
+// Get currency needed for the next prestige coin from current amount
+export function getCurrencyForNextCoin() {
+    const currentCoins = getPrestigeCoinsFromCurrency(PlayerData.currency);
+    const nextCoinTotal = getCurrencyForCoins(currentCoins + 1);
+    return nextCoinTotal;
+}
+
+// Get progress towards next prestige coin (0-1)
+export function getProgressToNextCoin() {
+    const currentCoins = getPrestigeCoinsFromCurrency(PlayerData.currency);
+    const currentThreshold = getCurrencyForCoins(currentCoins);
+    const nextThreshold = getCurrencyForCoins(currentCoins + 1);
+    const range = nextThreshold - currentThreshold;
+    const progress = PlayerData.currency - currentThreshold;
+    return Math.min(1, progress / range);
+}
+
+// Perform prestige: reset game, gain prestige coins
+export function performPrestige() {
+    const coinsToGain = getPrestigeCoinsFromCurrency(PlayerData.currency);
+    if (coinsToGain <= 0) return false;
+
+    // Add prestige coins
+    PlayerData.prestigeCurrency += coinsToGain;
+
+    // Reset regular progress (but keep prestige upgrades)
+    PlayerData.currency = 0;
+    PlayerData.totalEarned = 0;
+    PlayerData.autoMoveDelay = 5000;
+    PlayerData.bombChance = 10;
+    PlayerData.bombRadius = 1;
+    PlayerData.bronzeChance = 5;
+    PlayerData.silverChance = 1;
+    PlayerData.goldChance = 0;
+    PlayerData.crystalChance = 0;
+    PlayerData.rainbowChance = 0;
+    PlayerData.prismaticChance = 0;
+    PlayerData.celestialChance = 0;
+
+    savePlayerData();
+    return true;
 }
 
 // Prestige upgrade costs (in prestige coins)
@@ -545,4 +586,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.67-js';
+export const JS_VERSION = '0.0.68-js';

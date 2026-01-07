@@ -250,50 +250,7 @@ export class UpgradesScene extends Phaser.Scene {
             }, () => upgradeCelestial());
         }
 
-        // Separator - Prestige
-        y += 15;
-        const separator2 = this.add.text(cx, y, '— ПРЕСТИЖ —', {
-            fontSize: '14px', color: '#f1c40f', fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.scrollContainer.add(separator2);
-        y += 25;
-
-        // Prestige button
-        y = this.createPrestigeButton(y);
-
         return y - this.scrollTop + 20;
-    }
-
-    createPrestigeButton(y) {
-        const W = this.cameras.main.width;
-        const cx = W / 2;
-        const btnWidth = W - 60;
-        const btnHeight = 50;
-
-        const btn = this.add.graphics();
-        btn.fillStyle(0xf1c40f, 1);
-        btn.fillRoundedRect(cx - btnWidth / 2, y, btnWidth, btnHeight, 12);
-        this.scrollContainer.add(btn);
-
-        const hitArea = this.add.rectangle(cx, y + btnHeight / 2, btnWidth, btnHeight, 0x000000, 0)
-            .setInteractive({ useHandCursor: true })
-            .on('pointerover', () => {
-                btn.clear().fillStyle(0xf39c12, 1).fillRoundedRect(cx - btnWidth / 2, y, btnWidth, btnHeight, 12);
-            })
-            .on('pointerout', () => {
-                btn.clear().fillStyle(0xf1c40f, 1).fillRoundedRect(cx - btnWidth / 2, y, btnWidth, btnHeight, 12);
-            })
-            .on('pointerdown', () => {
-                this.scene.launch('PrestigeScene');
-            });
-        this.scrollContainer.add(hitArea);
-
-        const label = this.add.text(cx, y + btnHeight / 2, '👑 ПРЕСТИЖ', {
-            fontSize: '18px', color: '#000000', fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.scrollContainer.add(label);
-
-        return y + btnHeight + 10;
     }
 
     createUpgradeRow(y, icon, name, getValue, getCost, getAction, canAfford, onBuy) {
