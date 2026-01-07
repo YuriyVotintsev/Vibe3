@@ -5,8 +5,8 @@ import { PlayerData, savePlayerData, getDefaultValue, getPrestigeResetKeys } fro
 // ========== PRESTIGE CALCULATIONS ==========
 
 export function getMoneyMultiplier() {
-    // Multiplier = total lifetime prestige coins earned (never decreases)
-    return Math.max(1, PlayerData.totalPrestigeCoinsEarned);
+    // Multiplier = total lifetime prestige coins + 1 (useful from first coin)
+    return PlayerData.totalPrestigeCoinsEarned + 1;
 }
 
 export function getBoardSize() {
