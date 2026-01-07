@@ -239,13 +239,19 @@ export class PrestigeScene extends Phaser.Scene {
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Cost
+        // Cost - always bright gold
         const costText = isMaxed ? 'MAX' : `${cost}👑`;
         this.add.text(x + width / 2, y + 76, costText, {
             fontSize: FONT_SIZE.xl,
-            color: isMaxed ? '#666666' : (canAfford ? '#ffd700' : '#997700'),
+            color: isMaxed ? '#666666' : '#ffd700',
             fontStyle: 'bold'
         }).setOrigin(0.5);
+
+        // Level indicator - bottom right, white
+        this.add.text(x + width - 8, y + height - 8, upgrade.getLevel(), {
+            fontSize: FONT_SIZE.base,
+            color: '#ffffff'
+        }).setOrigin(1, 1);
 
         // Hit area
         if (!isMaxed) {
@@ -309,11 +315,11 @@ export class PrestigeScene extends Phaser.Scene {
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Status - clearer
+        // Status - always bright gold for cost
         const statusText = isOwned ? '✓ ВКЛ' : `${item.cost} 👑`;
         this.add.text(x + width / 2, y + 52, statusText, {
             fontSize: FONT_SIZE.xl,
-            color: isOwned ? '#55efc4' : (canAfford ? '#ffd700' : '#997700'),
+            color: isOwned ? '#55efc4' : '#ffd700',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
