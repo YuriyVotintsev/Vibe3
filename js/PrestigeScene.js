@@ -304,23 +304,23 @@ export class PrestigeScene extends Phaser.Scene {
 
         // Name
         this.add.text(x + width / 2, y + 12, name, {
-            fontSize: '10px', color: '#ffffff', fontStyle: 'bold'
+            fontSize: '12px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
 
         // Level
-        this.add.text(x + width / 2, y + 25, getLevel(), {
-            fontSize: '9px', color: '#aaaaaa'
+        this.add.text(x + width / 2, y + 26, getLevel(), {
+            fontSize: '10px', color: '#d0d0d0'
         }).setOrigin(0.5);
 
         // Value
-        this.add.text(x + width / 2, y + 42, getValue(), {
-            fontSize: '14px', color: '#55efc4', fontStyle: 'bold'
+        this.add.text(x + width / 2, y + 43, getValue(), {
+            fontSize: '15px', color: '#55efc4', fontStyle: 'bold'
         }).setOrigin(0.5);
 
         // Cost
         const costStr = isMaxed ? 'MAX' : `${cost}👑`;
-        this.add.text(x + width / 2, y + 58, costStr, {
-            fontSize: '10px', color: isMaxed ? '#888888' : (affordable ? '#f1c40f' : '#888888')
+        this.add.text(x + width / 2, y + 59, costStr, {
+            fontSize: '11px', color: isMaxed ? '#999999' : (affordable ? '#f1c40f' : '#cc9900')
         }).setOrigin(0.5);
 
         // Hit area
@@ -366,18 +366,18 @@ export class PrestigeScene extends Phaser.Scene {
         }
 
         // Name
-        this.add.text(x + width / 2, y + 16, name, {
-            fontSize: '11px', color: owned ? '#55efc4' : '#ffffff', fontStyle: 'bold'
+        this.add.text(x + width / 2, y + 18, name, {
+            fontSize: '12px', color: owned ? '#55efc4' : '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
 
         // Status or cost
         if (owned) {
             this.add.text(x + width / 2, y + 38, '✓ ВКЛ', {
-                fontSize: '12px', color: '#55efc4', fontStyle: 'bold'
+                fontSize: '13px', color: '#55efc4', fontStyle: 'bold'
             }).setOrigin(0.5);
         } else {
             this.add.text(x + width / 2, y + 38, `${AUTO_BUY_COST}👑`, {
-                fontSize: '12px', color: canAfford ? '#f1c40f' : '#666666'
+                fontSize: '13px', color: canAfford ? '#f1c40f' : '#cc9900'
             }).setOrigin(0.5);
 
             // Hit area

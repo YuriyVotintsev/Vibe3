@@ -311,28 +311,28 @@ export class UpgradesScene extends Phaser.Scene {
         }
         this.scrollContainer.add(btn);
 
-        // Name + Level on same line
+        // Name
         const nameText = this.add.text(x + width / 2, y + 12, name, {
-            fontSize: '10px', color: '#ffffff', fontStyle: 'bold'
+            fontSize: '12px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
         this.scrollContainer.add(nameText);
 
         // Level indicator
-        const levelText = this.add.text(x + width / 2, y + 25, getLevel(), {
-            fontSize: '9px', color: '#aaaaaa'
+        const levelText = this.add.text(x + width / 2, y + 26, getLevel(), {
+            fontSize: '10px', color: '#d0d0d0'
         }).setOrigin(0.5);
         this.scrollContainer.add(levelText);
 
         // Value
-        const valueText = this.add.text(x + width / 2, y + 42, getValue(), {
-            fontSize: '14px', color: '#55efc4', fontStyle: 'bold'
+        const valueText = this.add.text(x + width / 2, y + 43, getValue(), {
+            fontSize: '15px', color: '#55efc4', fontStyle: 'bold'
         }).setOrigin(0.5);
         this.scrollContainer.add(valueText);
 
         // Cost
         const costStr = isMaxed ? 'MAX' : formatNumber(cost) + '💰';
-        const costText = this.add.text(x + width / 2, y + 58, costStr, {
-            fontSize: '10px', color: isMaxed ? '#888888' : (affordable ? '#f1c40f' : '#888888')
+        const costText = this.add.text(x + width / 2, y + 59, costStr, {
+            fontSize: '11px', color: isMaxed ? '#999999' : (affordable ? '#f1c40f' : '#cc9900')
         }).setOrigin(0.5);
         this.scrollContainer.add(costText);
 
@@ -454,7 +454,7 @@ export class UpgradesScene extends Phaser.Scene {
             const isMaxed = cost === null;
             const affordable = !isMaxed && b.canAfford();
             b.costText.setText(isMaxed ? 'MAX' : formatNumber(cost) + '💰');
-            b.costText.setColor(isMaxed ? '#888888' : (affordable ? '#f1c40f' : '#888888'));
+            b.costText.setColor(isMaxed ? '#999999' : (affordable ? '#f1c40f' : '#cc9900'));
             b.hitArea.setInteractive({ useHandCursor: affordable });
             this.redrawButton(b.btn, b.x, b.y, b.width, b.height, b.getCost, b.canAfford);
         }
