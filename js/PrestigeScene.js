@@ -6,49 +6,63 @@ export class PrestigeScene extends Phaser.Scene {
     }
 
     create() {
-        const W = this.cameras.main.width;
-        const H = this.cameras.main.height;
-        const cx = W / 2;
+        console.log('[PrestigeScene] create() START');
+        try {
+            const W = this.cameras.main.width;
+            const H = this.cameras.main.height;
+            const cx = W / 2;
+            console.log('[PrestigeScene] dimensions:', W, H);
 
-        // Dark overlay
-        this.add.rectangle(cx, H / 2, W, H, 0x000000, 0.9);
+            // Dark overlay
+            this.add.rectangle(cx, H / 2, W, H, 0x000000, 0.9);
+            console.log('[PrestigeScene] overlay done');
 
-        // Panel background
-        const panelTop = 20;
-        const panelBottom = H - 90;
-        const panelHeight = panelBottom - panelTop;
+            // Panel background
+            const panelTop = 20;
+            const panelBottom = H - 90;
+            const panelHeight = panelBottom - panelTop;
 
-        const panel = this.add.graphics();
-        panel.fillStyle(0x1e1e2e, 1);
-        panel.fillRoundedRect(15, panelTop, W - 30, panelHeight, 16);
-        panel.lineStyle(3, 0xf1c40f, 1);
-        panel.strokeRoundedRect(15, panelTop, W - 30, panelHeight, 16);
+            const panel = this.add.graphics();
+            panel.fillStyle(0x1e1e2e, 1);
+            panel.fillRoundedRect(15, panelTop, W - 30, panelHeight, 16);
+            panel.lineStyle(3, 0xf1c40f, 1);
+            panel.strokeRoundedRect(15, panelTop, W - 30, panelHeight, 16);
+            console.log('[PrestigeScene] panel done');
 
-        // Title
-        this.add.text(cx, 50, 'ПРЕСТИЖ (ТЕСТ)', {
-            fontSize: '28px',
-            fontFamily: 'Arial Black',
-            color: '#f1c40f'
-        }).setOrigin(0.5);
+            // Title
+            this.add.text(cx, 50, 'ПРЕСТИЖ (ТЕСТ)', {
+                fontSize: '28px',
+                fontFamily: 'Arial Black',
+                color: '#f1c40f'
+            }).setOrigin(0.5);
+            console.log('[PrestigeScene] title done');
 
-        // Simple text - no calculations
-        this.add.text(cx, 150, 'Минимальная версия для теста', {
-            fontSize: '16px', color: '#ffffff'
-        }).setOrigin(0.5);
+            // Simple text - no calculations
+            this.add.text(cx, 150, 'Минимальная версия для теста', {
+                fontSize: '16px', color: '#ffffff'
+            }).setOrigin(0.5);
+            console.log('[PrestigeScene] text1 done');
 
-        this.add.text(cx, 200, `Монеты: ${PlayerData.prestigeCurrency}`, {
-            fontSize: '20px', color: '#e056fd', fontStyle: 'bold'
-        }).setOrigin(0.5);
+            this.add.text(cx, 200, `Монеты: ${PlayerData.prestigeCurrency}`, {
+                fontSize: '20px', color: '#e056fd', fontStyle: 'bold'
+            }).setOrigin(0.5);
+            console.log('[PrestigeScene] text2 done');
 
-        this.add.text(cx, 250, `Валюта: ${PlayerData.currency}`, {
-            fontSize: '20px', color: '#f1c40f', fontStyle: 'bold'
-        }).setOrigin(0.5);
+            this.add.text(cx, 250, `Валюта: ${PlayerData.currency}`, {
+                fontSize: '20px', color: '#f1c40f', fontStyle: 'bold'
+            }).setOrigin(0.5);
+            console.log('[PrestigeScene] text3 done');
 
-        // Close button
-        this.createCloseButton();
+            // Close button
+            this.createCloseButton();
+            console.log('[PrestigeScene] create() END - success');
+        } catch (e) {
+            console.error('[PrestigeScene] create() ERROR:', e.message, e.stack);
+        }
     }
 
     createCloseButton() {
+        console.log('[PrestigeScene] createCloseButton() START');
         const W = this.cameras.main.width;
         const H = this.cameras.main.height;
         const cx = W / 2;
@@ -59,13 +73,16 @@ export class PrestigeScene extends Phaser.Scene {
         const btn = this.add.graphics();
         btn.fillStyle(0xe74c3c, 1);
         btn.fillRoundedRect(cx - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
+        console.log('[PrestigeScene] button bg done');
 
         this.add.rectangle(cx, btnY, btnWidth, btnHeight, 0x000000, 0)
             .setInteractive({ useHandCursor: true })
             .on('pointerdown', () => this.scene.stop());
+        console.log('[PrestigeScene] button interactive done');
 
         this.add.text(cx, btnY, 'ЗАКРЫТЬ', {
             fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
+        console.log('[PrestigeScene] createCloseButton() END');
     }
 }
