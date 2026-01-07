@@ -1,4 +1,8 @@
-import { PlayerData } from './config.js';
+import {
+    PlayerData,
+    getPrestigeCoinsFromCurrency,
+    getProgressToNextCoin
+} from './config.js';
 
 export class PrestigeScene extends Phaser.Scene {
     constructor() {
@@ -52,6 +56,41 @@ export class PrestigeScene extends Phaser.Scene {
                 fontSize: '20px', color: '#f1c40f', fontStyle: 'bold'
             }).setOrigin(0.5);
             console.log('[PrestigeScene] text3 done');
+
+            // Progress bar section
+            const potential = getPrestigeCoinsFromCurrency(PlayerData.currency);
+            console.log('[PrestigeScene] potential coins:', potential);
+
+            this.add.text(cx, 310, potential > 0 ? `Можно получить: +${potential} монет` : 'Копите валюту для монет', {
+                fontSize: '16px', color: potential > 0 ? '#55efc4' : '#888888'
+            }).setOrigin(0.5);
+            console.log('[PrestigeScene] potential text done');
+
+            // Progress bar background
+            const barWidth = W - 80;
+            const barHeight = 20;
+            const barY = 350;
+
+            const barBg = this.add.graphics();
+            barBg.fillStyle(0x333333, 1);
+            barBg.fillRoundedRect(cx - barWidth / 2, barY, barWidth, barHeight, 8);
+            console.log('[PrestigeScene] bar bg done');
+
+            // Progress bar fill
+            const progress = getProgressToNextCoin();
+            console.log('[PrestigeScene] progress:', progress);
+
+            if (progress > 0) {
+                const barFill = this.add.graphics();
+                barFill.fillStyle(0xf1c40f, 1);
+                barFill.fillRoundedRect(cx - barWidth / 2, barY, barWidth * progress, barHeight, 8);
+            }
+            console.log('[PrestigeScene] bar fill done');
+
+            this.add.text(cx, barY + barHeight + 15, `${Math.floor(progress * 100)}% до следующей монеты`, {
+                fontSize: '14px', color: '#aaaaaa'
+            }).setOrigin(0.5);
+            console.log('[PrestigeScene] progress text done');
 
             // Close button
             this.createCloseButton();
