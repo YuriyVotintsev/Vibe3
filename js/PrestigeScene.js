@@ -25,56 +25,59 @@ export class PrestigeScene extends Phaser.Scene {
     }
 
     create() {
-        try {
-            this.isReady = false;
-            const W = this.cameras.main.width;
-            const H = this.cameras.main.height;
-            const cx = W / 2;
+        this.isReady = false;
+        const W = this.cameras.main.width;
+        const H = this.cameras.main.height;
+        const cx = W / 2;
 
-            // Track values for live updates
-            this.lastCurrency = PlayerData.currency;
-            this.lastPrestige = PlayerData.prestigeCurrency;
+        // Track values for live updates
+        this.lastCurrency = PlayerData.currency;
+        this.lastPrestige = PlayerData.prestigeCurrency;
 
-            // Dark overlay
-            this.add.rectangle(cx, H / 2, W, H, 0x000000, 0.9);
+        // Dark overlay (immediate)
+        this.add.rectangle(cx, H / 2, W, H, 0x000000, 0.9);
 
-            // Panel background
-            const panelTop = 20;
-            const panelBottom = H - 130;
-            const panelHeight = panelBottom - panelTop;
+        // Panel background (immediate)
+        const panelTop = 20;
+        const panelBottom = H - 130;
+        const panelHeight = panelBottom - panelTop;
 
-            const panel = this.add.graphics();
-            panel.fillStyle(0x1e1e2e, 1);
-            panel.fillRoundedRect(15, panelTop, W - 30, panelHeight, 16);
-            panel.lineStyle(3, 0xf1c40f, 1);
-            panel.strokeRoundedRect(15, panelTop, W - 30, panelHeight, 16);
+        const panel = this.add.graphics();
+        panel.fillStyle(0x1e1e2e, 1);
+        panel.fillRoundedRect(15, panelTop, W - 30, panelHeight, 16);
+        panel.lineStyle(3, 0xf1c40f, 1);
+        panel.strokeRoundedRect(15, panelTop, W - 30, panelHeight, 16);
 
-            // Title
-            this.add.text(cx, 50, 'ПРЕСТИЖ', {
-                fontSize: '28px',
-                fontFamily: 'Arial Black',
-                color: '#f1c40f'
-            }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
+        // Defer heavy UI creation to next frame to avoid blocking during match
+        this.time.delayedCall(50, () => {
+            try {
+                // Title
+                this.add.text(cx, 50, 'ПРЕСТИЖ', {
+                    fontSize: '28px',
+                    fontFamily: 'Arial Black',
+                    color: '#f1c40f'
+                }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
 
-            // Prestige coins display
-            this.add.text(cx - 50, 85, '👑', { fontSize: '26px' }).setOrigin(0.5);
-            this.prestigeText = this.add.text(cx - 20, 85, `${PlayerData.prestigeCurrency}`, {
-                fontSize: '26px', color: '#e056fd', fontStyle: 'bold'
-            }).setOrigin(0, 0.5);
+                // Prestige coins display
+                this.add.text(cx - 50, 85, '👑', { fontSize: '26px' }).setOrigin(0.5);
+                this.prestigeText = this.add.text(cx - 20, 85, `${PlayerData.prestigeCurrency}`, {
+                    fontSize: '26px', color: '#e056fd', fontStyle: 'bold'
+                }).setOrigin(0, 0.5);
 
-            // Progress bar section
-            this.createProgressBar(cx);
+                // Progress bar section
+                this.createProgressBar(cx);
 
-            // Prestige upgrades
-            this.createUpgradeRows();
+                // Prestige upgrades
+                this.createUpgradeRows();
 
-            // Bottom buttons
-            this.createBottomButtons();
+                // Bottom buttons
+                this.createBottomButtons();
 
-            this.isReady = true;
-        } catch (e) {
-            console.error('PrestigeScene create error:', e);
-        }
+                this.isReady = true;
+            } catch (e) {
+                console.error('PrestigeScene deferred create error:', e);
+            }
+        });
     }
 
     update() {
