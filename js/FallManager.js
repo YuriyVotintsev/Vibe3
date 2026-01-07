@@ -1,6 +1,6 @@
 // FallManager.js - Handles gem falling, gravity, and spawning
 import { GameSettings, BOARD_OFFSET_Y, GEM_STATE } from './config.js';
-import { getCellSize } from './utils.js';
+import { getCellSize } from './utils.js'; // used in spawnNewGems
 
 /**
  * Manages gem falling physics:
@@ -55,13 +55,7 @@ export class FallManager {
 
                     if (gem.y < targetY) {
                         gem.y = Math.min(gem.y + fallAmount, targetY);
-
-                        // Move overlay with gem (maintain corner offset)
-                        const overlay = gem.getData('overlay');
-                        if (overlay) {
-                            const cornerOffset = getCellSize() * 0.25;
-                            overlay.y = gem.y + cornerOffset;
-                        }
+                        // Overlay moves automatically with Container
 
                         if (gem.y >= targetY) {
                             gem.y = targetY;

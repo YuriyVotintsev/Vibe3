@@ -144,28 +144,45 @@ export class MainScene extends Phaser.Scene {
 
     createGem(row, col, gemType, startY = null, enhancement = null) {
         const pos = this.getGemPosition(row, col);
-        const gem = this.add.image(pos.x, startY !== null ? startY : pos.y, `gem_${gemType}`);
-        gem.setInteractive({ useHandCursor: true });
-        gem.setData('row', row);
-        gem.setData('col', col);
-        gem.setData('type', gemType);
-        gem.setData('state', GEM_STATE.IDLE);
-        gem.setData('targetY', pos.y);
-        gem.setMask(this.gemMask);
+        const cellSize = getCellSize();
 
+        // Use Container so overlay moves automatically with gem
+        const container = this.add.container(pos.x, startY !== null ? startY : pos.y);
+
+        // Gem sprite at center of container
+        const gemSprite = this.add.image(0, 0, `gem_${gemType}`);
+        container.add(gemSprite);
+        container.setData('sprite', gemSprite);
+
+        // Enhancement overlay (offset to corner, inside container)
         const enh = enhancement !== null ? enhancement : rollEnhancement();
-        gem.setData('enhancement', enh);
+        container.setData('enhancement', enh);
 
         if (enh !== ENHANCEMENT.NONE) {
-            const cellSize = getCellSize();
-            const cornerOffset = cellSize * 0.25; // offset to bottom-right corner
-            const overlay = this.add.image(gem.x + cornerOffset, gem.y + cornerOffset, `overlay_${enh}`);
-            overlay.setScale(0.7); // slightly smaller
-            overlay.setMask(this.gemMask);
-            gem.setData('overlay', overlay);
+            const cornerOffset = cellSize * 0.25;
+            const overlay = this.add.image(cornerOffset, cornerOffset, `overlay_${enh}`);
+            overlay.setScale(0.7);
+            container.add(overlay);
+            container.setData('overlay', overlay);
         }
 
-        return gem;
+        // Set container size for interaction
+        container.setSize(cellSize, cellSize);
+        container.setInteractive({ useHandCursor: true });
+
+        // Store data on container
+        container.setData('row', row);
+        container.setData('col', col);
+        container.setData('type', gemType);
+        container.setData('state', GEM_STATE.IDLE);
+        container.setData('targetY', pos.y);
+
+        // Apply mask to container children
+        gemSprite.setMask(this.gemMask);
+        const overlay = container.getData('overlay');
+        if (overlay) overlay.setMask(this.gemMask);
+
+        return container;
     }
 
     getGemPosition(row, col) {
@@ -192,8 +209,11 @@ export class MainScene extends Phaser.Scene {
                     const newType = validColors[Phaser.Math.Between(0, validColors.length - 1)];
                     if (newType !== this.board[row][col]) {
                         this.board[row][col] = newType;
-                        this.gems[row][col].setTexture(`gem_${newType}`);
-                        this.gems[row][col].setData('type', newType);
+                        // Container: update sprite texture inside
+                        const gem = this.gems[row][col];
+                        const sprite = gem.getData('sprite');
+                        if (sprite) sprite.setTexture(`gem_${newType}`);
+                        gem.setData('type', newType);
                     }
                 }
             }
@@ -286,7 +306,9 @@ export class MainScene extends Phaser.Scene {
             this.board[row][col] = types[i];
             const gem = this.gems[row][col];
             if (gem) {
-                gem.setTexture(`gem_${types[i]}`);
+                // Container: update sprite texture inside
+                const sprite = gem.getData('sprite');
+                if (sprite) sprite.setTexture(`gem_${types[i]}`);
                 gem.setData('type', types[i]);
             }
         }
@@ -304,9 +326,7 @@ export class MainScene extends Phaser.Scene {
         const colorIndex = gem.getData('type');
         const color = colorIndex !== 'bomb' ? ALL_GEM_COLORS[colorIndex] : COLORS.bombParticle;
 
-        const overlay = gem.getData('overlay');
-        if (overlay) overlay.destroy();
-
+        // Container: animate the whole container, destroy() removes all children
         // Pop animation
         this.tweens.add({
             targets: gem,
@@ -356,11 +376,8 @@ export class MainScene extends Phaser.Scene {
         for (let row = 0; row < boardSize; row++) {
             for (let col = 0; col < boardSize; col++) {
                 const gem = this.gems[row]?.[col];
-                if (gem) {
-                    const overlay = gem.getData('overlay');
-                    if (overlay) overlay.destroy();
-                    gem.destroy();
-                }
+                // Container: destroy() removes all children (sprite, overlay)
+                if (gem) gem.destroy();
             }
         }
 

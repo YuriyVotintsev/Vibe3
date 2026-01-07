@@ -1,7 +1,6 @@
 // SwapHandler.js - Handles gem selection and swapping (click and swipe)
 import { GameSettings, SWAP_DURATION, GEM_STATE } from './config.js';
 import { checkMatchAt } from './BoardLogic.js';
-import { getCellSize } from './utils.js';
 
 /**
  * Manages gem selection and swap operations:
@@ -189,12 +188,7 @@ export class SwapHandler {
         const willMatch = checkMatchAt(board, row1, col1, boardSize) ||
                           checkMatchAt(board, row2, col2, boardSize);
 
-        // Get overlays if they exist
-        const overlay1 = gem1.getData('overlay');
-        const overlay2 = gem2.getData('overlay');
-        const cornerOffset = getCellSize() * 0.25;
-
-        // Animate gem1
+        // Animate gem1 (Container - overlay moves automatically)
         scene.tweens.add({
             targets: gem1,
             x: pos2.x,
@@ -202,16 +196,6 @@ export class SwapHandler {
             duration: SWAP_DURATION,
             ease: 'Power2'
         });
-        // Animate overlay1 to corner offset position
-        if (overlay1) {
-            scene.tweens.add({
-                targets: overlay1,
-                x: pos2.x + cornerOffset,
-                y: pos2.y + cornerOffset,
-                duration: SWAP_DURATION,
-                ease: 'Power2'
-            });
-        }
 
         // Animate gem2 and use pre-calculated match result
         scene.tweens.add({
@@ -240,16 +224,6 @@ export class SwapHandler {
                 }
             }
         });
-        // Animate overlay2 to corner offset position
-        if (overlay2) {
-            scene.tweens.add({
-                targets: overlay2,
-                x: pos1.x + cornerOffset,
-                y: pos1.y + cornerOffset,
-                duration: SWAP_DURATION,
-                ease: 'Power2'
-            });
-        }
     }
 
     /**
@@ -269,12 +243,7 @@ export class SwapHandler {
         gem2.setData('row', row2);
         gem2.setData('col', col2);
 
-        // Get overlays if they exist
-        const overlay1 = gem1.getData('overlay');
-        const overlay2 = gem2.getData('overlay');
-        const cornerOffset = getCellSize() * 0.25;
-
-        // Animate gem1
+        // Animate gem1 (Container - overlay moves automatically)
         scene.tweens.add({
             targets: gem1,
             x: pos1.x,
@@ -282,15 +251,6 @@ export class SwapHandler {
             duration: SWAP_DURATION,
             ease: 'Power2'
         });
-        if (overlay1) {
-            scene.tweens.add({
-                targets: overlay1,
-                x: pos1.x + cornerOffset,
-                y: pos1.y + cornerOffset,
-                duration: SWAP_DURATION,
-                ease: 'Power2'
-            });
-        }
 
         // Animate gem2
         scene.tweens.add({
@@ -307,15 +267,6 @@ export class SwapHandler {
                 scene.isAutoMoving = false;
             }
         });
-        if (overlay2) {
-            scene.tweens.add({
-                targets: overlay2,
-                x: pos2.x + cornerOffset,
-                y: pos2.y + cornerOffset,
-                duration: SWAP_DURATION,
-                ease: 'Power2'
-            });
-        }
 
         if (!wasAutoMove) {
             scene.uiManager.showMessage('Нет совпадений!');
