@@ -49,7 +49,8 @@ const DEFAULTS = {
 
     // Prestige
     prestigeCurrency: 0,
-    prestigeMoneyMult: 0,
+    totalPrestigeCoinsEarned: 0,  // lifetime total, never decreases
+    prestigeMoneyMult: 0,  // deprecated, kept for save compatibility
     prestigeTiers: 0,
     prestigeColors: 0,
     prestigeArena: 0,

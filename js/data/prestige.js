@@ -5,7 +5,8 @@ import { PlayerData, savePlayerData, getDefaultValue, getPrestigeResetKeys } fro
 // ========== PRESTIGE CALCULATIONS ==========
 
 export function getMoneyMultiplier() {
-    return Math.pow(2, PlayerData.prestigeMoneyMult);
+    // Multiplier = total lifetime prestige coins earned (never decreases)
+    return Math.max(1, PlayerData.totalPrestigeCoinsEarned);
 }
 
 export function getBoardSize() {
@@ -60,8 +61,9 @@ export function performPrestige() {
     const coinsToGain = getPrestigeCoinsFromCurrency(PlayerData.currency);
     if (coinsToGain <= 0) return false;
 
-    // Add prestige coins
+    // Add prestige coins (both spendable and lifetime total)
     PlayerData.prestigeCurrency += coinsToGain;
+    PlayerData.totalPrestigeCoinsEarned += coinsToGain;
 
     // Reset regular progress using playerData's reset keys
     for (const key of getPrestigeResetKeys()) {
@@ -74,17 +76,11 @@ export function performPrestige() {
 
 // ========== PRESTIGE UPGRADES ==========
 
-// v4: Higher costs to match increased income
-// Множитель: 2, 4, 6, 8... (x2)
+// v5: Multiplier removed, now based on total earned coins
 // Тиры: 3, 6, 9, 12 (x3)
 // Цвета: 5, 10, 15 (x5)
 // Арена: 3, 6, 9, 12 (x3)
 const PRESTIGE_UPGRADE_CONFIGS = {
-    moneyMult: {
-        property: 'prestigeMoneyMult',
-        getCost: () => PlayerData.prestigeMoneyMult + 1,  // 1, 2, 3, 4...
-        maxLevel: Infinity
-    },
     tiers: {
         property: 'prestigeTiers',
         getCost: () => (PlayerData.prestigeTiers + 1) * 3,
@@ -116,13 +112,11 @@ function performPrestigeUpgrade(config) {
 }
 
 // Exported cost functions
-export const getPrestigeMoneyMultCost = () => PRESTIGE_UPGRADE_CONFIGS.moneyMult.getCost();
 export const getPrestigeTiersCost = () => PRESTIGE_UPGRADE_CONFIGS.tiers.getCost();
 export const getPrestigeColorsCost = () => PRESTIGE_UPGRADE_CONFIGS.colors.getCost();
 export const getPrestigeArenaCost = () => PRESTIGE_UPGRADE_CONFIGS.arena.getCost();
 
 // Exported upgrade functions
-export const upgradePrestigeMoneyMult = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.moneyMult);
 export const upgradePrestigeTiers = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.tiers);
 export const upgradePrestigeColors = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.colors);
 export const upgradePrestigeArena = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.arena);

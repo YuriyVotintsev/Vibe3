@@ -6,7 +6,8 @@ import {
     getPrestigeCoinsFromCurrency,
     getProgressToNextCoin,
     getCurrencyForNextCoin,
-    performPrestige
+    performPrestige,
+    getMoneyMultiplier
 } from './config.js';
 import { getPrestigeUpgrades, getAutoBuyItems } from './data/upgradesData.js';
 import { COLORS, FONT_SIZE, RADIUS, SPACING } from './styles.js';
@@ -73,17 +74,24 @@ export class PrestigeScene extends Phaser.Scene {
     createPrestigeCoinsDisplay(cx) {
         const coinsBg = this.add.graphics();
         coinsBg.fillStyle(COLORS.primary, 0.2);
-        coinsBg.fillRoundedRect(cx - 100, 80, 200, 40, RADIUS.lg);
+        coinsBg.fillRoundedRect(cx - 100, 75, 200, 50, RADIUS.lg);
 
         const potential = getPrestigeCoinsFromCurrency(PlayerData.currency);
         const displayText = potential > 0
             ? `👑 ${PlayerData.prestigeCurrency} (+${potential})`
             : `👑 ${PlayerData.prestigeCurrency}`;
 
-        this.add.text(cx, 100, displayText, {
+        this.add.text(cx, 90, displayText, {
             fontSize: FONT_SIZE['3xl'],
             color: COLORS.text.purple,
             fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        // Show multiplier based on total earned coins
+        const multiplier = getMoneyMultiplier();
+        this.add.text(cx, 115, `Множитель: x${multiplier} (всего заработано: ${PlayerData.totalPrestigeCoinsEarned}👑)`, {
+            fontSize: FONT_SIZE.md,
+            color: COLORS.text.light
         }).setOrigin(0.5);
     }
 
