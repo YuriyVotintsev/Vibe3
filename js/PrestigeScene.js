@@ -21,23 +21,17 @@ import {
 export class PrestigeScene extends Phaser.Scene {
     constructor() {
         super({ key: 'PrestigeScene' });
-        this.isReady = false;
     }
 
     create() {
-        this.isReady = false;
         const W = this.cameras.main.width;
         const H = this.cameras.main.height;
         const cx = W / 2;
 
-        // Track values for live updates
-        this.lastCurrency = PlayerData.currency;
-        this.lastPrestige = PlayerData.prestigeCurrency;
-
-        // Dark overlay (immediate)
+        // Dark overlay
         this.add.rectangle(cx, H / 2, W, H, 0x000000, 0.9);
 
-        // Panel background (immediate)
+        // Panel background
         const panelTop = 20;
         const panelBottom = H - 130;
         const panelHeight = panelBottom - panelTop;
@@ -48,55 +42,30 @@ export class PrestigeScene extends Phaser.Scene {
         panel.lineStyle(3, 0xf1c40f, 1);
         panel.strokeRoundedRect(15, panelTop, W - 30, panelHeight, 16);
 
-        // Defer heavy UI creation to next frame to avoid blocking during match
-        this.time.delayedCall(50, () => {
-            try {
-                // Title
-                this.add.text(cx, 50, 'ПРЕСТИЖ', {
-                    fontSize: '28px',
-                    fontFamily: 'Arial Black',
-                    color: '#f1c40f'
-                }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
+        // Title
+        this.add.text(cx, 50, 'ПРЕСТИЖ', {
+            fontSize: '28px',
+            fontFamily: 'Arial Black',
+            color: '#f1c40f'
+        }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
 
-                // Prestige coins display
-                this.add.text(cx - 50, 85, '👑', { fontSize: '26px' }).setOrigin(0.5);
-                this.prestigeText = this.add.text(cx - 20, 85, `${PlayerData.prestigeCurrency}`, {
-                    fontSize: '26px', color: '#e056fd', fontStyle: 'bold'
-                }).setOrigin(0, 0.5);
+        // Prestige coins display
+        this.add.text(cx - 50, 85, '👑', { fontSize: '26px' }).setOrigin(0.5);
+        this.add.text(cx - 20, 85, `${PlayerData.prestigeCurrency}`, {
+            fontSize: '26px', color: '#e056fd', fontStyle: 'bold'
+        }).setOrigin(0, 0.5);
 
-                // Progress bar section
-                this.createProgressBar(cx);
+        // Progress bar section
+        this.createProgressBar(cx);
 
-                // Prestige upgrades
-                this.createUpgradeRows();
+        // Prestige upgrades
+        this.createUpgradeRows();
 
-                // Bottom buttons
-                this.createBottomButtons();
-
-                this.isReady = true;
-            } catch (e) {
-                console.error('PrestigeScene deferred create error:', e);
-            }
-        });
+        // Bottom buttons
+        this.createBottomButtons();
     }
 
-    update() {
-        if (!this.isReady) return;
-
-        try {
-            // Live update when currencies change
-            if (PlayerData.currency !== this.lastCurrency || PlayerData.prestigeCurrency !== this.lastPrestige) {
-                this.lastCurrency = PlayerData.currency;
-                this.lastPrestige = PlayerData.prestigeCurrency;
-                if (this.prestigeText) this.prestigeText.setText(`${PlayerData.prestigeCurrency}`);
-                if (this.progressBarFill) this.updateProgressBar();
-                if (this.prestigeBtn) this.updatePrestigeButton();
-                if (this.upgradeRows) this.refreshAllRows();
-            }
-        } catch (e) {
-            console.error('PrestigeScene update error:', e);
-        }
-    }
+    // No update() - values are static, close/reopen to refresh
 
     createProgressBar(cx) {
         const W = this.cameras.main.width;
