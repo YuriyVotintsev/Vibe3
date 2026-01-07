@@ -173,8 +173,11 @@ function getUpgradeCost(config) {
 }
 
 function isMaxed(config) {
-    return PlayerData[config.property] >= config.max ||
-           (config.property === 'autoMoveDelay' && PlayerData.autoMoveDelay <= config.min);
+    // autoMove is special: decreases from max to min, so only check min
+    if (config.property === 'autoMoveDelay') {
+        return PlayerData.autoMoveDelay <= config.min;
+    }
+    return PlayerData[config.property] >= config.max;
 }
 
 function performUpgrade(config) {

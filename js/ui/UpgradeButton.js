@@ -49,30 +49,30 @@ export class UpgradeButton {
 
         // Name text
         this.nameText = scene.add.text(x + width / 2, y + 12, this.upgrade.getName(), {
-            fontSize: FONT_SIZE.md,
+            fontSize: FONT_SIZE.base,
             color: COLORS.text.white,
             fontStyle: 'bold'
         }).setOrigin(0.5);
         this.elements.push(this.nameText);
 
         // Level text
-        this.levelText = scene.add.text(x + width / 2, y + 26, '', {
-            fontSize: FONT_SIZE.xs,
+        this.levelText = scene.add.text(x + width / 2, y + 27, '', {
+            fontSize: FONT_SIZE.md,
             color: COLORS.text.light
         }).setOrigin(0.5);
         this.elements.push(this.levelText);
 
         // Value text
-        this.valueText = scene.add.text(x + width / 2, y + 43, '', {
-            fontSize: FONT_SIZE.lg,
+        this.valueText = scene.add.text(x + width / 2, y + 44, '', {
+            fontSize: FONT_SIZE.xl,
             color: COLORS.text.green,
             fontStyle: 'bold'
         }).setOrigin(0.5);
         this.elements.push(this.valueText);
 
         // Cost text
-        this.costText = scene.add.text(x + width / 2, y + 59, '', {
-            fontSize: FONT_SIZE.sm,
+        this.costText = scene.add.text(x + width / 2, y + 60, '', {
+            fontSize: FONT_SIZE.base,
             color: COLORS.text.gold
         }).setOrigin(0.5);
         this.elements.push(this.costText);
