@@ -16,12 +16,24 @@ import {
     upgradePrestigeColors,
     getPrestigeArenaCost,
     upgradePrestigeArena,
-    performPrestige
+    performPrestige,
+    AUTO_BUY_COST,
+    buyAutoBuyAutoMove,
+    buyAutoBuyBombChance,
+    buyAutoBuyBombRadius,
+    buyAutoBuyBronze,
+    buyAutoBuySilver,
+    buyAutoBuyGold,
+    buyAutoBuyCrystal,
+    buyAutoBuyRainbow,
+    buyAutoBuyPrismatic,
+    buyAutoBuyCelestial
 } from './config.js';
 
 export class PrestigeScene extends Phaser.Scene {
     constructor() {
         super({ key: 'PrestigeScene' });
+        this.currentTab = 0; // 0 = upgrades, 1 = auto-buy
     }
 
     create() {
@@ -119,13 +131,71 @@ export class PrestigeScene extends Phaser.Scene {
             }).setOrigin(0.5);
         }
 
-        // Separator
-        this.add.text(cx, 280, '— АПГРЕЙДЫ —', {
-            fontSize: '14px', color: '#f1c40f'
+        // Tab buttons
+        this.createTabs();
+
+        // Tab content
+        if (this.currentTab === 0) {
+            this.createUpgradesTab();
+        } else {
+            this.createAutoBuyTab();
+        }
+
+        // Close button
+        this.createCloseButton();
+
+        // Track currency for live updates
+        this.lastCurrency = PlayerData.currency;
+    }
+
+    createTabs() {
+        const W = this.cameras.main.width;
+        const cx = W / 2;
+        const tabY = 280;
+        const tabWidth = (W - 60) / 2;
+        const tabHeight = 32;
+
+        // Tab 1: Upgrades
+        const tab1Active = this.currentTab === 0;
+        const tab1Btn = this.add.graphics();
+        tab1Btn.fillStyle(tab1Active ? 0xf1c40f : 0x444444, 1);
+        tab1Btn.fillRoundedRect(25, tabY, tabWidth - 2, tabHeight, 6);
+
+        this.add.rectangle(25 + tabWidth / 2 - 1, tabY + tabHeight / 2, tabWidth - 2, tabHeight, 0x000000, 0)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerdown', () => {
+                if (this.currentTab !== 0) {
+                    this.currentTab = 0;
+                    this.scene.restart();
+                }
+            });
+
+        this.add.text(25 + tabWidth / 2 - 1, tabY + tabHeight / 2, 'УЛУЧШЕНИЯ', {
+            fontSize: '12px', color: tab1Active ? '#000000' : '#888888', fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Upgrade rows
-        let upgradeY = 310;
+        // Tab 2: Auto-buy
+        const tab2Active = this.currentTab === 1;
+        const tab2Btn = this.add.graphics();
+        tab2Btn.fillStyle(tab2Active ? 0xf1c40f : 0x444444, 1);
+        tab2Btn.fillRoundedRect(25 + tabWidth + 2, tabY, tabWidth - 2, tabHeight, 6);
+
+        this.add.rectangle(25 + tabWidth * 1.5 + 1, tabY + tabHeight / 2, tabWidth - 2, tabHeight, 0x000000, 0)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerdown', () => {
+                if (this.currentTab !== 1) {
+                    this.currentTab = 1;
+                    this.scene.restart();
+                }
+            });
+
+        this.add.text(25 + tabWidth * 1.5 + 1, tabY + tabHeight / 2, 'АВТО-ПОКУПКА', {
+            fontSize: '12px', color: tab2Active ? '#000000' : '#888888', fontStyle: 'bold'
+        }).setOrigin(0.5);
+    }
+
+    createUpgradesTab() {
+        let upgradeY = 320;
 
         // Money multiplier upgrade
         upgradeY = this.createUpgradeRow(upgradeY, '💰', 'Множитель',
@@ -161,12 +231,90 @@ export class PrestigeScene extends Phaser.Scene {
             maxArena ? null : () => {
                 if (upgradePrestigeArena()) this.scene.restart();
             });
+    }
 
-        // Close button
-        this.createCloseButton();
+    createAutoBuyTab() {
+        let y = 320;
+        const rowHeight = 38;
 
-        // Track currency for live updates
-        this.lastCurrency = PlayerData.currency;
+        // Auto-buy upgrades list
+        const autoBuys = [
+            { name: 'Авто-мув', owned: PlayerData.autoBuyAutoMove, buy: buyAutoBuyAutoMove },
+            { name: 'Шанс бомб', owned: PlayerData.autoBuyBombChance, buy: buyAutoBuyBombChance },
+            { name: 'Радиус бомб', owned: PlayerData.autoBuyBombRadius, buy: buyAutoBuyBombRadius },
+            { name: 'Бронза', owned: PlayerData.autoBuyBronze, buy: buyAutoBuyBronze },
+            { name: 'Серебро', owned: PlayerData.autoBuySilver, buy: buyAutoBuySilver },
+            { name: 'Золото', owned: PlayerData.autoBuyGold, buy: buyAutoBuyGold },
+            { name: 'Кристалл', owned: PlayerData.autoBuyCrystal, buy: buyAutoBuyCrystal },
+            { name: 'Радуга', owned: PlayerData.autoBuyRainbow, buy: buyAutoBuyRainbow },
+            { name: 'Призма', owned: PlayerData.autoBuyPrismatic, buy: buyAutoBuyPrismatic },
+            { name: 'Небесный', owned: PlayerData.autoBuyCelestial, buy: buyAutoBuyCelestial }
+        ];
+
+        autoBuys.forEach(item => {
+            this.createAutoBuyRow(y, item.name, item.owned, item.buy);
+            y += rowHeight;
+        });
+    }
+
+    createAutoBuyRow(y, name, owned, onBuy) {
+        const W = this.cameras.main.width;
+        const rowHeight = 35;
+
+        // Row background
+        const rowBg = this.add.graphics();
+        rowBg.fillStyle(owned ? 0x27ae60 : 0x2a2a3e, owned ? 0.3 : 0.5);
+        rowBg.fillRoundedRect(25, y, W - 50, rowHeight, 6);
+
+        // Name
+        this.add.text(35, y + rowHeight / 2, name, {
+            fontSize: '13px', color: owned ? '#55efc4' : '#ffffff'
+        }).setOrigin(0, 0.5);
+
+        // Status/Cost
+        if (owned) {
+            this.add.text(W - 60, y + rowHeight / 2, '✓ АКТИВНО', {
+                fontSize: '11px', color: '#55efc4', fontStyle: 'bold'
+            }).setOrigin(1, 0.5);
+        } else {
+            const canAfford = PlayerData.prestigeCurrency >= AUTO_BUY_COST;
+
+            this.add.text(W - 95, y + rowHeight / 2, `${AUTO_BUY_COST}👑`, {
+                fontSize: '11px', color: canAfford ? '#f1c40f' : '#888888'
+            }).setOrigin(1, 0.5);
+
+            // Buy button
+            const btnX = W - 55;
+            const btnSize = 30;
+
+            const btn = this.add.graphics();
+            btn.fillStyle(canAfford ? 0x27ae60 : 0x555555, 1);
+            btn.fillRoundedRect(btnX - btnSize / 2, y + rowHeight / 2 - btnSize / 2, btnSize, btnSize, 5);
+
+            this.add.rectangle(btnX, y + rowHeight / 2, btnSize, btnSize, 0x000000, 0)
+                .setInteractive({ useHandCursor: canAfford })
+                .on('pointerover', () => {
+                    if (canAfford) {
+                        btn.clear();
+                        btn.fillStyle(0x2ecc71, 1);
+                        btn.fillRoundedRect(btnX - btnSize / 2, y + rowHeight / 2 - btnSize / 2, btnSize, btnSize, 5);
+                    }
+                })
+                .on('pointerout', () => {
+                    btn.clear();
+                    btn.fillStyle(canAfford ? 0x27ae60 : 0x555555, 1);
+                    btn.fillRoundedRect(btnX - btnSize / 2, y + rowHeight / 2 - btnSize / 2, btnSize, btnSize, 5);
+                })
+                .on('pointerdown', () => {
+                    if (canAfford && onBuy()) {
+                        this.scene.restart();
+                    }
+                });
+
+            this.add.text(btnX, y + rowHeight / 2, '+', {
+                fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
+            }).setOrigin(0.5);
+        }
     }
 
     update() {

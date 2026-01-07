@@ -59,7 +59,18 @@ export const PlayerData = {
     prestigeMoneyMult: 0, // money multiplier level (2^level)
     prestigeTiers: 0,     // unlocked tier levels (0=3 tiers, 4=7 tiers)
     prestigeColors: 0,    // color reduction level (0=6 colors, 3=3 colors)
-    prestigeArena: 0      // arena size level (0=5x5, 4=9x9)
+    prestigeArena: 0,     // arena size level (0=5x5, 4=9x9)
+    // Auto-buy upgrades (prestige unlocks)
+    autoBuyAutoMove: false,
+    autoBuyBombChance: false,
+    autoBuyBombRadius: false,
+    autoBuyBronze: false,
+    autoBuySilver: false,
+    autoBuyGold: false,
+    autoBuyCrystal: false,
+    autoBuyRainbow: false,
+    autoBuyPrismatic: false,
+    autoBuyCelestial: false
 };
 
 // Enhanced gem types and multipliers (7 tiers total)
@@ -517,6 +528,189 @@ export function upgradePrestigeArena() {
     return false;
 }
 
+// ========== AUTO-BUY PRESTIGE UPGRADES ==========
+
+// Auto-buy costs (one-time purchase, 5 coins each)
+export const AUTO_BUY_COST = 5;
+
+// Auto-buy upgrade functions
+export function buyAutoBuyAutoMove() {
+    if (!PlayerData.autoBuyAutoMove && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyAutoMove = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyBombChance() {
+    if (!PlayerData.autoBuyBombChance && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyBombChance = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyBombRadius() {
+    if (!PlayerData.autoBuyBombRadius && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyBombRadius = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyBronze() {
+    if (!PlayerData.autoBuyBronze && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyBronze = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuySilver() {
+    if (!PlayerData.autoBuySilver && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuySilver = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyGold() {
+    if (!PlayerData.autoBuyGold && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyGold = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyCrystal() {
+    if (!PlayerData.autoBuyCrystal && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyCrystal = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyRainbow() {
+    if (!PlayerData.autoBuyRainbow && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyRainbow = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyPrismatic() {
+    if (!PlayerData.autoBuyPrismatic && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyPrismatic = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+export function buyAutoBuyCelestial() {
+    if (!PlayerData.autoBuyCelestial && PlayerData.prestigeCurrency >= AUTO_BUY_COST) {
+        PlayerData.prestigeCurrency -= AUTO_BUY_COST;
+        PlayerData.autoBuyCelestial = true;
+        savePlayerData();
+        return true;
+    }
+    return false;
+}
+
+// Process all auto-buys (call this periodically)
+export function processAutoBuys() {
+    let purchased = false;
+
+    if (PlayerData.autoBuyAutoMove && PlayerData.autoMoveDelay > 100) {
+        if (PlayerData.currency >= getAutoMoveUpgradeCost()) {
+            upgradeAutoMove();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyBombChance && PlayerData.bombChance < 50) {
+        if (PlayerData.currency >= getBombChanceUpgradeCost()) {
+            upgradeBombChance();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyBombRadius && PlayerData.bombRadius < 3) {
+        if (PlayerData.currency >= getBombRadiusUpgradeCost()) {
+            upgradeBombRadius();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyBronze && PlayerData.bronzeChance < 100) {
+        if (PlayerData.currency >= getBronzeUpgradeCost()) {
+            upgradeBronze();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuySilver && PlayerData.silverChance < 100) {
+        if (PlayerData.currency >= getSilverUpgradeCost()) {
+            upgradeSilver();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyGold && PlayerData.goldChance < 100) {
+        if (PlayerData.currency >= getGoldUpgradeCost()) {
+            upgradeGold();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyCrystal && PlayerData.crystalChance < 100) {
+        if (PlayerData.currency >= getCrystalUpgradeCost()) {
+            upgradeCrystal();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyRainbow && PlayerData.rainbowChance < 100) {
+        if (PlayerData.currency >= getRainbowUpgradeCost()) {
+            upgradeRainbow();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyPrismatic && PlayerData.prismaticChance < 100) {
+        if (PlayerData.currency >= getPrismaticUpgradeCost()) {
+            upgradePrismatic();
+            purchased = true;
+        }
+    }
+
+    if (PlayerData.autoBuyCelestial && PlayerData.celestialChance < 100) {
+        if (PlayerData.currency >= getCelestialUpgradeCost()) {
+            upgradeCelestial();
+            purchased = true;
+        }
+    }
+
+    return purchased;
+}
+
 // ========== SAVE/LOAD ==========
 
 // Save/Load player data to localStorage
@@ -551,6 +745,17 @@ export function loadPlayerData() {
     if (PlayerData.prestigeTiers === undefined) PlayerData.prestigeTiers = 0;
     if (PlayerData.prestigeColors === undefined) PlayerData.prestigeColors = 0;
     if (PlayerData.prestigeArena === undefined) PlayerData.prestigeArena = 0;
+    // Ensure auto-buy properties have valid values
+    if (PlayerData.autoBuyAutoMove === undefined) PlayerData.autoBuyAutoMove = false;
+    if (PlayerData.autoBuyBombChance === undefined) PlayerData.autoBuyBombChance = false;
+    if (PlayerData.autoBuyBombRadius === undefined) PlayerData.autoBuyBombRadius = false;
+    if (PlayerData.autoBuyBronze === undefined) PlayerData.autoBuyBronze = false;
+    if (PlayerData.autoBuySilver === undefined) PlayerData.autoBuySilver = false;
+    if (PlayerData.autoBuyGold === undefined) PlayerData.autoBuyGold = false;
+    if (PlayerData.autoBuyCrystal === undefined) PlayerData.autoBuyCrystal = false;
+    if (PlayerData.autoBuyRainbow === undefined) PlayerData.autoBuyRainbow = false;
+    if (PlayerData.autoBuyPrismatic === undefined) PlayerData.autoBuyPrismatic = false;
+    if (PlayerData.autoBuyCelestial === undefined) PlayerData.autoBuyCelestial = false;
 }
 
 export function resetPlayerData() {
@@ -595,4 +800,4 @@ export const GEM_STATE = {
 };
 
 // JS version (update with each commit)
-export const JS_VERSION = '0.0.86-js';
+export const JS_VERSION = '0.0.87-js';

@@ -11,7 +11,8 @@ import {
     ENHANCEMENT,
     ENHANCEMENT_MULTIPLIERS,
     rollEnhancement,
-    getMoneyMultiplier
+    getMoneyMultiplier,
+    processAutoBuys
 } from './config.js';
 import { getCellSize } from './utils.js';
 import {
@@ -215,6 +216,8 @@ export class MainScene extends Phaser.Scene {
         this.fallManager.spawnNewGems(time);
         this.checkLandedGems();
         this.checkAutoMove(time);
+        // Process auto-buy upgrades if unlocked
+        processAutoBuys();
     }
 
     checkAutoMove(time) {
