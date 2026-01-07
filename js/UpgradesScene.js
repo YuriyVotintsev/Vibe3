@@ -36,12 +36,12 @@ export class UpgradesScene extends Phaser.Scene {
         const H = this.cameras.main.height;
         const cx = W / 2;
 
-        // Panel bounds (button is outside, below panel)
+        // Panel bounds
         const panelTop = 20;
         const panelBottom = H - 90;
         const panelHeight = panelBottom - panelTop;
 
-        // Scroll area bounds (inside panel)
+        // Scroll area bounds
         this.scrollTop = 150;
         this.scrollBottom = panelBottom - 15;
         this.scrollHeight = this.scrollBottom - this.scrollTop;
@@ -49,24 +49,24 @@ export class UpgradesScene extends Phaser.Scene {
         // Track last currency for live updates
         this.lastCurrency = PlayerData.currency;
 
-        // Dark overlay (covers entire screen)
+        // Dark overlay
         this.add.rectangle(cx, H / 2, W, H, 0x000000, 0.85);
 
-        // Panel background (smaller, doesn't include button)
+        // Panel background
         const panel = this.add.graphics();
         panel.fillStyle(0x1e1e2e, 1);
         panel.fillRoundedRect(15, panelTop, W - 30, panelHeight, 16);
         panel.lineStyle(3, 0x9b59b6, 1);
         panel.strokeRoundedRect(15, panelTop, W - 30, panelHeight, 16);
 
-        // Title (fixed)
+        // Title
         this.add.text(cx, 55, 'АПГРЕЙДЫ', {
             fontSize: '28px',
             fontFamily: 'Arial Black',
             color: '#ffffff'
         }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
 
-        // Currency display (fixed)
+        // Currency display
         const currencyBg = this.add.graphics();
         currencyBg.fillStyle(0xf39c12, 0.3);
         currencyBg.fillRoundedRect(cx - 100, 85, 200, 50, 12);
@@ -84,15 +84,15 @@ export class UpgradesScene extends Phaser.Scene {
         const mask = maskShape.createGeometryMask();
         this.scrollContainer.setMask(mask);
 
-        // Build upgrade list inside container
-        this.contentHeight = this.createUpgradeList();
+        // Build upgrade grid inside container
+        this.contentHeight = this.createUpgradeGrid();
         this.scrollY = 0;
         this.maxScroll = Math.max(0, this.contentHeight - this.scrollHeight);
 
         // Setup scroll input
         this.setupScrollInput();
 
-        // Close button (outside panel, on overlay)
+        // Close button
         this.createCloseButton();
 
         // Scroll indicator
@@ -100,239 +100,296 @@ export class UpgradesScene extends Phaser.Scene {
     }
 
     update() {
-        // Live update when currency changes (game runs in background)
         if (PlayerData.currency !== this.lastCurrency) {
             this.lastCurrency = PlayerData.currency;
             this.currencyText.setText(formatNumber(PlayerData.currency));
-            this.refreshAllRows();
+            this.refreshAllButtons();
         }
     }
 
-    createUpgradeList() {
+    createUpgradeGrid() {
         const W = this.cameras.main.width;
-        const cx = W / 2;
         let y = this.scrollTop;
 
-        this.upgradeRows = [];
+        this.upgradeButtons = [];
 
-        // Auto-move upgrade
-        y = this.createUpgradeRow(y, '⏱️', 'Авто-ход', () => {
-            const seconds = (PlayerData.autoMoveDelay / 1000).toFixed(1);
-            return `${seconds}с`;
-        }, () => {
-            const atMin = PlayerData.autoMoveDelay <= 100;
-            return atMin ? 'MAX' : `${formatNumber(getAutoMoveUpgradeCost())}💰`;
-        }, () => {
-            const step = getAutoMoveStep();
-            return `-${step / 1000}с`;
-        }, () => {
-            const atMin = PlayerData.autoMoveDelay <= 100;
-            return !atMin && PlayerData.currency >= getAutoMoveUpgradeCost();
-        }, () => upgradeAutoMove());
+        // Grid settings
+        const padding = 25;
+        const gap = 8;
+        const cols = 3;
+        const btnWidth = Math.floor((W - padding * 2 - gap * (cols - 1)) / cols);
+        const btnHeight = 70;
 
-        // Bomb chance upgrade
-        y = this.createUpgradeRow(y, '💣', 'Шанс бомбы', () => {
-            return `${PlayerData.bombChance}%`;
-        }, () => {
-            const atMax = PlayerData.bombChance >= 50;
-            return atMax ? 'MAX' : `${formatNumber(getBombChanceUpgradeCost())}💰`;
-        }, () => '+5%', () => {
-            const atMax = PlayerData.bombChance >= 50;
-            return !atMax && PlayerData.currency >= getBombChanceUpgradeCost();
-        }, () => upgradeBombChance());
+        // Collect all upgrades
+        const upgrades = [];
 
-        // Bomb radius upgrade
-        y = this.createUpgradeRow(y, '💥', 'Радиус', () => {
-            return `${PlayerData.bombRadius}`;
-        }, () => {
-            const atMax = PlayerData.bombRadius >= 3;
-            return atMax ? 'MAX' : `${formatNumber(getBombRadiusUpgradeCost())}💰`;
-        }, () => '+1', () => {
-            const atMax = PlayerData.bombRadius >= 3;
-            return !atMax && PlayerData.currency >= getBombRadiusUpgradeCost();
-        }, () => upgradeBombRadius());
+        // Auto-move: 5000ms -> 100ms, step varies (500ms until 500ms, then 100ms)
+        // Levels: 0-9 (500ms steps) + 0-4 (100ms steps) = ~13 max
+        upgrades.push({
+            name: 'Авто-ход',
+            getValue: () => {
+                const seconds = (PlayerData.autoMoveDelay / 1000).toFixed(1);
+                return `${seconds}с`;
+            },
+            getLevel: () => {
+                const current = Math.round((5000 - PlayerData.autoMoveDelay) / 100);
+                return `${current}/49`;
+            },
+            getCost: () => {
+                const atMin = PlayerData.autoMoveDelay <= 100;
+                return atMin ? null : getAutoMoveUpgradeCost();
+            },
+            canAfford: () => {
+                const atMin = PlayerData.autoMoveDelay <= 100;
+                return !atMin && PlayerData.currency >= getAutoMoveUpgradeCost();
+            },
+            onBuy: () => upgradeAutoMove()
+        });
 
-        // Separator - Enhanced gems
-        y += 15;
-        const separator = this.add.text(cx, y, '— УСИЛЕННЫЕ ГЕМЫ —', {
-            fontSize: '14px', color: '#9b59b6', fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.scrollContainer.add(separator);
-        y += 25;
+        // Bomb chance: 10% -> 50%, +5% per level = 8 levels
+        upgrades.push({
+            name: 'Шанс бомбы',
+            getValue: () => `${PlayerData.bombChance}%`,
+            getLevel: () => {
+                const current = (PlayerData.bombChance - 10) / 5;
+                return `${current}/8`;
+            },
+            getCost: () => {
+                const atMax = PlayerData.bombChance >= 50;
+                return atMax ? null : getBombChanceUpgradeCost();
+            },
+            canAfford: () => {
+                const atMax = PlayerData.bombChance >= 50;
+                return !atMax && PlayerData.currency >= getBombChanceUpgradeCost();
+            },
+            onBuy: () => upgradeBombChance()
+        });
 
-        // Bronze gem upgrade (x2) - tier 0
+        // Bomb radius: 1 -> 3 = 2 levels
+        upgrades.push({
+            name: 'Радиус',
+            getValue: () => `${PlayerData.bombRadius}`,
+            getLevel: () => {
+                const current = PlayerData.bombRadius - 1;
+                return `${current}/2`;
+            },
+            getCost: () => {
+                const atMax = PlayerData.bombRadius >= 3;
+                return atMax ? null : getBombRadiusUpgradeCost();
+            },
+            canAfford: () => {
+                const atMax = PlayerData.bombRadius >= 3;
+                return !atMax && PlayerData.currency >= getBombRadiusUpgradeCost();
+            },
+            onBuy: () => upgradeBombRadius()
+        });
+
+        // Bronze: 5% -> 100%, +5% = 19 levels
         if (isTierUnlocked(ENHANCEMENT.BRONZE)) {
-            y = this.createUpgradeRow(y, '🥉', 'Бронзовый', () => {
-                return `${PlayerData.bronzeChance}%`;
-            }, () => {
-                const atMax = PlayerData.bronzeChance >= 100;
-                return atMax ? 'MAX' : `${formatNumber(getBronzeUpgradeCost())}💰`;
-            }, () => '+5%', () => {
-                const atMax = PlayerData.bronzeChance >= 100;
-                return !atMax && PlayerData.currency >= getBronzeUpgradeCost();
-            }, () => upgradeBronze());
+            upgrades.push({
+                name: 'Бронза',
+                getValue: () => `${PlayerData.bronzeChance}%`,
+                getLevel: () => {
+                    const current = (PlayerData.bronzeChance - 5) / 5;
+                    return `${current}/19`;
+                },
+                getCost: () => PlayerData.bronzeChance >= 100 ? null : getBronzeUpgradeCost(),
+                canAfford: () => PlayerData.bronzeChance < 100 && PlayerData.currency >= getBronzeUpgradeCost(),
+                onBuy: () => upgradeBronze()
+            });
         }
 
-        // Silver gem upgrade (x5) - tier 1
+        // Silver: 0% -> 100%, +4% = 25 levels
         if (isTierUnlocked(ENHANCEMENT.SILVER)) {
-            y = this.createUpgradeRow(y, '🥈', 'Серебряный', () => {
-                return `${PlayerData.silverChance}%`;
-            }, () => {
-                const atMax = PlayerData.silverChance >= 100;
-                return atMax ? 'MAX' : `${formatNumber(getSilverUpgradeCost())}💰`;
-            }, () => '+4%', () => {
-                const atMax = PlayerData.silverChance >= 100;
-                return !atMax && PlayerData.currency >= getSilverUpgradeCost();
-            }, () => upgradeSilver());
+            upgrades.push({
+                name: 'Серебро',
+                getValue: () => `${PlayerData.silverChance}%`,
+                getLevel: () => {
+                    const current = Math.floor(PlayerData.silverChance / 4);
+                    return `${current}/25`;
+                },
+                getCost: () => PlayerData.silverChance >= 100 ? null : getSilverUpgradeCost(),
+                canAfford: () => PlayerData.silverChance < 100 && PlayerData.currency >= getSilverUpgradeCost(),
+                onBuy: () => upgradeSilver()
+            });
         }
 
-        // Gold gem upgrade (x15) - tier 2
+        // Gold: 0% -> 100%, +3% = 34 levels
         if (isTierUnlocked(ENHANCEMENT.GOLD)) {
-            y = this.createUpgradeRow(y, '🥇', 'Золотой', () => {
-                return `${PlayerData.goldChance}%`;
-            }, () => {
-                const atMax = PlayerData.goldChance >= 100;
-                return atMax ? 'MAX' : `${formatNumber(getGoldUpgradeCost())}💰`;
-            }, () => '+3%', () => {
-                const atMax = PlayerData.goldChance >= 100;
-                return !atMax && PlayerData.currency >= getGoldUpgradeCost();
-            }, () => upgradeGold());
+            upgrades.push({
+                name: 'Золото',
+                getValue: () => `${PlayerData.goldChance}%`,
+                getLevel: () => {
+                    const current = Math.floor(PlayerData.goldChance / 3);
+                    return `${current}/34`;
+                },
+                getCost: () => PlayerData.goldChance >= 100 ? null : getGoldUpgradeCost(),
+                canAfford: () => PlayerData.goldChance < 100 && PlayerData.currency >= getGoldUpgradeCost(),
+                onBuy: () => upgradeGold()
+            });
         }
 
-        // Crystal gem upgrade (x50) - tier 3
+        // Crystal: 0% -> 100%, +2% = 50 levels
         if (isTierUnlocked(ENHANCEMENT.CRYSTAL)) {
-            y = this.createUpgradeRow(y, '💎', 'Кристальный', () => {
-                return `${PlayerData.crystalChance}%`;
-            }, () => {
-                const atMax = PlayerData.crystalChance >= 100;
-                return atMax ? 'MAX' : `${formatNumber(getCrystalUpgradeCost())}💰`;
-            }, () => '+2%', () => {
-                const atMax = PlayerData.crystalChance >= 100;
-                return !atMax && PlayerData.currency >= getCrystalUpgradeCost();
-            }, () => upgradeCrystal());
+            upgrades.push({
+                name: 'Кристалл',
+                getValue: () => `${PlayerData.crystalChance}%`,
+                getLevel: () => {
+                    const current = Math.floor(PlayerData.crystalChance / 2);
+                    return `${current}/50`;
+                },
+                getCost: () => PlayerData.crystalChance >= 100 ? null : getCrystalUpgradeCost(),
+                canAfford: () => PlayerData.crystalChance < 100 && PlayerData.currency >= getCrystalUpgradeCost(),
+                onBuy: () => upgradeCrystal()
+            });
         }
 
-        // Rainbow gem upgrade (x200) - tier 4
+        // Rainbow: 0% -> 100%, +1% = 100 levels
         if (isTierUnlocked(ENHANCEMENT.RAINBOW)) {
-            y = this.createUpgradeRow(y, '🌈', 'Радужный', () => {
-                return `${PlayerData.rainbowChance}%`;
-            }, () => {
-                const atMax = PlayerData.rainbowChance >= 100;
-                return atMax ? 'MAX' : `${formatNumber(getRainbowUpgradeCost())}💰`;
-            }, () => '+1%', () => {
-                const atMax = PlayerData.rainbowChance >= 100;
-                return !atMax && PlayerData.currency >= getRainbowUpgradeCost();
-            }, () => upgradeRainbow());
+            upgrades.push({
+                name: 'Радуга',
+                getValue: () => `${PlayerData.rainbowChance}%`,
+                getLevel: () => `${PlayerData.rainbowChance}/100`,
+                getCost: () => PlayerData.rainbowChance >= 100 ? null : getRainbowUpgradeCost(),
+                canAfford: () => PlayerData.rainbowChance < 100 && PlayerData.currency >= getRainbowUpgradeCost(),
+                onBuy: () => upgradeRainbow()
+            });
         }
 
-        // Prismatic gem upgrade (x1000) - tier 5
+        // Prismatic: 0% -> 100%, +1% = 100 levels
         if (isTierUnlocked(ENHANCEMENT.PRISMATIC)) {
-            y = this.createUpgradeRow(y, '⭐', 'Призматич.', () => {
-                return `${PlayerData.prismaticChance}%`;
-            }, () => {
-                const atMax = PlayerData.prismaticChance >= 100;
-                return atMax ? 'MAX' : `${formatNumber(getPrismaticUpgradeCost())}💰`;
-            }, () => '+1%', () => {
-                const atMax = PlayerData.prismaticChance >= 100;
-                return !atMax && PlayerData.currency >= getPrismaticUpgradeCost();
-            }, () => upgradePrismatic());
+            upgrades.push({
+                name: 'Призма',
+                getValue: () => `${PlayerData.prismaticChance}%`,
+                getLevel: () => `${PlayerData.prismaticChance}/100`,
+                getCost: () => PlayerData.prismaticChance >= 100 ? null : getPrismaticUpgradeCost(),
+                canAfford: () => PlayerData.prismaticChance < 100 && PlayerData.currency >= getPrismaticUpgradeCost(),
+                onBuy: () => upgradePrismatic()
+            });
         }
 
-        // Celestial gem upgrade (x5000) - tier 6
+        // Celestial: 0% -> 100%, +1% = 100 levels
         if (isTierUnlocked(ENHANCEMENT.CELESTIAL)) {
-            y = this.createUpgradeRow(y, '💠', 'Небесный', () => {
-                return `${PlayerData.celestialChance}%`;
-            }, () => {
-                const atMax = PlayerData.celestialChance >= 100;
-                return atMax ? 'MAX' : `${formatNumber(getCelestialUpgradeCost())}💰`;
-            }, () => '+1%', () => {
-                const atMax = PlayerData.celestialChance >= 100;
-                return !atMax && PlayerData.currency >= getCelestialUpgradeCost();
-            }, () => upgradeCelestial());
+            upgrades.push({
+                name: 'Небесный',
+                getValue: () => `${PlayerData.celestialChance}%`,
+                getLevel: () => `${PlayerData.celestialChance}/100`,
+                getCost: () => PlayerData.celestialChance >= 100 ? null : getCelestialUpgradeCost(),
+                canAfford: () => PlayerData.celestialChance < 100 && PlayerData.currency >= getCelestialUpgradeCost(),
+                onBuy: () => upgradeCelestial()
+            });
         }
 
-        return y - this.scrollTop + 20;
+        // Create grid of buttons
+        for (let i = 0; i < upgrades.length; i++) {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const x = padding + col * (btnWidth + gap);
+            const btnY = y + row * (btnHeight + gap);
+
+            this.createUpgradeButton(x, btnY, btnWidth, btnHeight, upgrades[i]);
+        }
+
+        const rows = Math.ceil(upgrades.length / cols);
+        return rows * (btnHeight + gap) + 20;
     }
 
-    createUpgradeRow(y, icon, name, getValue, getCost, getAction, canAfford, onBuy) {
-        const W = this.cameras.main.width;
+    createUpgradeButton(x, y, width, height, upgrade) {
+        const { name, getValue, getLevel, getCost, canAfford, onBuy } = upgrade;
+        const cost = getCost();
+        const isMaxed = cost === null;
+        const affordable = !isMaxed && canAfford();
 
-        // Row background
-        const rowBg = this.add.graphics();
-        rowBg.fillStyle(0x2a2a3e, 0.5);
-        rowBg.fillRoundedRect(25, y, W - 50, 55, 10);
-        this.scrollContainer.add(rowBg);
-
-        // Icon
-        const iconText = this.add.text(40, y + 28, icon, { fontSize: '22px' }).setOrigin(0, 0.5);
-        this.scrollContainer.add(iconText);
+        // Button background
+        const btn = this.add.graphics();
+        const bgColor = isMaxed ? 0x444444 : (affordable ? 0x27ae60 : 0x2a2a3e);
+        btn.fillStyle(bgColor, 1);
+        btn.fillRoundedRect(x, y, width, height, 8);
+        if (!isMaxed) {
+            btn.lineStyle(2, affordable ? 0x55efc4 : 0x555555, 1);
+            btn.strokeRoundedRect(x, y, width, height, 8);
+        }
+        this.scrollContainer.add(btn);
 
         // Name
-        const nameText = this.add.text(72, y + 28, name, {
-            fontSize: '16px', color: '#ffffff', fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
+        const nameText = this.add.text(x + width / 2, y + 12, name, {
+            fontSize: '12px', color: '#ffffff', fontStyle: 'bold'
+        }).setOrigin(0.5);
         this.scrollContainer.add(nameText);
 
+        // Level indicator
+        const levelText = this.add.text(x + width / 2, y + 26, getLevel(), {
+            fontSize: '10px', color: '#d0d0d0'
+        }).setOrigin(0.5);
+        this.scrollContainer.add(levelText);
+
         // Value
-        const valueText = this.add.text(185, y + 28, getValue(), {
-            fontSize: '18px', color: '#55efc4', fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
+        const valueText = this.add.text(x + width / 2, y + 43, getValue(), {
+            fontSize: '15px', color: '#55efc4', fontStyle: 'bold'
+        }).setOrigin(0.5);
         this.scrollContainer.add(valueText);
 
         // Cost
-        const costText = this.add.text(255, y + 28, getCost(), {
-            fontSize: '14px', color: '#f1c40f'
-        }).setOrigin(0, 0.5);
+        const costStr = isMaxed ? 'MAX' : formatNumber(cost) + '💰';
+        const costText = this.add.text(x + width / 2, y + 59, costStr, {
+            fontSize: '11px', color: isMaxed ? '#999999' : (affordable ? '#f1c40f' : '#cc9900')
+        }).setOrigin(0.5);
         this.scrollContainer.add(costText);
 
-        // Button
-        const btnX = W - 60;
-        const btnSize = 44;
-        const affordable = canAfford();
-
-        const btn = this.add.graphics();
-        btn.fillStyle(affordable ? 0x27ae60 : 0x555555, 1);
-        btn.fillRoundedRect(btnX - btnSize / 2, y + 28 - btnSize / 2, btnSize, btnSize, 8);
-        this.scrollContainer.add(btn);
-
-        const btnLabel = this.add.text(btnX, y + 28, getAction(), {
-            fontSize: '12px', color: '#ffffff', fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.scrollContainer.add(btnLabel);
-
-        const hitArea = this.add.rectangle(btnX, y + 28, btnSize, btnSize, 0x000000, 0)
-            .setInteractive({ useHandCursor: affordable })
+        // Hit area
+        const hitArea = this.add.rectangle(x + width / 2, y + height / 2, width, height, 0x000000, 0)
+            .setInteractive({ useHandCursor: !isMaxed && affordable })
             .on('pointerover', () => {
-                if (canAfford()) btn.clear().fillStyle(0x2ecc71, 1).fillRoundedRect(btnX - btnSize / 2, y + 28 - btnSize / 2, btnSize, btnSize, 8);
+                if (!isMaxed) {
+                    const hoverColor = canAfford() ? 0x2ecc71 : 0x3a3a4e;
+                    btn.clear();
+                    btn.fillStyle(hoverColor, 1);
+                    btn.fillRoundedRect(x, y, width, height, 8);
+                    btn.lineStyle(2, canAfford() ? 0x55efc4 : 0x555555, 1);
+                    btn.strokeRoundedRect(x, y, width, height, 8);
+                }
             })
             .on('pointerout', () => {
-                btn.clear().fillStyle(canAfford() ? 0x27ae60 : 0x555555, 1).fillRoundedRect(btnX - btnSize / 2, y + 28 - btnSize / 2, btnSize, btnSize, 8);
+                this.redrawButton(btn, x, y, width, height, getCost, canAfford);
             })
             .on('pointerdown', () => {
                 if (canAfford() && onBuy()) {
                     this.currencyText.setText(formatNumber(PlayerData.currency));
-                    this.refreshAllRows();
+                    this.refreshAllButtons();
                 }
             });
         this.scrollContainer.add(hitArea);
 
-        this.upgradeRows.push({ valueText, costText, btn, hitArea, btnX, y, btnSize, getValue, getCost, canAfford });
+        this.upgradeButtons.push({
+            btn, valueText, levelText, costText, hitArea,
+            x, y, width, height,
+            getValue, getLevel, getCost, canAfford
+        });
+    }
 
-        return y + 62;
+    redrawButton(btn, x, y, width, height, getCost, canAfford) {
+        const cost = getCost();
+        const isMaxed = cost === null;
+        const affordable = !isMaxed && canAfford();
+        const bgColor = isMaxed ? 0x444444 : (affordable ? 0x27ae60 : 0x2a2a3e);
+        btn.clear();
+        btn.fillStyle(bgColor, 1);
+        btn.fillRoundedRect(x, y, width, height, 8);
+        if (!isMaxed) {
+            btn.lineStyle(2, affordable ? 0x55efc4 : 0x555555, 1);
+            btn.strokeRoundedRect(x, y, width, height, 8);
+        }
     }
 
     setupScrollInput() {
-        // Track drag state
         this.isDragging = false;
         this.lastPointerY = 0;
 
-        // Start drag
         this.input.on('pointerdown', (pointer) => {
             this.isDragging = true;
             this.lastPointerY = pointer.y;
         });
 
-        // Drag to scroll
         this.input.on('pointermove', (pointer) => {
             if (this.isDragging && pointer.isDown && this.maxScroll > 0) {
                 const dy = this.lastPointerY - pointer.y;
@@ -341,12 +398,10 @@ export class UpgradesScene extends Phaser.Scene {
             }
         });
 
-        // End drag
         this.input.on('pointerup', () => {
             this.isDragging = false;
         });
 
-        // Mouse wheel
         this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY) => {
             this.scrollBy(deltaY * 0.5);
         });
@@ -366,12 +421,10 @@ export class UpgradesScene extends Phaser.Scene {
         const trackTop = this.scrollTop + 5;
         const trackHeight = this.scrollHeight - 10;
 
-        // Track
         this.scrollTrack = this.add.graphics();
         this.scrollTrack.fillStyle(0x333333, 0.5);
         this.scrollTrack.fillRoundedRect(trackX - 3, trackTop, 6, trackHeight, 3);
 
-        // Thumb
         const thumbHeight = Math.max(30, (this.scrollHeight / this.contentHeight) * trackHeight);
         this.scrollThumb = this.add.graphics();
         this.scrollThumbHeight = thumbHeight;
@@ -393,14 +446,17 @@ export class UpgradesScene extends Phaser.Scene {
         this.scrollThumb.fillRoundedRect(this.scrollTrackX - 3, thumbY, 6, this.scrollThumbHeight, 3);
     }
 
-    refreshAllRows() {
-        for (const row of this.upgradeRows) {
-            row.valueText.setText(row.getValue());
-            row.costText.setText(row.getCost());
-            const affordable = row.canAfford();
-            const col = affordable ? 0x27ae60 : 0x555555;
-            row.btn.clear().fillStyle(col, 1).fillRoundedRect(row.btnX - row.btnSize / 2, row.y + 28 - row.btnSize / 2, row.btnSize, row.btnSize, 8);
-            row.hitArea.setInteractive({ useHandCursor: affordable });
+    refreshAllButtons() {
+        for (const b of this.upgradeButtons) {
+            b.valueText.setText(b.getValue());
+            b.levelText.setText(b.getLevel());
+            const cost = b.getCost();
+            const isMaxed = cost === null;
+            const affordable = !isMaxed && b.canAfford();
+            b.costText.setText(isMaxed ? 'MAX' : formatNumber(cost) + '💰');
+            b.costText.setColor(isMaxed ? '#999999' : (affordable ? '#f1c40f' : '#cc9900'));
+            b.hitArea.setInteractive({ useHandCursor: affordable });
+            this.redrawButton(b.btn, b.x, b.y, b.width, b.height, b.getCost, b.canAfford);
         }
     }
 
@@ -412,7 +468,6 @@ export class UpgradesScene extends Phaser.Scene {
         const btnWidth = W - 60;
         const btnHeight = 50;
 
-        // Button directly on overlay (no background needed)
         const btn = this.add.graphics();
         btn.fillStyle(0xe74c3c, 1);
         btn.fillRoundedRect(cx - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 12);
