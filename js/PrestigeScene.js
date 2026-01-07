@@ -101,22 +101,22 @@ export class PrestigeScene extends Phaser.Scene {
 
         // Prestige button (perform prestige)
         if (potential > 0) {
-            const prestigeBtnY = 230;
+            const prestigeBtnY = 225;
             const prestigeBtn = this.add.graphics();
             prestigeBtn.fillStyle(0x9b59b6, 1);
-            prestigeBtn.fillRoundedRect(cx - 100, prestigeBtnY - 20, 200, 40, 10);
+            prestigeBtn.fillRoundedRect(cx - 100, prestigeBtnY - 18, 200, 36, 10);
 
-            this.add.rectangle(cx, prestigeBtnY, 200, 40, 0x000000, 0)
+            this.add.rectangle(cx, prestigeBtnY, 200, 36, 0x000000, 0)
                 .setInteractive({ useHandCursor: true })
                 .on('pointerover', () => {
                     prestigeBtn.clear();
                     prestigeBtn.fillStyle(0x8e44ad, 1);
-                    prestigeBtn.fillRoundedRect(cx - 100, prestigeBtnY - 20, 200, 40, 10);
+                    prestigeBtn.fillRoundedRect(cx - 100, prestigeBtnY - 18, 200, 36, 10);
                 })
                 .on('pointerout', () => {
                     prestigeBtn.clear();
                     prestigeBtn.fillStyle(0x9b59b6, 1);
-                    prestigeBtn.fillRoundedRect(cx - 100, prestigeBtnY - 20, 200, 40, 10);
+                    prestigeBtn.fillRoundedRect(cx - 100, prestigeBtnY - 18, 200, 36, 10);
                 })
                 .on('pointerdown', () => {
                     if (performPrestige()) {
@@ -151,7 +151,7 @@ export class PrestigeScene extends Phaser.Scene {
     createTabs() {
         const W = this.cameras.main.width;
         const cx = W / 2;
-        const tabY = 280;
+        const tabY = 270;
         const tabWidth = (W - 60) / 2;
         const tabHeight = 32;
 
@@ -195,53 +195,74 @@ export class PrestigeScene extends Phaser.Scene {
     }
 
     createUpgradesTab() {
-        let upgradeY = 320;
+        const W = this.cameras.main.width;
+        const startY = 315;
 
-        // Money multiplier upgrade
-        upgradeY = this.createUpgradeRow(upgradeY, '💰', 'Множитель',
-            `x${getMoneyMultiplier()}`,
-            getPrestigeMoneyMultCost(),
-            () => {
-                if (upgradePrestigeMoneyMult()) this.scene.restart();
-            });
+        // Grid settings
+        const padding = 25;
+        const gap = 8;
+        const cols = 3;
+        const btnWidth = Math.floor((W - padding * 2 - gap * (cols - 1)) / cols);
+        const btnHeight = 70;
 
-        // Tiers upgrade
-        const maxTiers = PlayerData.prestigeTiers >= 4;
-        upgradeY = this.createUpgradeRow(upgradeY, '⭐', 'Тиры гемов',
-            `${getUnlockedTiers()}/7`,
-            maxTiers ? 'MAX' : getPrestigeTiersCost(),
-            maxTiers ? null : () => {
-                if (upgradePrestigeTiers()) this.scene.restart();
-            });
+        // Prestige upgrades
+        const upgrades = [
+            {
+                name: 'Множитель',
+                getValue: () => `x${getMoneyMultiplier()}`,
+                getCost: () => getPrestigeMoneyMultCost(),
+                canAfford: () => PlayerData.prestigeCurrency >= getPrestigeMoneyMultCost(),
+                onBuy: () => upgradePrestigeMoneyMult()
+            },
+            {
+                name: 'Тиры гемов',
+                getValue: () => `${getUnlockedTiers()}/7`,
+                getCost: () => PlayerData.prestigeTiers >= 4 ? null : getPrestigeTiersCost(),
+                canAfford: () => PlayerData.prestigeTiers < 4 && PlayerData.prestigeCurrency >= getPrestigeTiersCost(),
+                onBuy: () => upgradePrestigeTiers()
+            },
+            {
+                name: 'Цветов',
+                getValue: () => `${getColorCount()}`,
+                getCost: () => PlayerData.prestigeColors >= 3 ? null : getPrestigeColorsCost(),
+                canAfford: () => PlayerData.prestigeColors < 3 && PlayerData.prestigeCurrency >= getPrestigeColorsCost(),
+                onBuy: () => upgradePrestigeColors()
+            },
+            {
+                name: 'Размер поля',
+                getValue: () => `${getBoardSize()}x${getBoardSize()}`,
+                getCost: () => PlayerData.prestigeArena >= 4 ? null : getPrestigeArenaCost(),
+                canAfford: () => PlayerData.prestigeArena < 4 && PlayerData.prestigeCurrency >= getPrestigeArenaCost(),
+                onBuy: () => upgradePrestigeArena()
+            }
+        ];
 
-        // Colors upgrade
-        const maxColors = PlayerData.prestigeColors >= 3;
-        upgradeY = this.createUpgradeRow(upgradeY, '🎨', 'Цветов',
-            `${getColorCount()}`,
-            maxColors ? 'MAX' : getPrestigeColorsCost(),
-            maxColors ? null : () => {
-                if (upgradePrestigeColors()) this.scene.restart();
-            });
+        for (let i = 0; i < upgrades.length; i++) {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const x = padding + col * (btnWidth + gap);
+            const y = startY + row * (btnHeight + gap);
 
-        // Arena size upgrade
-        const maxArena = PlayerData.prestigeArena >= 4;
-        upgradeY = this.createUpgradeRow(upgradeY, '📐', 'Размер поля',
-            `${getBoardSize()}x${getBoardSize()}`,
-            maxArena ? 'MAX' : getPrestigeArenaCost(),
-            maxArena ? null : () => {
-                if (upgradePrestigeArena()) this.scene.restart();
-            });
+            this.createUpgradeButton(x, y, btnWidth, btnHeight, upgrades[i], true);
+        }
     }
 
     createAutoBuyTab() {
-        let y = 320;
-        const rowHeight = 38;
+        const W = this.cameras.main.width;
+        const startY = 315;
 
-        // Auto-buy upgrades list
+        // Grid settings
+        const padding = 25;
+        const gap = 6;
+        const cols = 3;
+        const btnWidth = Math.floor((W - padding * 2 - gap * (cols - 1)) / cols);
+        const btnHeight = 55;
+
+        // Auto-buy upgrades
         const autoBuys = [
             { name: 'Авто-мув', owned: PlayerData.autoBuyAutoMove, buy: buyAutoBuyAutoMove },
             { name: 'Шанс бомб', owned: PlayerData.autoBuyBombChance, buy: buyAutoBuyBombChance },
-            { name: 'Радиус бомб', owned: PlayerData.autoBuyBombRadius, buy: buyAutoBuyBombRadius },
+            { name: 'Радиус', owned: PlayerData.autoBuyBombRadius, buy: buyAutoBuyBombRadius },
             { name: 'Бронза', owned: PlayerData.autoBuyBronze, buy: buyAutoBuyBronze },
             { name: 'Серебро', owned: PlayerData.autoBuySilver, buy: buyAutoBuySilver },
             { name: 'Золото', owned: PlayerData.autoBuyGold, buy: buyAutoBuyGold },
@@ -251,77 +272,135 @@ export class PrestigeScene extends Phaser.Scene {
             { name: 'Небесный', owned: PlayerData.autoBuyCelestial, buy: buyAutoBuyCelestial }
         ];
 
-        autoBuys.forEach(item => {
-            this.createAutoBuyRow(y, item.name, item.owned, item.buy);
-            y += rowHeight;
-        });
+        for (let i = 0; i < autoBuys.length; i++) {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const x = padding + col * (btnWidth + gap);
+            const y = startY + row * (btnHeight + gap);
+
+            this.createAutoBuyButton(x, y, btnWidth, btnHeight, autoBuys[i]);
+        }
     }
 
-    createAutoBuyRow(y, name, owned, onBuy) {
-        const W = this.cameras.main.width;
-        const rowHeight = 35;
+    createUpgradeButton(x, y, width, height, upgrade, isPrestige = false) {
+        const { name, getValue, getCost, canAfford, onBuy } = upgrade;
+        const cost = getCost();
+        const isMaxed = cost === null;
+        const affordable = !isMaxed && canAfford();
 
-        // Row background
-        const rowBg = this.add.graphics();
-        rowBg.fillStyle(owned ? 0x27ae60 : 0x2a2a3e, owned ? 0.3 : 0.5);
-        rowBg.fillRoundedRect(25, y, W - 50, rowHeight, 6);
+        // Button background
+        const btn = this.add.graphics();
+        const bgColor = isMaxed ? 0x444444 : (affordable ? 0x27ae60 : 0x2a2a3e);
+        btn.fillStyle(bgColor, 1);
+        btn.fillRoundedRect(x, y, width, height, 8);
+        if (!isMaxed) {
+            btn.lineStyle(2, affordable ? 0x55efc4 : 0x555555, 1);
+            btn.strokeRoundedRect(x, y, width, height, 8);
+        }
 
         // Name
-        this.add.text(35, y + rowHeight / 2, name, {
-            fontSize: '13px', color: owned ? '#55efc4' : '#ffffff'
-        }).setOrigin(0, 0.5);
+        this.add.text(x + width / 2, y + 14, name, {
+            fontSize: '11px', color: '#ffffff', fontStyle: 'bold'
+        }).setOrigin(0.5);
 
-        // Status/Cost
+        // Value
+        this.add.text(x + width / 2, y + 34, getValue(), {
+            fontSize: '16px', color: '#55efc4', fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        // Cost
+        const costStr = isMaxed ? 'MAX' : `${cost}👑`;
+        this.add.text(x + width / 2, y + 55, costStr, {
+            fontSize: '11px', color: isMaxed ? '#888888' : (affordable ? '#f1c40f' : '#888888')
+        }).setOrigin(0.5);
+
+        // Hit area
+        if (!isMaxed) {
+            this.add.rectangle(x + width / 2, y + height / 2, width, height, 0x000000, 0)
+                .setInteractive({ useHandCursor: affordable })
+                .on('pointerover', () => {
+                    const hoverColor = canAfford() ? 0x2ecc71 : 0x3a3a4e;
+                    btn.clear();
+                    btn.fillStyle(hoverColor, 1);
+                    btn.fillRoundedRect(x, y, width, height, 8);
+                    btn.lineStyle(2, canAfford() ? 0x55efc4 : 0x555555, 1);
+                    btn.strokeRoundedRect(x, y, width, height, 8);
+                })
+                .on('pointerout', () => {
+                    const col = canAfford() ? 0x27ae60 : 0x2a2a3e;
+                    btn.clear();
+                    btn.fillStyle(col, 1);
+                    btn.fillRoundedRect(x, y, width, height, 8);
+                    btn.lineStyle(2, canAfford() ? 0x55efc4 : 0x555555, 1);
+                    btn.strokeRoundedRect(x, y, width, height, 8);
+                })
+                .on('pointerdown', () => {
+                    if (canAfford() && onBuy()) {
+                        this.scene.restart();
+                    }
+                });
+        }
+    }
+
+    createAutoBuyButton(x, y, width, height, item) {
+        const { name, owned, buy } = item;
+        const canAfford = PlayerData.prestigeCurrency >= AUTO_BUY_COST;
+
+        // Button background
+        const btn = this.add.graphics();
+        const bgColor = owned ? 0x27ae60 : (canAfford ? 0x2a2a3e : 0x222233);
+        btn.fillStyle(bgColor, owned ? 0.6 : 1);
+        btn.fillRoundedRect(x, y, width, height, 8);
+        if (!owned) {
+            btn.lineStyle(2, canAfford ? 0x55efc4 : 0x444444, 1);
+            btn.strokeRoundedRect(x, y, width, height, 8);
+        }
+
+        // Name
+        this.add.text(x + width / 2, y + 16, name, {
+            fontSize: '11px', color: owned ? '#55efc4' : '#ffffff', fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        // Status or cost
         if (owned) {
-            this.add.text(W - 60, y + rowHeight / 2, '✓ АКТИВНО', {
-                fontSize: '11px', color: '#55efc4', fontStyle: 'bold'
-            }).setOrigin(1, 0.5);
+            this.add.text(x + width / 2, y + 38, '✓ ВКЛ', {
+                fontSize: '12px', color: '#55efc4', fontStyle: 'bold'
+            }).setOrigin(0.5);
         } else {
-            const canAfford = PlayerData.prestigeCurrency >= AUTO_BUY_COST;
+            this.add.text(x + width / 2, y + 38, `${AUTO_BUY_COST}👑`, {
+                fontSize: '12px', color: canAfford ? '#f1c40f' : '#666666'
+            }).setOrigin(0.5);
 
-            this.add.text(W - 95, y + rowHeight / 2, `${AUTO_BUY_COST}👑`, {
-                fontSize: '11px', color: canAfford ? '#f1c40f' : '#888888'
-            }).setOrigin(1, 0.5);
-
-            // Buy button
-            const btnX = W - 55;
-            const btnSize = 30;
-
-            const btn = this.add.graphics();
-            btn.fillStyle(canAfford ? 0x27ae60 : 0x555555, 1);
-            btn.fillRoundedRect(btnX - btnSize / 2, y + rowHeight / 2 - btnSize / 2, btnSize, btnSize, 5);
-
-            this.add.rectangle(btnX, y + rowHeight / 2, btnSize, btnSize, 0x000000, 0)
+            // Hit area
+            this.add.rectangle(x + width / 2, y + height / 2, width, height, 0x000000, 0)
                 .setInteractive({ useHandCursor: canAfford })
                 .on('pointerover', () => {
                     if (canAfford) {
                         btn.clear();
-                        btn.fillStyle(0x2ecc71, 1);
-                        btn.fillRoundedRect(btnX - btnSize / 2, y + rowHeight / 2 - btnSize / 2, btnSize, btnSize, 5);
+                        btn.fillStyle(0x3a3a4e, 1);
+                        btn.fillRoundedRect(x, y, width, height, 8);
+                        btn.lineStyle(2, 0x55efc4, 1);
+                        btn.strokeRoundedRect(x, y, width, height, 8);
                     }
                 })
                 .on('pointerout', () => {
                     btn.clear();
-                    btn.fillStyle(canAfford ? 0x27ae60 : 0x555555, 1);
-                    btn.fillRoundedRect(btnX - btnSize / 2, y + rowHeight / 2 - btnSize / 2, btnSize, btnSize, 5);
+                    btn.fillStyle(canAfford ? 0x2a2a3e : 0x222233, 1);
+                    btn.fillRoundedRect(x, y, width, height, 8);
+                    btn.lineStyle(2, canAfford ? 0x55efc4 : 0x444444, 1);
+                    btn.strokeRoundedRect(x, y, width, height, 8);
                 })
                 .on('pointerdown', () => {
-                    if (canAfford && onBuy()) {
+                    if (canAfford && buy()) {
                         this.scene.restart();
                     }
                 });
-
-            this.add.text(btnX, y + rowHeight / 2, '+', {
-                fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
-            }).setOrigin(0.5);
         }
     }
 
     update() {
-        // Live update when currency changes (game runs in background)
         if (PlayerData.currency !== this.lastCurrency) {
             this.lastCurrency = PlayerData.currency;
-            // Restart scene to refresh all values
             this.scene.restart();
         }
     }
@@ -355,68 +434,5 @@ export class PrestigeScene extends Phaser.Scene {
         this.add.text(cx, btnY, '✕ ЗАКРЫТЬ', {
             fontSize: '18px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
-    }
-
-    createUpgradeRow(y, icon, name, value, cost, onBuy) {
-        const W = this.cameras.main.width;
-        const rowHeight = 45;
-
-        // Row background
-        const rowBg = this.add.graphics();
-        rowBg.fillStyle(0x2a2a3e, 0.5);
-        rowBg.fillRoundedRect(25, y, W - 50, rowHeight, 8);
-
-        // Icon and name
-        this.add.text(35, y + rowHeight / 2, icon, { fontSize: '18px' }).setOrigin(0, 0.5);
-        this.add.text(60, y + rowHeight / 2, name, {
-            fontSize: '14px', color: '#ffffff'
-        }).setOrigin(0, 0.5);
-
-        // Value
-        this.add.text(160, y + rowHeight / 2, value, {
-            fontSize: '14px', color: '#55efc4', fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-
-        // Cost or MAX
-        const costStr = typeof cost === 'number' ? `${cost}👑` : cost;
-        const canAfford = typeof cost === 'number' && PlayerData.prestigeCurrency >= cost;
-
-        this.add.text(220, y + rowHeight / 2, costStr, {
-            fontSize: '12px', color: canAfford ? '#f1c40f' : '#888888'
-        }).setOrigin(0, 0.5);
-
-        // Buy button (if not maxed)
-        if (onBuy) {
-            const btnX = W - 55;
-            const btnSize = 35;
-
-            const btn = this.add.graphics();
-            btn.fillStyle(canAfford ? 0x27ae60 : 0x555555, 1);
-            btn.fillRoundedRect(btnX - btnSize / 2, y + rowHeight / 2 - btnSize / 2, btnSize, btnSize, 6);
-
-            this.add.rectangle(btnX, y + rowHeight / 2, btnSize, btnSize, 0x000000, 0)
-                .setInteractive({ useHandCursor: canAfford })
-                .on('pointerover', () => {
-                    if (canAfford) {
-                        btn.clear();
-                        btn.fillStyle(0x2ecc71, 1);
-                        btn.fillRoundedRect(btnX - btnSize / 2, y + rowHeight / 2 - btnSize / 2, btnSize, btnSize, 6);
-                    }
-                })
-                .on('pointerout', () => {
-                    btn.clear();
-                    btn.fillStyle(canAfford ? 0x27ae60 : 0x555555, 1);
-                    btn.fillRoundedRect(btnX - btnSize / 2, y + rowHeight / 2 - btnSize / 2, btnSize, btnSize, 6);
-                })
-                .on('pointerdown', () => {
-                    if (canAfford) onBuy();
-                });
-
-            this.add.text(btnX, y + rowHeight / 2, '+', {
-                fontSize: '20px', color: '#ffffff', fontStyle: 'bold'
-            }).setOrigin(0.5);
-        }
-
-        return y + rowHeight + 5;
     }
 }
