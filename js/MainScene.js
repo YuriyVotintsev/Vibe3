@@ -131,6 +131,7 @@ export class MainScene extends Phaser.Scene {
 
     onResume() {
         this.uiManager.updateCurrency();
+        this.uiManager.updatePrestige();
     }
 
     createBoard() {
