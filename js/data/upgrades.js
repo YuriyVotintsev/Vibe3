@@ -18,20 +18,20 @@ const UPGRADE_CONFIGS = {
         name: 'Авто-ход',
         unit: 'с',
         enhancement: null,
-        baseCost: 500,      // v4: utility, not income-dependent
-        growthRate: 1.6,
-        step: null,         // special: variable step
+        baseCost: 500,
+        growthRate: 1.236,  // 500 -> 1M over 37 levels
+        step: null,         // special: 10% reduction per level
         min: 100,
         max: 5000,
         getValue: () => (PlayerData.autoMoveDelay / 1000).toFixed(1),
         getLevel: () => {
-            // 5000 -> 500 (9 steps of 500ms), then 500 -> 100 (4 steps of 100ms)
-            if (PlayerData.autoMoveDelay >= 500) {
-                return Math.round((5000 - PlayerData.autoMoveDelay) / 500);
-            }
-            return 9 + Math.round((500 - PlayerData.autoMoveDelay) / 100);
+            // Each level = 10% faster: delay = 5000 * 0.9^level
+            const delay = PlayerData.autoMoveDelay;
+            if (delay >= 5000) return 0;
+            if (delay <= 100) return 37;
+            return Math.round(Math.log(5000 / delay) / Math.log(1 / 0.9));
         },
-        getMaxLevel: () => 13
+        getMaxLevel: () => 37
     },
     bombChance: {
         property: 'bombChance',
@@ -187,11 +187,10 @@ function performUpgrade(config) {
 
     PlayerData.currency -= cost;
 
-    // Special handling for autoMove (decreases instead of increases)
+    // Special handling for autoMove (10% reduction per level)
     if (config.property === 'autoMoveDelay') {
-        // v3: 5000->500 in 500ms steps, then 500->100 in 100ms steps
-        const step = PlayerData.autoMoveDelay > 500 ? 500 : 100;
-        PlayerData.autoMoveDelay = Math.max(config.min, PlayerData.autoMoveDelay - step);
+        const newDelay = Math.round(PlayerData.autoMoveDelay * 0.9);
+        PlayerData.autoMoveDelay = Math.max(config.min, newDelay);
     } else {
         PlayerData[config.property] = Math.min(config.max, PlayerData[config.property] + config.step);
     }
@@ -265,7 +264,7 @@ export const upgradeBombRadius = () => performUpgrade(UPGRADE_CONFIGS.bombRadius
 
 export const getAutoMoveLevel = () => UPGRADE_CONFIGS.autoMove.getLevel();
 export const getAutoMoveUpgradeCost = () => getUpgradeCost(UPGRADE_CONFIGS.autoMove);
-export const getAutoMoveStep = () => PlayerData.autoMoveDelay > 500 ? 500 : 100; // v3: standard steps
+export const getAutoMoveStep = () => Math.round(PlayerData.autoMoveDelay * 0.1); // 10% of current
 export const upgradeAutoMove = () => performUpgrade(UPGRADE_CONFIGS.autoMove);
 
 // ========== AUTO-BUY PROCESSOR ==========
