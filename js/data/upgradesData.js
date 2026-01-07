@@ -2,11 +2,10 @@
 // Generates upgrade objects from UPGRADE_CONFIGS - single source of truth
 
 import { PlayerData } from './playerData.js';
-import { isTierUnlocked } from './enhancements.js';
+import { isTierUnlocked, getUnlockedTiers } from './enhancements.js';
 import { UPGRADE_CONFIGS, AUTO_BUY_KEYS, createUpgradeForUI } from './upgrades.js';
 import {
     getMoneyMultiplier,
-    getUnlockedTiers,
     getBoardSize,
     getColorCount,
     getPrestigeMoneyMultCost,
