@@ -21,10 +21,12 @@ import {
 export class PrestigeScene extends Phaser.Scene {
     constructor() {
         super({ key: 'PrestigeScene' });
+        this.isReady = false;
     }
 
     create() {
         try {
+            this.isReady = false;
             const W = this.cameras.main.width;
             const H = this.cameras.main.height;
             const cx = W / 2;
@@ -68,21 +70,25 @@ export class PrestigeScene extends Phaser.Scene {
 
             // Bottom buttons
             this.createBottomButtons();
+
+            this.isReady = true;
         } catch (e) {
             console.error('PrestigeScene create error:', e);
         }
     }
 
     update() {
+        if (!this.isReady) return;
+
         try {
             // Live update when currencies change
             if (PlayerData.currency !== this.lastCurrency || PlayerData.prestigeCurrency !== this.lastPrestige) {
                 this.lastCurrency = PlayerData.currency;
                 this.lastPrestige = PlayerData.prestigeCurrency;
                 if (this.prestigeText) this.prestigeText.setText(`${PlayerData.prestigeCurrency}`);
-                this.updateProgressBar();
-                this.updatePrestigeButton();
-                this.refreshAllRows();
+                if (this.progressBarFill) this.updateProgressBar();
+                if (this.prestigeBtn) this.updatePrestigeButton();
+                if (this.upgradeRows) this.refreshAllRows();
             }
         } catch (e) {
             console.error('PrestigeScene update error:', e);
