@@ -18,8 +18,7 @@ export {
     PlayerData,
     savePlayerData,
     loadPlayerData,
-    resetPlayerData,
-    fullResetPlayerData
+    resetPlayerData
 } from './playerData.js';
 
 // Enhancements
