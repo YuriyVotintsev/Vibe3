@@ -52,7 +52,10 @@ export class SettingsScene extends Phaser.Scene {
         this.createSettingRow(startY + rowHeight, W, cx, 'Множитель цен', 0.1, 1, GameSettings.priceMultiplier, 0.1, true,
             val => { GameSettings.priceMultiplier = val; });
 
-        // === BUTTONS ===
+        // === RESET BUTTON (in panel body, after settings) ===
+        this.createResetButton(startY + rowHeight * 2 + 15, W, cx);
+
+        // === BOTTOM BUTTONS ===
         this.createBottomButtons(W, H, cx, padding);
     }
 
@@ -115,32 +118,13 @@ export class SettingsScene extends Phaser.Scene {
         });
     }
 
-    createBottomButtons(W, H, cx, padding) {
-        const btnWidth = W - padding * 2 - 20;
-        const btnHeight = 52;
-
-        // Apply button
-        new Button(this, {
-            x: cx, y: H - 225, width: btnWidth, height: btnHeight,
-            text: '✓ ПРИМЕНИТЬ', style: 'success',
-            radius: RADIUS.xl, fontSize: FONT_SIZE['2xl'],
-            onClick: () => this.applySettings()
-        });
-
-        // Cancel button
-        new Button(this, {
-            x: cx, y: H - 165, width: btnWidth, height: btnHeight,
-            text: '← ОТМЕНА', style: 'secondary',
-            radius: RADIUS.xl, fontSize: FONT_SIZE['2xl'],
-            onClick: () => this.cancelSettings()
-        });
-
-        // Reset button with confirmation
+    createResetButton(y, W, cx) {
+        // Reset button with two-click confirmation
         this.resetConfirm = false;
         const resetBtn = new Button(this, {
-            x: cx, y: H - 105, width: btnWidth, height: btnHeight,
+            x: cx, y: y + 25, width: W - 50, height: 50,
             text: '🗑️ СБРОСИТЬ ПРОГРЕСС', style: 'default',
-            radius: RADIUS.xl, fontSize: FONT_SIZE.xl,
+            radius: RADIUS.lg, fontSize: FONT_SIZE.xl,
             onClick: () => {
                 if (this.resetConfirm) {
                     resetPlayerData();
@@ -161,8 +145,21 @@ export class SettingsScene extends Phaser.Scene {
                 }
             }
         });
+    }
 
-        // Close button
+    createBottomButtons(W, H, cx, padding) {
+        const btnWidth = W - padding * 2 - 20;
+        const btnHeight = 52;
+
+        // Apply button
+        new Button(this, {
+            x: cx, y: H - 105, width: btnWidth, height: btnHeight,
+            text: '✓ ПРИМЕНИТЬ', style: 'success',
+            radius: RADIUS.xl, fontSize: FONT_SIZE['2xl'],
+            onClick: () => this.applySettings()
+        });
+
+        // Back button
         new Button(this, {
             x: cx, y: H - 45, width: btnWidth, height: btnHeight,
             text: '← НАЗАД', style: 'secondary',
