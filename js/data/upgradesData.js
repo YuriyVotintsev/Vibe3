@@ -101,13 +101,13 @@ export function getPrestigeUpgrades() {
     return [
         // Economy & Combo upgrades
         {
-            getName: () => 'Старт💰',
+            getName: () => 'Старт. капитал',
             getValue: () => {
                 const current = getStartingCapital();
                 const level = PlayerData.prestigeStartingCapital;
-                if (level >= 3) return `+${current}`;
+                if (level >= 3) return `+${current}💰`;
                 const next = STARTING_CAPITAL_VALUES[level + 1];
-                return `+${current} (→${next})`;
+                return `+${current}💰 (→${next}💰)`;
             },
             getLevel: () => `${PlayerData.prestigeStartingCapital}/3`,
             getCost: () => getStartingCapitalCost(),
@@ -118,13 +118,13 @@ export function getPrestigeUpgrades() {
             onBuy: () => upgradeStartingCapital()
         },
         {
-            getName: () => 'Скидка%',
+            getName: () => 'Скидка на цены',
             getValue: () => {
                 const current = Math.round((1 - getCostReductionMultiplier()) * 100);
                 const level = PlayerData.prestigeCostReduction;
                 if (level >= 3) return `-${current}%`;
                 const next = COST_REDUCTION_VALUES[level + 1];
-                return `-${current}% (→${next})`;
+                return `-${current}% (→${next}%)`;
             },
             getLevel: () => `${PlayerData.prestigeCostReduction}/3`,
             getCost: () => getCostReductionCost(),
@@ -135,13 +135,13 @@ export function getPrestigeUpgrades() {
             onBuy: () => upgradeCostReduction()
         },
         {
-            getName: () => 'Рост↓',
+            getName: () => 'Рост цен↓',
             getValue: () => {
                 const current = (getGrowthReductionAmount() * 100).toFixed(0);
                 const level = PlayerData.prestigeGrowthReduction;
                 if (level >= 3) return `-${current}%`;
                 const next = GROWTH_REDUCTION_VALUES[level + 1];
-                return `-${current}% (→${next})`;
+                return `-${current}% (→${next}%)`;
             },
             getLevel: () => `${PlayerData.prestigeGrowthReduction}/3`,
             getCost: () => getGrowthReductionCost(),
@@ -152,13 +152,13 @@ export function getPrestigeUpgrades() {
             onBuy: () => upgradeGrowthReduction()
         },
         {
-            getName: () => 'Комбо+',
+            getName: () => 'Комбо набор',
             getValue: () => {
                 const current = getComboGainBonus().toFixed(1);
                 const level = PlayerData.prestigeComboGain;
                 if (level >= 3) return `+${current}`;
                 const next = COMBO_GAIN_VALUES[level + 1].toFixed(1);
-                return `+${current} (→${next})`;
+                return `+${current} (→+${next})`;
             },
             getLevel: () => `${PlayerData.prestigeComboGain}/3`,
             getCost: () => getComboGainCost(),
@@ -169,13 +169,13 @@ export function getPrestigeUpgrades() {
             onBuy: () => upgradeComboGain()
         },
         {
-            getName: () => 'Комбо×',
+            getName: () => 'Сила комбо',
             getValue: () => {
                 const current = getComboEffectMultiplier().toFixed(2);
                 const level = PlayerData.prestigeComboEffect;
                 if (level >= 3) return `×${current}`;
                 const next = COMBO_EFFECT_VALUES[level + 1].toFixed(2);
-                return `×${current} (→${next})`;
+                return `×${current} (→×${next})`;
             },
             getLevel: () => `${PlayerData.prestigeComboEffect}/3`,
             getCost: () => getComboEffectCost(),
@@ -188,13 +188,13 @@ export function getPrestigeUpgrades() {
         'separator',
         // Board & Gem upgrades
         {
-            getName: () => 'Тиры💎',
+            getName: () => 'Тиры гемов',
             getValue: () => {
                 const current = getUnlockedTiers();
                 const level = PlayerData.prestigeTiers;
                 if (level >= 4) return `${current}/7`;
                 const next = TIERS_VALUES[level + 1];
-                return `${current}/7 (→${next})`;
+                return `${current}/7 (→${next}/7)`;
             },
             getLevel: () => `${PlayerData.prestigeTiers}/4`,
             getCost: () => PlayerData.prestigeTiers >= 4 ? null : getPrestigeTiersCost(),
@@ -205,13 +205,13 @@ export function getPrestigeUpgrades() {
             onBuy: () => upgradePrestigeTiers()
         },
         {
-            getName: () => 'Цвета',
+            getName: () => 'Кол-во цветов',
             getValue: () => {
                 const current = getColorCount();
                 const level = PlayerData.prestigeColors;
-                if (level >= 3) return `${current}`;
+                if (level >= 3) return `${current} шт`;
                 const next = COLORS_VALUES[level + 1];
-                return `${current} (→${next})`;
+                return `${current} шт (→${next} шт)`;
             },
             getLevel: () => `${PlayerData.prestigeColors}/3`,
             getCost: () => PlayerData.prestigeColors >= 3 ? null : getPrestigeColorsCost(),
@@ -222,13 +222,13 @@ export function getPrestigeUpgrades() {
             onBuy: () => upgradePrestigeColors()
         },
         {
-            getName: () => 'Поле',
+            getName: () => 'Размер поля',
             getValue: () => {
                 const current = getBoardSize();
                 const level = PlayerData.prestigeArena;
                 if (level >= 4) return `${current}×${current}`;
                 const next = BOARD_SIZE_VALUES[level + 1];
-                return `${current}×${current} (→${next})`;
+                return `${current}×${current} (→${next}×${next})`;
             },
             getLevel: () => `${PlayerData.prestigeArena}/4`,
             getCost: () => PlayerData.prestigeArena >= 4 ? null : getPrestigeArenaCost(),
@@ -244,18 +244,18 @@ export function getPrestigeUpgrades() {
 // Auto-buy item definitions with buy functions
 // 'separator' marks visual gap between groups
 const AUTO_BUY_ITEMS = [
-    { key: 'autoMove', name: 'Автоход', buy: buyAutoBuyAutoMove },
-    { key: 'comboDecay', name: 'Комбо', buy: buyAutoBuyComboDecay },
+    { key: 'autoMove', name: 'Скорость', buy: buyAutoBuyAutoMove },
+    { key: 'comboDecay', name: 'Стойк. комбо', buy: buyAutoBuyComboDecay },
     { key: 'bombChance', name: 'Шанс💣', buy: buyAutoBuyBombChance },
     { key: 'bombRadius', name: 'Радиус💣', buy: buyAutoBuyBombRadius },
     'separator',
-    { key: 'bronze', name: 'Бронза', buy: buyAutoBuyBronze },
-    { key: 'silver', name: 'Серебро', buy: buyAutoBuySilver },
-    { key: 'gold', name: 'Золото', buy: buyAutoBuyGold },
-    { key: 'crystal', name: 'Кристалл', buy: buyAutoBuyCrystal },
-    { key: 'rainbow', name: 'Радуга', buy: buyAutoBuyRainbow },
-    { key: 'prismatic', name: 'Призма', buy: buyAutoBuyPrismatic },
-    { key: 'celestial', name: 'Небесный', buy: buyAutoBuyCelestial }
+    { key: 'bronze', name: '→бронза', buy: buyAutoBuyBronze },
+    { key: 'silver', name: '→серебро', buy: buyAutoBuySilver },
+    { key: 'gold', name: '→золото', buy: buyAutoBuyGold },
+    { key: 'crystal', name: '→кристалл', buy: buyAutoBuyCrystal },
+    { key: 'rainbow', name: '→радуга', buy: buyAutoBuyRainbow },
+    { key: 'prismatic', name: '→призма', buy: buyAutoBuyPrismatic },
+    { key: 'celestial', name: '→небесный', buy: buyAutoBuyCelestial }
 ];
 
 /**

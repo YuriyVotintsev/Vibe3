@@ -16,7 +16,7 @@ import { getCostReductionMultiplier, getGrowthReductionAmount } from './prestige
 const UPGRADE_CONFIGS = {
     autoMove: {
         property: 'autoMoveDelay',
-        name: 'Автоход',
+        name: 'Скорость хода',
         unit: 'с',
         enhancement: null,
         baseCost: 500,
@@ -37,7 +37,7 @@ const UPGRADE_CONFIGS = {
     },
     bombChance: {
         property: 'bombChance',
-        name: 'Шанс💣',
+        name: 'Шанс бомбы',
         unit: '%',
         enhancement: null,
         baseCost: 400,      // v4: ~2.5x increase
@@ -51,7 +51,7 @@ const UPGRADE_CONFIGS = {
     },
     bombRadius: {
         property: 'bombRadius',
-        name: 'Радиус💣',
+        name: 'Радиус бомбы',
         unit: '',
         enhancement: null,
         baseCost: 2000,     // v4: ~2.5x increase
@@ -65,7 +65,7 @@ const UPGRADE_CONFIGS = {
     },
     bronze: {
         property: 'bronzeChance',
-        name: 'Бронза',
+        name: 'обычн.→бронза',
         unit: '%',
         enhancement: ENHANCEMENT.BRONZE,
         baseCost: 20,       // v4: unchanged! First buy stays quick
@@ -79,7 +79,7 @@ const UPGRADE_CONFIGS = {
     },
     silver: {
         property: 'silverChance',
-        name: 'Серебро',
+        name: 'бронза→серебро',
         unit: '%',
         enhancement: ENHANCEMENT.SILVER,
         baseCost: 200,      // v4: 4x (income ~4x higher with bronze)
@@ -93,7 +93,7 @@ const UPGRADE_CONFIGS = {
     },
     gold: {
         property: 'goldChance',
-        name: 'Золото',
+        name: 'серебро→золото',
         unit: '%',
         enhancement: ENHANCEMENT.GOLD,
         baseCost: 600,      // v4: 6x (income ~6x with silver)
@@ -107,7 +107,7 @@ const UPGRADE_CONFIGS = {
     },
     crystal: {
         property: 'crystalChance',
-        name: 'Кристалл',
+        name: 'золото→кристалл',
         unit: '%',
         enhancement: ENHANCEMENT.CRYSTAL,
         baseCost: 2000,     // v4: 10x (income ~10x with gold)
@@ -121,7 +121,7 @@ const UPGRADE_CONFIGS = {
     },
     rainbow: {
         property: 'rainbowChance',
-        name: 'Радуга',
+        name: 'кристалл→радуга',
         unit: '%',
         enhancement: ENHANCEMENT.RAINBOW,
         baseCost: 5000,     // v4: 12x (income ~12x with crystal)
@@ -135,7 +135,7 @@ const UPGRADE_CONFIGS = {
     },
     prismatic: {
         property: 'prismaticChance',
-        name: 'Призма',
+        name: 'радуга→призма',
         unit: '%',
         enhancement: ENHANCEMENT.PRISMATIC,
         baseCost: 15000,    // v4: 18x (income ~18x with rainbow)
@@ -149,7 +149,7 @@ const UPGRADE_CONFIGS = {
     },
     celestial: {
         property: 'celestialChance',
-        name: 'Небесный',
+        name: 'призма→небесный',
         unit: '%',
         enhancement: ENHANCEMENT.CELESTIAL,
         baseCost: 50000,    // v4: 33x (income ~25x with prismatic)
@@ -163,7 +163,7 @@ const UPGRADE_CONFIGS = {
     },
     comboDecay: {
         property: 'comboDecayReduction',
-        name: 'Комбо',
+        name: 'Стойкость комбо',
         unit: '%',
         enhancement: null,  // Always visible
         baseCost: 100,
@@ -252,9 +252,10 @@ export function createUpgradeForUI(configKey, currencyGetter = () => PlayerData.
         getName: () => config.name,
         getValue: () => {
             const current = config.getValue();
-            if (isMaxed(config)) return `${current}${config.unit}`;
+            const unit = config.unit;
+            if (isMaxed(config)) return `${current}${unit}`;
             const next = getNextValue();
-            return `${current}${config.unit} (→${next})`;
+            return `${current}${unit} (→${next}${unit})`;
         },
         getLevel: () => `${config.getLevel()}/${config.getMaxLevel()}`,
         // Tell, Don't Ask: getCost returns null if maxed (tells you the state)
