@@ -25,6 +25,7 @@ const UPGRADE_CONFIGS = {
         min: 100,
         max: 5000,
         getValue: () => (PlayerData.autoMoveDelay / 1000).toFixed(1),
+        getNextValue: () => (Math.max(100, PlayerData.autoMoveDelay * 0.9) / 1000).toFixed(1),
         getLevel: () => {
             // Each level = 10% faster: delay = 5000 * 0.9^level
             const delay = PlayerData.autoMoveDelay;
@@ -236,11 +237,25 @@ export function createUpgradeForUI(configKey, currencyGetter = () => PlayerData.
     const config = UPGRADE_CONFIGS[configKey];
     if (!config) throw new Error(`Unknown upgrade: ${configKey}`);
 
+    // Calculate next value: use config.getNextValue if exists, otherwise compute from step
+    const getNextValue = () => {
+        if (config.getNextValue) return config.getNextValue();
+        // Default: current + step (capped at max)
+        const current = PlayerData[config.property];
+        const next = Math.min(config.max, current + config.step);
+        return next;
+    };
+
     return {
         key: configKey,
         config,
         getName: () => config.name,
-        getValue: () => `${config.getValue()}${config.unit}`,
+        getValue: () => {
+            const current = config.getValue();
+            if (isMaxed(config)) return `${current}${config.unit}`;
+            const next = getNextValue();
+            return `${current}${config.unit} (→${next})`;
+        },
         getLevel: () => `${config.getLevel()}/${config.getMaxLevel()}`,
         // Tell, Don't Ask: getCost returns null if maxed (tells you the state)
         getCost: () => isMaxed(config) ? null : getUpgradeCost(config),
@@ -310,7 +325,8 @@ const AUTO_BUY_KEYS = {
     crystal: 'autoBuyCrystal',
     rainbow: 'autoBuyRainbow',
     prismatic: 'autoBuyPrismatic',
-    celestial: 'autoBuyCelestial'
+    celestial: 'autoBuyCelestial',
+    comboDecay: 'autoBuyComboDecay'
 };
 
 export function processAutoBuys() {

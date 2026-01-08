@@ -211,7 +211,8 @@ const AUTO_BUY_COSTS = {
     autoBuyRainbow: 8,      // Late game
     autoBuyAutoMove: 8,     // Late game
     autoBuyPrismatic: 10,   // Endgame luxury
-    autoBuyCelestial: 10    // Endgame luxury
+    autoBuyCelestial: 10,   // Endgame luxury
+    autoBuyComboDecay: 5    // Mid-game, helps with combo
 };
 
 export function getAutoBuyCost(property) {
@@ -239,6 +240,7 @@ export const buyAutoBuyCrystal = () => buyAutoBuy('autoBuyCrystal');
 export const buyAutoBuyRainbow = () => buyAutoBuy('autoBuyRainbow');
 export const buyAutoBuyPrismatic = () => buyAutoBuy('autoBuyPrismatic');
 export const buyAutoBuyCelestial = () => buyAutoBuy('autoBuyCelestial');
+export const buyAutoBuyComboDecay = () => buyAutoBuy('autoBuyComboDecay');
 
 // Export costs for UI
 export { AUTO_BUY_COSTS };

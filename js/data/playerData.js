@@ -73,7 +73,8 @@ const DEFAULTS = {
     autoBuyCrystal: false,
     autoBuyRainbow: false,
     autoBuyPrismatic: false,
-    autoBuyCelestial: false
+    autoBuyCelestial: false,
+    autoBuyComboDecay: false
 };
 
 // Properties that reset on prestige

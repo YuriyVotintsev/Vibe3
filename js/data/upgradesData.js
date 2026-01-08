@@ -39,7 +39,8 @@ import {
     buyAutoBuyCrystal,
     buyAutoBuyRainbow,
     buyAutoBuyPrismatic,
-    buyAutoBuyCelestial
+    buyAutoBuyCelestial,
+    buyAutoBuyComboDecay
 } from './prestige.js';
 
 // Order of upgrades in UI
@@ -176,7 +177,8 @@ const AUTO_BUY_ITEMS = [
     { key: 'crystal', name: 'Кристалл', buy: buyAutoBuyCrystal },
     { key: 'rainbow', name: 'Радуга', buy: buyAutoBuyRainbow },
     { key: 'prismatic', name: 'Призма', buy: buyAutoBuyPrismatic },
-    { key: 'celestial', name: 'Небесный', buy: buyAutoBuyCelestial }
+    { key: 'celestial', name: 'Небесный', buy: buyAutoBuyCelestial },
+    { key: 'comboDecay', name: 'Комбо', buy: buyAutoBuyComboDecay }
 ];
 
 /**

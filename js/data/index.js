@@ -84,7 +84,8 @@ export {
     buyAutoBuyCrystal,
     buyAutoBuyRainbow,
     buyAutoBuyPrismatic,
-    buyAutoBuyCelestial
+    buyAutoBuyCelestial,
+    buyAutoBuyComboDecay
 } from './prestige.js';
 
 // Upgrades - configs and factories
