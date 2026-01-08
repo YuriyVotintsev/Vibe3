@@ -73,18 +73,8 @@ export function getRegularUpgrades() {
     return result;
 }
 
-// Starting capital values by level
+// Starting capital values by level (нелинейные, нужен массив)
 const STARTING_CAPITAL_VALUES = [0, 100, 500, 2000];
-// Growth reduction values by level
-const GROWTH_REDUCTION_VALUES = [0, 0.01, 0.02, 0.03];
-// Combo gain bonus by level
-const COMBO_GAIN_VALUES = [0, 0.5, 1.0, 1.5];
-// Tiers unlocked by level (3 + level, max 7)
-const TIERS_VALUES = [3, 4, 5, 6, 7];
-// Colors by level (6 -> 5 -> 4 -> 3)
-const COLORS_VALUES = [6, 5, 4, 3];
-// Board size by level (5 -> 6 -> 7 -> 8 -> 9)
-const BOARD_SIZE_VALUES = [5, 6, 7, 8, 9];
 
 /**
  * Get prestige upgrades for PrestigeScene
@@ -135,7 +125,7 @@ export function getPrestigeUpgrades() {
                 const current = getGrowthReductionAmount().toFixed(2);
                 const level = PlayerData.prestigeGrowthReduction;
                 if (level >= 3) return `-${current}`;
-                const next = GROWTH_REDUCTION_VALUES[level + 1].toFixed(2);
+                const next = ((level + 1) * 0.01).toFixed(2);
                 return `-${current} (→-${next})`;
             },
             getLevel: () => `${PlayerData.prestigeGrowthReduction}/3`,
@@ -152,7 +142,7 @@ export function getPrestigeUpgrades() {
                 const current = getComboGainBonus().toFixed(1);
                 const level = PlayerData.prestigeComboGain;
                 if (level >= 3) return `+${current}`;
-                const next = COMBO_GAIN_VALUES[level + 1].toFixed(1);
+                const next = ((level + 1) * 0.5).toFixed(1);
                 return `+${current} (→+${next})`;
             },
             getLevel: () => `${PlayerData.prestigeComboGain}/3`,
@@ -187,7 +177,7 @@ export function getPrestigeUpgrades() {
                 const current = getUnlockedTiers();
                 const level = PlayerData.prestigeTiers;
                 if (level >= 4) return `${current}`;
-                const next = TIERS_VALUES[level + 1];
+                const next = current + 1; // 3 + level → 3 + level + 1
                 return `${current} (→${next})`;
             },
             getLevel: () => `${PlayerData.prestigeTiers}/4`,
@@ -204,7 +194,7 @@ export function getPrestigeUpgrades() {
                 const current = getColorCount();
                 const level = PlayerData.prestigeColors;
                 if (level >= 3) return `${current}`;
-                const next = COLORS_VALUES[level + 1];
+                const next = current - 1; // 6 - level → 6 - level - 1
                 return `${current} (→${next})`;
             },
             getLevel: () => `${PlayerData.prestigeColors}/3`,
