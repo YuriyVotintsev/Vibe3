@@ -20,6 +20,7 @@ import { SwapHandler } from './SwapHandler.js';
 import { UIManager } from './UIManager.js';
 import { BombManager } from './BombManager.js';
 import { MatchProcessor } from './MatchProcessor.js';
+import { ComboManager } from './ComboManager.js';
 import { COLORS } from './styles.js';
 
 export class MainScene extends Phaser.Scene {
@@ -48,6 +49,7 @@ export class MainScene extends Phaser.Scene {
         this.uiManager = new UIManager(this);
         this.bombManager = new BombManager(this, context);
         this.matchProcessor = new MatchProcessor(this, context);
+        this.comboManager = new ComboManager();
     }
 
     preload() {
@@ -234,6 +236,10 @@ export class MainScene extends Phaser.Scene {
         this.checkAutoMove(time);
         processAutoBuys();
 
+        // Update combo decay
+        this.comboManager.update(delta);
+        this.uiManager.updateCombo(this.comboManager);
+
         // Update FPS counter (subtle)
         this.fpsText.setText(Math.round(this.game.loop.actualFps));
     }
@@ -242,7 +248,8 @@ export class MainScene extends Phaser.Scene {
         const hadMatches = this.matchProcessor.checkLandedGems(
             this.bombManager,
             this.uiManager,
-            this.lastMatchWasManual
+            this.lastMatchWasManual,
+            this.comboManager
         );
         if (hadMatches) {
             this.lastMatchWasManual = false;
@@ -394,6 +401,7 @@ export class MainScene extends Phaser.Scene {
         this.lastMatchWasManual = false;
         this.swapHandler.clearSelection();
         this.fallManager.resetSpawnTimers(boardSize);
+        this.comboManager.reset();
 
         this.createBoard();
         this.removeInitialMatches();

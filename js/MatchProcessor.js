@@ -46,9 +46,10 @@ export class MatchProcessor {
      * @param {BombManager} bombManager - For bomb spawning
      * @param {UIManager} uiManager - For UI updates
      * @param {boolean} wasManualMove - Whether last move was manual (for bomb spawning)
+     * @param {ComboManager} comboManager - For combo tracking
      * @returns {boolean} Whether matches were found
      */
-    checkLandedGems(bombManager, uiManager, wasManualMove) {
+    checkLandedGems(bombManager, uiManager, wasManualMove, comboManager) {
         if (this.ctx.pendingMatches.length === 0) return false;
 
         this.ctx.pendingMatches.length = 0;
@@ -56,8 +57,13 @@ export class MatchProcessor {
 
         if (matches.length === 0) return false;
 
-        // Award currency for each matched gem
-        this.awardCurrency(matches, uiManager);
+        // Add combo based on match size
+        if (comboManager) {
+            comboManager.addCombo(matches.length);
+        }
+
+        // Award currency for each matched gem (with combo multiplier)
+        this.awardCurrency(matches, uiManager, comboManager);
 
         // Try to spawn bomb if manual move
         if (wasManualMove && matches.length >= 3) {
@@ -77,16 +83,18 @@ export class MatchProcessor {
      * Award currency for matched gems
      * @param {Array} matches - Array of {row, col}
      * @param {UIManager} uiManager - For floating text
+     * @param {ComboManager} comboManager - For combo multiplier
      */
-    awardCurrency(matches, uiManager) {
+    awardCurrency(matches, uiManager, comboManager) {
         const moneyMult = getMoneyMultiplier();
+        const comboMult = comboManager ? comboManager.getMultiplier() : 1;
 
         matches.forEach(({ row, col }) => {
             const gem = this.ctx.gems[row]?.[col];
             if (gem) {
                 const enhancement = gem.getData('enhancement') || ENHANCEMENT.NONE;
                 const enhMultiplier = ENHANCEMENT_MULTIPLIERS[enhancement] || 1;
-                const gemCurrency = enhMultiplier * moneyMult;
+                const gemCurrency = Math.floor(enhMultiplier * moneyMult * comboMult);
 
                 PlayerData.currency += gemCurrency;
                 PlayerData.totalEarned += gemCurrency;

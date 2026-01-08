@@ -23,6 +23,12 @@ import {
     getGrowthReductionAmount,
     getGrowthReductionCost,
     upgradeGrowthReduction,
+    getComboGainBonus,
+    getComboGainCost,
+    upgradeComboGain,
+    getComboEffectMultiplier,
+    getComboEffectCost,
+    upgradeComboEffect,
     getAutoBuyCost,
     buyAutoBuyAutoMove,
     buyAutoBuyBombChance,
@@ -38,7 +44,7 @@ import {
 
 // Order of upgrades in UI
 const REGULAR_UPGRADE_ORDER = [
-    'autoMove', 'bombChance', 'bombRadius',
+    'autoMove', 'comboDecay', 'bombChance', 'bombRadius',
     'bronze', 'silver', 'gold', 'crystal',
     'rainbow', 'prismatic', 'celestial'
 ];
@@ -98,6 +104,29 @@ export function getPrestigeUpgrades() {
                 return cost !== null && prestigeCurrency() >= cost;
             },
             onBuy: () => upgradeGrowthReduction()
+        },
+        // Combo upgrades
+        {
+            getName: () => 'Комбо+',
+            getValue: () => `+${getComboGainBonus().toFixed(1)}`,
+            getLevel: () => `${PlayerData.prestigeComboGain}/3`,
+            getCost: () => getComboGainCost(),
+            canAfford() {
+                const cost = this.getCost();
+                return cost !== null && prestigeCurrency() >= cost;
+            },
+            onBuy: () => upgradeComboGain()
+        },
+        {
+            getName: () => 'Комбо×',
+            getValue: () => `×${getComboEffectMultiplier().toFixed(2)}`,
+            getLevel: () => `${PlayerData.prestigeComboEffect}/3`,
+            getCost: () => getComboEffectCost(),
+            canAfford() {
+                const cost = this.getCost();
+                return cost !== null && prestigeCurrency() >= cost;
+            },
+            onBuy: () => upgradeComboEffect()
         },
         // Original upgrades
         {

@@ -33,6 +33,17 @@ export function getGrowthReductionAmount() {
     return PlayerData.prestigeGrowthReduction * 0.01;
 }
 
+// Combo bonuses from prestige
+export function getComboGainBonus() {
+    // +0.5 combo per match per level: 0, 0.5, 1.0, 1.5
+    return PlayerData.prestigeComboGain * 0.5;
+}
+
+export function getComboEffectMultiplier() {
+    // +25% combo effect per level: 1.0, 1.25, 1.5, 1.75
+    return 1 + PlayerData.prestigeComboEffect * 0.25;
+}
+
 // === PRESTIGE BALANCE v4: High income economy ===
 // IMPORTANT: Currency resets to 0 after each prestige!
 // Coins are earned fresh each run, not cumulative.
@@ -133,6 +144,17 @@ const PRESTIGE_UPGRADE_CONFIGS = {
         property: 'prestigeGrowthReduction',
         getCost: () => [3, 6, 10][PlayerData.prestigeGrowthReduction] || null,
         maxLevel: 3
+    },
+    // Combo prestige upgrades
+    comboGain: {
+        property: 'prestigeComboGain',
+        getCost: () => [3, 6, 10][PlayerData.prestigeComboGain] || null,
+        maxLevel: 3
+    },
+    comboEffect: {
+        property: 'prestigeComboEffect',
+        getCost: () => [4, 8, 12][PlayerData.prestigeComboEffect] || null,
+        maxLevel: 3
     }
 };
 
@@ -166,6 +188,12 @@ export const upgradeGrowthReduction = () => performPrestigeUpgrade(PRESTIGE_UPGR
 export const getStartingCapitalCost = () => PRESTIGE_UPGRADE_CONFIGS.startingCapital.getCost();
 export const getCostReductionCost = () => PRESTIGE_UPGRADE_CONFIGS.costReduction.getCost();
 export const getGrowthReductionCost = () => PRESTIGE_UPGRADE_CONFIGS.growthReduction.getCost();
+export const getComboGainCost = () => PRESTIGE_UPGRADE_CONFIGS.comboGain.getCost();
+export const getComboEffectCost = () => PRESTIGE_UPGRADE_CONFIGS.comboEffect.getCost();
+
+// Combo upgrade functions
+export const upgradeComboGain = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.comboGain);
+export const upgradeComboEffect = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.comboEffect);
 
 // ========== AUTO-BUY UNLOCKS ==========
 // v4: Higher costs (~2x) to match increased income

@@ -159,6 +159,20 @@ const UPGRADE_CONFIGS = {
         getValue: () => PlayerData.celestialChance,
         getLevel: () => PlayerData.celestialChance,
         getMaxLevel: () => 100
+    },
+    comboDecay: {
+        property: 'comboDecayReduction',
+        name: 'Комбо',
+        unit: '%',
+        enhancement: null,  // Always visible
+        baseCost: 100,
+        growthRate: 1.4,
+        step: 5,            // 5% reduction per level
+        min: 0,
+        max: 50,            // Max 50% decay reduction
+        getValue: () => PlayerData.comboDecayReduction,
+        getLevel: () => PlayerData.comboDecayReduction / 5,
+        getMaxLevel: () => 50 / 5
     }
 };
 

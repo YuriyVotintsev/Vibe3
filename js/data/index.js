@@ -65,6 +65,13 @@ export {
     getGrowthReductionAmount,
     getGrowthReductionCost,
     upgradeGrowthReduction,
+    // Combo prestige upgrades
+    getComboGainBonus,
+    getComboGainCost,
+    upgradeComboGain,
+    getComboEffectMultiplier,
+    getComboEffectCost,
+    upgradeComboEffect,
     // Auto-buy
     getAutoBuyCost,
     AUTO_BUY_COSTS,

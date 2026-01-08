@@ -38,6 +38,7 @@ export class UIManager {
         this.messageText = null;
         this.prestigeText = null;
         this.fullscreenBtn = null;
+        this.comboText = null;
     }
 
     /**
@@ -74,6 +75,13 @@ export class UIManager {
             fontFamily: 'Arial Black',
             color: COLORS.text.white
         }).setOrigin(0.5);
+
+        // Combo display (left side of header)
+        this.comboText = scene.add.text(45, 42, '', {
+            fontSize: FONT_SIZE['2xl'],
+            color: '#ff6b6b',
+            fontStyle: 'bold'
+        }).setOrigin(0, 0.5).setAlpha(0);
 
         // Currency card - same size as UpgradesScene (25px padding, 55px height)
         const cardY = 75;
@@ -244,6 +252,21 @@ export class UIManager {
      */
     updateCurrency() {
         this.currencyText.setText(`💰 ${formatNumber(PlayerData.currency)}`);
+    }
+
+    /**
+     * Update combo display
+     * @param {ComboManager} comboManager - The combo manager
+     */
+    updateCombo(comboManager) {
+        const combo = comboManager.getCombo();
+        if (combo > 0) {
+            const mult = comboManager.getMultiplier();
+            this.comboText.setText(`🔥${combo} ×${mult.toFixed(1)}`);
+            this.comboText.setAlpha(1);
+        } else {
+            this.comboText.setAlpha(0);
+        }
     }
 
     /**
