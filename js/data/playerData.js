@@ -47,6 +47,9 @@ const DEFAULTS = {
     prismaticChance: 0,
     celestialChance: 0,
 
+    // Combo system
+    comboDecayReduction: 0, // Reduces combo decay rate
+
     // Prestige
     prestigeCurrency: 0,
     totalPrestigeCoinsEarned: 0,  // lifetime total, never decreases
@@ -54,6 +57,11 @@ const DEFAULTS = {
     prestigeTiers: 0,
     prestigeColors: 0,
     prestigeArena: 0,
+    prestigeStartingCapital: 0,   // Starting currency after prestige
+    prestigeCostReduction: 0,     // % reduction on upgrade costs
+    prestigeGrowthReduction: 0,   // Reduction of price growth rate
+    prestigeComboGain: 0,         // Extra combo per match
+    prestigeComboEffect: 0,       // Stronger combo multiplier
 
     // Auto-buy flags
     autoBuyAutoMove: false,
@@ -65,14 +73,16 @@ const DEFAULTS = {
     autoBuyCrystal: false,
     autoBuyRainbow: false,
     autoBuyPrismatic: false,
-    autoBuyCelestial: false
+    autoBuyCelestial: false,
+    autoBuyComboDecay: false
 };
 
 // Properties that reset on prestige
 const PRESTIGE_RESET_KEYS = [
     'currency', 'totalEarned', 'autoMoveDelay', 'bombChance', 'bombRadius',
     'bronzeChance', 'silverChance', 'goldChance', 'crystalChance',
-    'rainbowChance', 'prismaticChance', 'celestialChance'
+    'rainbowChance', 'prismaticChance', 'celestialChance',
+    'comboDecayReduction'
 ];
 
 // ========== REACTIVE PLAYER DATA ==========

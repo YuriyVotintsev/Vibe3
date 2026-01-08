@@ -31,12 +31,20 @@
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
+
+        /* Crisp rendering for scaled canvas */
+        #game-container canvas {
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
     </style>
 </head>
 <body>
     <div id="game-container"></div>
 
-    <div id="html-version" style="position:fixed;bottom:10px;left:10px;color:#666;font-size:12px;font-family:monospace;z-index:9999;">0.0.111-html</div>
+    <div id="html-version" style="position:fixed;bottom:10px;left:10px;color:#666;font-size:12px;font-family:monospace;z-index:9999;">0.0.135-html</div>
 
     <script type="module">
         import { BOARD_TOTAL_SIZE } from './js/config.js';
@@ -48,10 +56,15 @@
         const gameConfig = {
             type: Phaser.AUTO,
             width: BOARD_TOTAL_SIZE + 100,
-            height: BOARD_TOTAL_SIZE + 220,
+            height: Math.round((BOARD_TOTAL_SIZE + 220) * 1.5),
             parent: 'game-container',
             backgroundColor: '#1a1a2e',
             scene: [MainScene, SettingsScene, UpgradesScene, PrestigeScene],
+            render: {
+                antialias: false,
+                pixelArt: false,
+                roundPixels: true
+            },
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH

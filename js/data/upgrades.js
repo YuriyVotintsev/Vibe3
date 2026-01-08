@@ -3,6 +3,7 @@
 import { PlayerData, savePlayerData } from './playerData.js';
 import { GameSettings } from './gameSettings.js';
 import { ENHANCEMENT } from './enhancements.js';
+import { getCostReductionMultiplier, getGrowthReductionAmount } from './prestige.js';
 
 // ========== UPGRADE CONFIGURATIONS ==========
 
@@ -15,23 +16,22 @@ import { ENHANCEMENT } from './enhancements.js';
 const UPGRADE_CONFIGS = {
     autoMove: {
         property: 'autoMoveDelay',
-        name: 'Авто-ход',
+        name: 'Скорость автохода',
         unit: 'с',
         enhancement: null,
         baseCost: 500,
-        growthRate: 1.236,  // 500 -> 1M over 37 levels
+        growthRate: 1.236,
         step: null,         // special: 10% reduction per level
-        min: 100,
+        min: 10,            // 0.01s minimum (practically infinite)
         max: 5000,
-        getValue: () => (PlayerData.autoMoveDelay / 1000).toFixed(1),
+        getValue: () => (PlayerData.autoMoveDelay / 1000).toFixed(2),
+        getNextValue: () => (Math.max(10, PlayerData.autoMoveDelay * 0.9) / 1000).toFixed(2),
         getLevel: () => {
-            // Each level = 10% faster: delay = 5000 * 0.9^level
             const delay = PlayerData.autoMoveDelay;
             if (delay >= 5000) return 0;
-            if (delay <= 100) return 37;
             return Math.round(Math.log(5000 / delay) / Math.log(1 / 0.9));
         },
-        getMaxLevel: () => 37
+        getMaxLevel: () => '∞'
     },
     bombChance: {
         property: 'bombChance',
@@ -49,7 +49,7 @@ const UPGRADE_CONFIGS = {
     },
     bombRadius: {
         property: 'bombRadius',
-        name: 'Радиус',
+        name: 'Радиус бомбы',
         unit: '',
         enhancement: null,
         baseCost: 2000,     // v4: ~2.5x increase
@@ -63,7 +63,7 @@ const UPGRADE_CONFIGS = {
     },
     bronze: {
         property: 'bronzeChance',
-        name: 'Бронза',
+        name: 'обычн.→бронза',
         unit: '%',
         enhancement: ENHANCEMENT.BRONZE,
         baseCost: 20,       // v4: unchanged! First buy stays quick
@@ -77,7 +77,7 @@ const UPGRADE_CONFIGS = {
     },
     silver: {
         property: 'silverChance',
-        name: 'Серебро',
+        name: 'бронза→серебро',
         unit: '%',
         enhancement: ENHANCEMENT.SILVER,
         baseCost: 200,      // v4: 4x (income ~4x higher with bronze)
@@ -91,7 +91,7 @@ const UPGRADE_CONFIGS = {
     },
     gold: {
         property: 'goldChance',
-        name: 'Золото',
+        name: 'серебро→золото',
         unit: '%',
         enhancement: ENHANCEMENT.GOLD,
         baseCost: 600,      // v4: 6x (income ~6x with silver)
@@ -105,7 +105,7 @@ const UPGRADE_CONFIGS = {
     },
     crystal: {
         property: 'crystalChance',
-        name: 'Кристалл',
+        name: 'золото→кристалл',
         unit: '%',
         enhancement: ENHANCEMENT.CRYSTAL,
         baseCost: 2000,     // v4: 10x (income ~10x with gold)
@@ -119,7 +119,7 @@ const UPGRADE_CONFIGS = {
     },
     rainbow: {
         property: 'rainbowChance',
-        name: 'Радуга',
+        name: 'кристалл→радуга',
         unit: '%',
         enhancement: ENHANCEMENT.RAINBOW,
         baseCost: 5000,     // v4: 12x (income ~12x with crystal)
@@ -133,7 +133,7 @@ const UPGRADE_CONFIGS = {
     },
     prismatic: {
         property: 'prismaticChance',
-        name: 'Призма',
+        name: 'радуга→призма',
         unit: '%',
         enhancement: ENHANCEMENT.PRISMATIC,
         baseCost: 15000,    // v4: 18x (income ~18x with rainbow)
@@ -147,7 +147,7 @@ const UPGRADE_CONFIGS = {
     },
     celestial: {
         property: 'celestialChance',
-        name: 'Небесный',
+        name: 'призма→небесный',
         unit: '%',
         enhancement: ENHANCEMENT.CELESTIAL,
         baseCost: 50000,    // v4: 33x (income ~25x with prismatic)
@@ -158,6 +158,28 @@ const UPGRADE_CONFIGS = {
         getValue: () => PlayerData.celestialChance,
         getLevel: () => PlayerData.celestialChance,
         getMaxLevel: () => 100
+    },
+    comboDecay: {
+        property: 'comboDecayReduction',
+        name: 'Угасание комбо',
+        unit: '%/с',
+        enhancement: null,  // Always visible
+        baseCost: 100,
+        growthRate: 1.5,
+        step: 10,           // 10% multiplicative reduction per level
+        min: 0,
+        max: Infinity,      // Infinite upgrade
+        getValue: () => {
+            // Base decay 25%/s * 0.9^level
+            const level = PlayerData.comboDecayReduction / 10;
+            return (25 * Math.pow(0.9, level)).toFixed(2);
+        },
+        getNextValue: () => {
+            const level = PlayerData.comboDecayReduction / 10;
+            return (25 * Math.pow(0.9, level + 1)).toFixed(2);
+        },
+        getLevel: () => PlayerData.comboDecayReduction / 10,
+        getMaxLevel: () => '∞'
     }
 };
 
@@ -166,13 +188,30 @@ export { UPGRADE_CONFIGS };
 
 // ========== GENERIC UPGRADE FUNCTIONS ==========
 
+// Enhanced gem upgrade keys that get growth reduction
+const ENHANCED_GEM_KEYS = ['bronze', 'silver', 'gold', 'crystal', 'rainbow', 'prismatic', 'celestial'];
+
 function getUpgradeCost(config) {
     const level = config.getLevel();
-    return Math.floor(config.baseCost * Math.pow(config.growthRate, level) * GameSettings.priceMultiplier);
+
+    // Apply growth reduction to enhanced gem upgrades (min 1.05)
+    let growthRate = config.growthRate;
+    const configKey = Object.keys(UPGRADE_CONFIGS).find(k => UPGRADE_CONFIGS[k] === config);
+    if (ENHANCED_GEM_KEYS.includes(configKey)) {
+        const reduction = getGrowthReductionAmount();
+        growthRate = Math.max(1.05, growthRate - reduction);
+    }
+
+    // Apply cost reduction multiplier
+    const costReduction = getCostReductionMultiplier();
+
+    return Math.floor(config.baseCost * Math.pow(growthRate, level) * GameSettings.priceMultiplier * costReduction);
 }
 
 function isMaxed(config) {
-    // autoMove is special: decreases from max to min, so only check min
+    // Infinite upgrades never max out
+    if (config.max === Infinity) return false;
+    // autoMove is special: decreases from max to min
     if (config.property === 'autoMoveDelay') {
         return PlayerData.autoMoveDelay <= config.min;
     }
@@ -190,7 +229,7 @@ function performUpgrade(config) {
     // Special handling for autoMove (10% reduction per level)
     if (config.property === 'autoMoveDelay') {
         const newDelay = Math.round(PlayerData.autoMoveDelay * 0.9);
-        PlayerData.autoMoveDelay = Math.max(config.min, newDelay);
+        PlayerData.autoMoveDelay = Math.max(10, newDelay);
     } else {
         PlayerData[config.property] = Math.min(config.max, PlayerData[config.property] + config.step);
     }
@@ -206,11 +245,26 @@ export function createUpgradeForUI(configKey, currencyGetter = () => PlayerData.
     const config = UPGRADE_CONFIGS[configKey];
     if (!config) throw new Error(`Unknown upgrade: ${configKey}`);
 
+    // Calculate next value: use config.getNextValue if exists, otherwise compute from step
+    const getNextValue = () => {
+        if (config.getNextValue) return config.getNextValue();
+        // Default: current + step (capped at max)
+        const current = PlayerData[config.property];
+        const next = Math.min(config.max, current + config.step);
+        return next;
+    };
+
     return {
         key: configKey,
         config,
         getName: () => config.name,
-        getValue: () => `${config.getValue()}${config.unit}`,
+        getValue: () => {
+            const current = config.getValue();
+            const unit = config.unit;
+            if (isMaxed(config)) return `${current}${unit}`;
+            const next = getNextValue();
+            return `${current}${unit} (→${next}${unit})`;
+        },
         getLevel: () => `${config.getLevel()}/${config.getMaxLevel()}`,
         // Tell, Don't Ask: getCost returns null if maxed (tells you the state)
         getCost: () => isMaxed(config) ? null : getUpgradeCost(config),
@@ -280,7 +334,8 @@ const AUTO_BUY_KEYS = {
     crystal: 'autoBuyCrystal',
     rainbow: 'autoBuyRainbow',
     prismatic: 'autoBuyPrismatic',
-    celestial: 'autoBuyCelestial'
+    celestial: 'autoBuyCelestial',
+    comboDecay: 'autoBuyComboDecay'
 };
 
 export function processAutoBuys() {

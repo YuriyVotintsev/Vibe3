@@ -3,8 +3,6 @@
 import {
     GameSettings,
     BOARD_TOTAL_SIZE,
-    BOARD_OFFSET_X,
-    BOARD_OFFSET_Y,
     GEM_STATE,
     PlayerData,
     loadPlayerData,
@@ -14,7 +12,7 @@ import {
     rollEnhancement,
     processAutoBuys
 } from './config.js';
-import { getCellSize } from './utils.js';
+import { getCellSize, getLayout } from './utils.js';
 import { findValidMoves, getValidColors, shuffleArray } from './BoardLogic.js';
 import { createGemTextures } from './GemRenderer.js';
 import { FallManager } from './FallManager.js';
@@ -22,6 +20,7 @@ import { SwapHandler } from './SwapHandler.js';
 import { UIManager } from './UIManager.js';
 import { BombManager } from './BombManager.js';
 import { MatchProcessor } from './MatchProcessor.js';
+import { ComboManager } from './ComboManager.js';
 import { COLORS } from './styles.js';
 
 export class MainScene extends Phaser.Scene {
@@ -50,6 +49,7 @@ export class MainScene extends Phaser.Scene {
         this.uiManager = new UIManager(this);
         this.bombManager = new BombManager(this, context);
         this.matchProcessor = new MatchProcessor(this, context);
+        this.comboManager = new ComboManager();
     }
 
     preload() {
@@ -59,20 +59,23 @@ export class MainScene extends Phaser.Scene {
     create() {
         const boardSize = GameSettings.boardSize;
 
+        // Calculate adaptive layout
+        this.layout = getLayout(this.cameras.main.width, this.cameras.main.height);
+
         // Background
         this.add.rectangle(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            this.cameras.main.width,
-            this.cameras.main.height,
+            this.layout.centerX,
+            this.layout.canvasHeight / 2,
+            this.layout.canvasWidth,
+            this.layout.canvasHeight,
             COLORS.bgDark
         );
 
         // Board background
         const boardBgSize = BOARD_TOTAL_SIZE + 20;
         this.add.rectangle(
-            BOARD_OFFSET_X + BOARD_TOTAL_SIZE / 2,
-            BOARD_OFFSET_Y + BOARD_TOTAL_SIZE / 2,
+            this.layout.boardOffsetX + BOARD_TOTAL_SIZE / 2,
+            this.layout.boardOffsetY + BOARD_TOTAL_SIZE / 2,
             boardBgSize,
             boardBgSize,
             COLORS.bgOverlay,
@@ -82,8 +85,8 @@ export class MainScene extends Phaser.Scene {
         // Gem mask
         const maskShape = this.make.graphics();
         maskShape.fillRect(
-            BOARD_OFFSET_X - 10,
-            BOARD_OFFSET_Y - 10,
+            this.layout.boardOffsetX - 10,
+            this.layout.boardOffsetY - 10,
             BOARD_TOTAL_SIZE + 20,
             BOARD_TOTAL_SIZE + 20
         );
@@ -113,12 +116,11 @@ export class MainScene extends Phaser.Scene {
 
         this.fallManager.initSpawnTimers(boardSize);
 
-        // FPS counter for debugging
-        this.fpsText = this.add.text(10, 10, 'FPS: --', {
-            fontSize: '14px',
-            color: '#00ff00',
-            backgroundColor: '#000000'
-        }).setDepth(1000);
+        // FPS counter - subtle, bottom right
+        this.fpsText = this.add.text(this.layout.canvasWidth - 10, this.layout.canvasHeight - 10, '', {
+            fontSize: '12px',
+            color: '#666666'
+        }).setOrigin(1, 1).setDepth(1000);
 
         this.events.on('shutdown', this.shutdown, this);
         this.events.on('resume', this.onResume, this);
@@ -195,8 +197,8 @@ export class MainScene extends Phaser.Scene {
         const cellSize = getCellSize();
         const gap = GameSettings.gap;
         return {
-            x: BOARD_OFFSET_X + col * (cellSize + gap) + cellSize / 2,
-            y: BOARD_OFFSET_Y + row * (cellSize + gap) + cellSize / 2
+            x: this.layout.boardOffsetX + col * (cellSize + gap) + cellSize / 2,
+            y: this.layout.boardOffsetY + row * (cellSize + gap) + cellSize / 2
         };
     }
 
@@ -234,15 +236,20 @@ export class MainScene extends Phaser.Scene {
         this.checkAutoMove(time);
         processAutoBuys();
 
-        // Update FPS counter
-        this.fpsText.setText(`FPS: ${Math.round(this.game.loop.actualFps)}`);
+        // Update combo decay
+        this.comboManager.update(delta);
+        this.uiManager.updateCombo(this.comboManager);
+
+        // Update FPS counter (subtle)
+        this.fpsText.setText(Math.round(this.game.loop.actualFps));
     }
 
     checkLandedGems() {
         const hadMatches = this.matchProcessor.checkLandedGems(
             this.bombManager,
             this.uiManager,
-            this.lastMatchWasManual
+            this.lastMatchWasManual,
+            this.comboManager
         );
         if (hadMatches) {
             this.lastMatchWasManual = false;
@@ -394,6 +401,7 @@ export class MainScene extends Phaser.Scene {
         this.lastMatchWasManual = false;
         this.swapHandler.clearSelection();
         this.fallManager.resetSpawnTimers(boardSize);
+        this.comboManager.reset();
 
         this.createBoard();
         this.removeInitialMatches();

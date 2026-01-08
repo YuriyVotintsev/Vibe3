@@ -1,8 +1,6 @@
 // UIManager.js - Handles UI elements for MainScene
 
 import {
-    BOARD_TOTAL_SIZE,
-    BOARD_OFFSET_Y,
     JS_VERSION,
     PlayerData,
     ENHANCEMENT,
@@ -39,62 +37,98 @@ export class UIManager {
         this.currencyText = null;
         this.messageText = null;
         this.prestigeText = null;
+        this.fullscreenBtn = null;
+        this.comboText = null;
     }
 
     /**
      * Create all UI elements
      */
     create() {
-        const scene = this.scene;
-        const cx = scene.cameras.main.width / 2;
+        const layout = this.scene.layout;
 
-        this.createHeader(cx);
-        this.createMessageText(cx);
-        this.createButtons(cx);
-        this.createVersionText();
+        this.createHeader(layout);
+        this.createMessageText(layout);
+        this.createButtons(layout);
+        this.createVersionText(layout);
     }
 
     /**
      * Create header panel with currency
      */
-    createHeader(cx) {
+    createHeader(layout) {
         const scene = this.scene;
+        const cx = layout.centerX;
+        const W = layout.canvasWidth;
+        const padding = 15;
 
-        // Header panel background
+        // Header panel background - styled dark with colored border
         const headerBg = scene.add.graphics();
-        headerBg.fillStyle(COLORS.bgHeader, 0.95);
-        headerBg.fillRoundedRect(10, 8, scene.cameras.main.width - 20, 100, 15);
-        headerBg.lineStyle(2, COLORS.secondary, 0.5);
-        headerBg.strokeRoundedRect(10, 8, scene.cameras.main.width - 20, 100, 15);
+        headerBg.fillStyle(COLORS.bgPanel, 0.98);
+        headerBg.fillRoundedRect(padding, padding, W - padding * 2, 100, RADIUS['2xl']);
+        headerBg.lineStyle(2, COLORS.primary, 0.8);
+        headerBg.strokeRoundedRect(padding, padding, W - padding * 2, 100, RADIUS['2xl']);
 
-        // Title
-        scene.add.text(cx, 35, 'MATCH-3', {
-            fontSize: FONT_SIZE['5xl'],
+        // Title - prominent
+        scene.add.text(cx, 42, '💎 MATCH-3', {
+            fontSize: FONT_SIZE['4xl'],
             fontFamily: 'Arial Black',
             color: COLORS.text.white
-        }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
+        }).setOrigin(0.5);
 
-        // Currency stat card
-        const statY = 80;
-        const statWidth = 180;
-        scene.add.graphics()
-            .fillStyle(COLORS.warning, 0.25)
-            .fillRoundedRect(cx - statWidth / 2, statY - 22, statWidth, 44, RADIUS.lg);
-
-        scene.add.text(cx - 50, statY, '💰', { fontSize: FONT_SIZE['4xl'] }).setOrigin(0.5);
-
-        this.currencyText = scene.add.text(cx + 5, statY, formatNumber(PlayerData.currency), {
-            fontSize: FONT_SIZE['3xl'],
-            color: COLORS.text.gold,
+        // Combo display (left side of header)
+        this.comboText = scene.add.text(45, 42, '', {
+            fontSize: FONT_SIZE['2xl'],
+            color: '#ff6b6b',
             fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
+        }).setOrigin(0, 0.5).setAlpha(0);
+
+        // Currency card - same size as UpgradesScene (25px padding, 55px height)
+        const cardY = 75;
+        const currencyCard = scene.add.graphics();
+        currencyCard.fillStyle(0x1a3a2a, 1); // dark green like UpgradesScene
+        currencyCard.fillRoundedRect(25, cardY - 5, W - 50, 55, RADIUS.lg);
+        currencyCard.lineStyle(2, COLORS.success, 0.6);
+        currencyCard.strokeRoundedRect(25, cardY - 5, W - 50, 55, RADIUS.lg);
+
+        // Currency text - centered, bright gold
+        this.currencyText = scene.add.text(cx, cardY + 20, `💰 ${formatNumber(PlayerData.currency)}`, {
+            fontSize: FONT_SIZE['4xl'],
+            color: '#ffd700',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        // Fullscreen toggle button (right side of header)
+        this.fullscreenBtn = new Button(scene, {
+            x: W - 50,
+            y: 42,
+            width: 44,
+            height: 44,
+            text: '⛶',
+            style: 'default',
+            fontSize: FONT_SIZE['2xl'],
+            onClick: () => this.toggleFullscreen()
+        });
+    }
+
+    /**
+     * Toggle fullscreen mode
+     */
+    toggleFullscreen() {
+        if (this.scene.scale.isFullscreen) {
+            this.scene.scale.stopFullscreen();
+            this.fullscreenBtn.setText('⛶');
+        } else {
+            this.scene.scale.startFullscreen();
+            this.fullscreenBtn.setText('✕');
+        }
     }
 
     /**
      * Create message text area
      */
-    createMessageText(cx) {
-        this.messageText = this.scene.add.text(cx, BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 25, '', {
+    createMessageText(layout) {
+        this.messageText = this.scene.add.text(layout.centerX, layout.messageY, '', {
             fontSize: FONT_SIZE.xl,
             color: COLORS.text.green,
             fontStyle: 'bold'
@@ -104,22 +138,40 @@ export class UIManager {
     /**
      * Create bottom panel buttons
      */
-    createButtons(cx) {
+    createButtons(layout) {
         const scene = this.scene;
-        const btnY = BOARD_OFFSET_Y + BOARD_TOTAL_SIZE + 70;
-        const btnWidth = 100;
-        const btnHeight = 48;
-        const btnSpacing = 110;
+        const W = layout.canvasWidth;
+        const H = layout.canvasHeight;
+        const padding = 15;
+
+        // Bottom panel background - equal padding on all sides
+        const panelHeight = 70;
+        const panelY = H - padding - panelHeight;
+        const btnY = panelY + panelHeight / 2;
+
+        const bottomPanel = scene.add.graphics();
+        bottomPanel.fillStyle(COLORS.bgPanel, 0.95);
+        bottomPanel.fillRoundedRect(padding, panelY, W - padding * 2, panelHeight, RADIUS['2xl']);
+        bottomPanel.lineStyle(2, COLORS.borderLight, 0.5);
+        bottomPanel.strokeRoundedRect(padding, panelY, W - padding * 2, panelHeight, RADIUS['2xl']);
+
+        // Button sizing - larger, touch-friendly
+        const gap = 10;
+        const totalWidth = W - 60;
+        const btnWidth = Math.floor((totalWidth - gap * 2) / 3);
+        const btnHeight = 52;
+        const startX = 30;
 
         // Upgrades button
         new Button(scene, {
-            x: cx - btnSpacing,
+            x: startX + btnWidth / 2,
             y: btnY,
             width: btnWidth,
             height: btnHeight,
             text: '⬆️ Апгрейд',
             style: 'primary',
-            fontSize: FONT_SIZE.base,
+            radius: RADIUS.xl,
+            fontSize: FONT_SIZE.xl,
             onClick: () => {
                 if (!scene.scene.isActive('UpgradesScene')) {
                     scene.scene.launch('UpgradesScene');
@@ -129,13 +181,14 @@ export class UIManager {
 
         // Prestige button
         const prestigeBtn = new Button(scene, {
-            x: cx,
+            x: startX + btnWidth + gap + btnWidth / 2,
             y: btnY,
             width: btnWidth,
             height: btnHeight,
             text: this.getPrestigeButtonText(),
             style: 'warning',
-            fontSize: FONT_SIZE.base,
+            radius: RADIUS.xl,
+            fontSize: FONT_SIZE.xl,
             onClick: () => {
                 if (!scene.scene.isActive('PrestigeScene')) {
                     scene.scene.launch('PrestigeScene');
@@ -146,13 +199,14 @@ export class UIManager {
 
         // Settings button
         new Button(scene, {
-            x: cx + btnSpacing,
+            x: startX + (btnWidth + gap) * 2 + btnWidth / 2,
             y: btnY,
             width: btnWidth,
             height: btnHeight,
             text: '⚙️ Опции',
             style: 'secondary',
-            fontSize: FONT_SIZE.base,
+            radius: RADIUS.xl,
+            fontSize: FONT_SIZE.xl,
             onClick: () => {
                 if (!scene.scene.isActive('SettingsScene')) {
                     scene.scene.launch('SettingsScene');
@@ -164,8 +218,8 @@ export class UIManager {
     /**
      * Create version text
      */
-    createVersionText() {
-        this.scene.add.text(10, this.scene.cameras.main.height - 10, JS_VERSION, {
+    createVersionText(layout) {
+        this.scene.add.text(10, layout.canvasHeight - 10, JS_VERSION, {
             fontSize: FONT_SIZE.base,
             color: COLORS.text.muted,
             fontStyle: 'bold'
@@ -197,7 +251,22 @@ export class UIManager {
      * Update currency display
      */
     updateCurrency() {
-        this.currencyText.setText(formatNumber(PlayerData.currency));
+        this.currencyText.setText(`💰 ${formatNumber(PlayerData.currency)}`);
+    }
+
+    /**
+     * Update combo display
+     * @param {ComboManager} comboManager - The combo manager
+     */
+    updateCombo(comboManager) {
+        const combo = comboManager.getCombo();
+        if (combo > 0) {
+            const mult = comboManager.getMultiplier();
+            this.comboText.setText(`🔥${combo} ×${mult.toFixed(1)}`);
+            this.comboText.setAlpha(1);
+        } else {
+            this.comboText.setAlpha(0);
+        }
     }
 
     /**

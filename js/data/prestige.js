@@ -17,6 +17,33 @@ export function getColorCount() {
     return Math.max(3, 6 - PlayerData.prestigeColors);
 }
 
+// New prestige bonuses
+export function getStartingCapital() {
+    const amounts = [0, 100, 500, 2000];
+    return amounts[PlayerData.prestigeStartingCapital] || 0;
+}
+
+export function getCostReductionMultiplier() {
+    // 10% multiplicative reduction per level: 1.0, 0.9, 0.81, 0.729...
+    return Math.pow(0.9, PlayerData.prestigeCostReduction);
+}
+
+export function getGrowthReductionAmount() {
+    // 0.01 reduction per level
+    return PlayerData.prestigeGrowthReduction * 0.01;
+}
+
+// Combo bonuses from prestige
+export function getComboGainBonus() {
+    // +0.5 combo per match per level: 0, 0.5, 1.0, 1.5
+    return PlayerData.prestigeComboGain * 0.5;
+}
+
+export function getComboEffectMultiplier() {
+    // 10% multiplicative increase per level: 1.0, 1.1, 1.21, 1.331...
+    return Math.pow(1.1, PlayerData.prestigeComboEffect);
+}
+
 // === PRESTIGE BALANCE v4: High income economy ===
 // IMPORTANT: Currency resets to 0 after each prestige!
 // Coins are earned fresh each run, not cumulative.
@@ -70,6 +97,12 @@ export function performPrestige() {
         PlayerData[key] = getDefaultValue(key);
     }
 
+    // Apply starting capital bonus
+    const startingCapital = getStartingCapital();
+    if (startingCapital > 0) {
+        PlayerData.currency = startingCapital;
+    }
+
     savePlayerData();
     return true;
 }
@@ -95,14 +128,44 @@ const PRESTIGE_UPGRADE_CONFIGS = {
         property: 'prestigeArena',
         getCost: () => (PlayerData.prestigeArena + 1) * 3,
         maxLevel: 4
+    },
+    // New early-game upgrades
+    startingCapital: {
+        property: 'prestigeStartingCapital',
+        getCost: () => [2, 4, 6][PlayerData.prestigeStartingCapital] || null,
+        maxLevel: 3
+    },
+    costReduction: {
+        property: 'prestigeCostReduction',
+        getCost: () => Math.floor(2 * Math.pow(1.8, PlayerData.prestigeCostReduction)),
+        maxLevel: Infinity
+    },
+    growthReduction: {
+        property: 'prestigeGrowthReduction',
+        getCost: () => [3, 6, 10][PlayerData.prestigeGrowthReduction] || null,
+        maxLevel: 3
+    },
+    // Combo prestige upgrades
+    comboGain: {
+        property: 'prestigeComboGain',
+        getCost: () => [3, 6, 10][PlayerData.prestigeComboGain] || null,
+        maxLevel: 3
+    },
+    comboEffect: {
+        property: 'prestigeComboEffect',
+        getCost: () => Math.floor(4 * Math.pow(1.8, PlayerData.prestigeComboEffect)),
+        maxLevel: Infinity
     }
 };
 
 function performPrestigeUpgrade(config) {
     const cost = config.getCost();
-    const currentLevel = PlayerData[config.property];
+    if (cost === null) return false; // maxed out
 
-    if (PlayerData.prestigeCurrency >= cost && currentLevel < config.maxLevel) {
+    const currentLevel = PlayerData[config.property];
+    const isInfinite = config.maxLevel === Infinity;
+
+    if (PlayerData.prestigeCurrency >= cost && (isInfinite || currentLevel < config.maxLevel)) {
         PlayerData.prestigeCurrency -= cost;
         PlayerData[config.property] += 1;
         savePlayerData();
@@ -120,6 +183,20 @@ export const getPrestigeArenaCost = () => PRESTIGE_UPGRADE_CONFIGS.arena.getCost
 export const upgradePrestigeTiers = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.tiers);
 export const upgradePrestigeColors = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.colors);
 export const upgradePrestigeArena = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.arena);
+export const upgradeStartingCapital = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.startingCapital);
+export const upgradeCostReduction = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.costReduction);
+export const upgradeGrowthReduction = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.growthReduction);
+
+// Exported cost functions for new upgrades
+export const getStartingCapitalCost = () => PRESTIGE_UPGRADE_CONFIGS.startingCapital.getCost();
+export const getCostReductionCost = () => PRESTIGE_UPGRADE_CONFIGS.costReduction.getCost();
+export const getGrowthReductionCost = () => PRESTIGE_UPGRADE_CONFIGS.growthReduction.getCost();
+export const getComboGainCost = () => PRESTIGE_UPGRADE_CONFIGS.comboGain.getCost();
+export const getComboEffectCost = () => PRESTIGE_UPGRADE_CONFIGS.comboEffect.getCost();
+
+// Combo upgrade functions
+export const upgradeComboGain = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.comboGain);
+export const upgradeComboEffect = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.comboEffect);
 
 // ========== AUTO-BUY UNLOCKS ==========
 // v4: Higher costs (~2x) to match increased income
@@ -137,7 +214,8 @@ const AUTO_BUY_COSTS = {
     autoBuyRainbow: 8,      // Late game
     autoBuyAutoMove: 8,     // Late game
     autoBuyPrismatic: 10,   // Endgame luxury
-    autoBuyCelestial: 10    // Endgame luxury
+    autoBuyCelestial: 10,   // Endgame luxury
+    autoBuyComboDecay: 5    // Mid-game, helps with combo
 };
 
 export function getAutoBuyCost(property) {
@@ -165,6 +243,7 @@ export const buyAutoBuyCrystal = () => buyAutoBuy('autoBuyCrystal');
 export const buyAutoBuyRainbow = () => buyAutoBuy('autoBuyRainbow');
 export const buyAutoBuyPrismatic = () => buyAutoBuy('autoBuyPrismatic');
 export const buyAutoBuyCelestial = () => buyAutoBuy('autoBuyCelestial');
+export const buyAutoBuyComboDecay = () => buyAutoBuy('autoBuyComboDecay');
 
 // Export costs for UI
 export { AUTO_BUY_COSTS };

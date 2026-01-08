@@ -55,6 +55,24 @@ export {
     upgradePrestigeTiers,
     upgradePrestigeColors,
     upgradePrestigeArena,
+    // New early-game prestige upgrades
+    getStartingCapital,
+    getStartingCapitalCost,
+    upgradeStartingCapital,
+    getCostReductionMultiplier,
+    getCostReductionCost,
+    upgradeCostReduction,
+    getGrowthReductionAmount,
+    getGrowthReductionCost,
+    upgradeGrowthReduction,
+    // Combo prestige upgrades
+    getComboGainBonus,
+    getComboGainCost,
+    upgradeComboGain,
+    getComboEffectMultiplier,
+    getComboEffectCost,
+    upgradeComboEffect,
+    // Auto-buy
     getAutoBuyCost,
     AUTO_BUY_COSTS,
     buyAutoBuyAutoMove,
@@ -66,7 +84,8 @@ export {
     buyAutoBuyCrystal,
     buyAutoBuyRainbow,
     buyAutoBuyPrismatic,
-    buyAutoBuyCelestial
+    buyAutoBuyCelestial,
+    buyAutoBuyComboDecay
 } from './prestige.js';
 
 // Upgrades - configs and factories

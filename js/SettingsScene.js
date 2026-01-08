@@ -1,6 +1,8 @@
+// SettingsScene.js - Settings menu scene (redesigned)
+
 import { GameSettings, resetPlayerData } from './config.js';
 import { Button } from './ui/Button.js';
-import { COLORS, FONT_SIZE, RADIUS, FONT_FAMILY } from './styles.js';
+import { COLORS, FONT_SIZE, RADIUS } from './styles.js';
 
 export class SettingsScene extends Phaser.Scene {
     constructor() {
@@ -19,80 +21,78 @@ export class SettingsScene extends Phaser.Scene {
         const W = this.cameras.main.width;
         const H = this.cameras.main.height;
         const cx = W / 2;
+        const padding = 15;
 
-        // Panel bounds (buttons are outside, below panel)
-        const panelTop = 20;
-        const panelBottom = H - 200;
-        const panelHeight = panelBottom - panelTop;
+        // Dark overlay
+        this.add.rectangle(cx, H / 2, W, H, COLORS.bgOverlay, 0.92);
 
-        // Dark overlay (covers entire screen)
-        this.add.rectangle(cx, H / 2, W, H, COLORS.bgOverlay, 0.85);
-
-        // Panel (smaller, doesn't include buttons)
+        // Main panel
         const panel = this.add.graphics();
         panel.fillStyle(COLORS.bgPanel, 1);
-        panel.fillRoundedRect(15, panelTop, W - 30, panelHeight, RADIUS['2xl']);
-        panel.lineStyle(3, COLORS.danger, 1);
-        panel.strokeRoundedRect(15, panelTop, W - 30, panelHeight, RADIUS['2xl']);
+        panel.fillRoundedRect(padding, 15, W - padding * 2, H - 30, RADIUS['2xl']);
+        panel.lineStyle(2, COLORS.danger, 0.8);
+        panel.strokeRoundedRect(padding, 15, W - padding * 2, H - 30, RADIUS['2xl']);
 
-        // Title
-        this.add.text(cx, 55, 'НАСТРОЙКИ', {
-            fontSize: FONT_SIZE['4xl'],
-            fontFamily: FONT_FAMILY.bold,
-            color: COLORS.text.white
-        }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
+        // === HEADER ===
+        this.add.text(cx, 38, '⚙️ НАСТРОЙКИ', {
+            fontSize: FONT_SIZE['3xl'],
+            fontFamily: 'Arial Black',
+            color: '#ffffff'
+        }).setOrigin(0.5);
 
-        // Settings rows - fixed positions inside panel
-        const ROW_HEIGHT = 90;
-        const START_Y = 120;
+        // === SETTINGS ROWS ===
+        const startY = 80;
+        const rowHeight = 100;
 
         // Row 1: Fall speed
-        this.createSettingRow(START_Y, 'Скорость', 1, 20, GameSettings.fallSpeed, 1, false,
+        this.createSettingRow(startY, W, cx, 'Скорость падения', 1, 20, GameSettings.fallSpeed, 1, false,
             val => { GameSettings.fallSpeed = val; });
 
         // Row 2: Price multiplier
-        this.createSettingRow(START_Y + ROW_HEIGHT, 'Множитель цен', 0.1, 1, GameSettings.priceMultiplier, 0.1, true,
+        this.createSettingRow(startY + rowHeight, W, cx, 'Множитель цен', 0.1, 1, GameSettings.priceMultiplier, 0.1, true,
             val => { GameSettings.priceMultiplier = val; });
 
-        // Buttons outside panel (on overlay)
-        this.createBottomButtons();
+        // === RESET BUTTON (in panel body, after settings) ===
+        this.createResetButton(startY + rowHeight * 2 + 15, W, cx);
+
+        // === BOTTOM BUTTONS ===
+        this.createBottomButtons(W, H, cx, padding);
     }
 
-    createSettingRow(y, label, min, max, value, step, isDecimal, onChange) {
-        const W = this.cameras.main.width;
-        const cx = W / 2;
-
-        // Row background
+    createSettingRow(y, W, cx, label, min, max, value, step, isDecimal, onChange) {
+        // Row background card
         const rowBg = this.add.graphics();
-        rowBg.fillStyle(COLORS.bgButton, 0.5);
-        rowBg.fillRoundedRect(25, y - 5, W - 50, 80, RADIUS.lg);
+        rowBg.fillStyle(0x2a2a3e, 1);
+        rowBg.fillRoundedRect(25, y, W - 50, 90, RADIUS.lg);
+        rowBg.lineStyle(2, COLORS.borderLight, 0.5);
+        rowBg.strokeRoundedRect(25, y, W - 50, 90, RADIUS.lg);
 
-        // Label at top
-        this.add.text(cx, y + 12, label, {
+        // Label
+        this.add.text(cx, y + 22, label, {
             fontSize: FONT_SIZE.xl,
-            color: COLORS.text.white,
+            color: '#ffffff',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
         // Controls row
-        const controlY = y + 50;
+        const controlY = y + 60;
         const btnSize = 50;
-        const spacing = 100;
+        const spacing = 90;
 
         // Format function
         const format = (v) => isDecimal ? v.toFixed(1) : v.toString();
 
-        // Value text (center)
+        // Value text (center) - bright green
         const valueText = this.add.text(cx, controlY, format(value), {
             fontSize: FONT_SIZE['4xl'],
-            color: COLORS.text.green,
+            color: '#55efc4',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Minus button (left of center)
+        // Minus button
         new Button(this, {
             x: cx - spacing, y: controlY, width: btnSize, height: btnSize,
-            text: '−', style: 'default', fontSize: FONT_SIZE['5xl'],
+            text: '−', style: 'default', fontSize: FONT_SIZE['4xl'],
             onClick: () => {
                 let newVal = parseFloat(valueText.text) - step;
                 newVal = Math.round(newVal * 10) / 10;
@@ -103,10 +103,10 @@ export class SettingsScene extends Phaser.Scene {
             }
         });
 
-        // Plus button (right of center)
+        // Plus button
         new Button(this, {
             x: cx + spacing, y: controlY, width: btnSize, height: btnSize,
-            text: '+', style: 'default', fontSize: FONT_SIZE['5xl'],
+            text: '+', style: 'default', fontSize: FONT_SIZE['4xl'],
             onClick: () => {
                 let newVal = parseFloat(valueText.text) + step;
                 newVal = Math.round(newVal * 10) / 10;
@@ -118,32 +118,13 @@ export class SettingsScene extends Phaser.Scene {
         });
     }
 
-    createBottomButtons() {
-        const W = this.cameras.main.width;
-        const H = this.cameras.main.height;
-        const cx = W / 2;
-        const btnWidth = W - 60;
-        const btnHeight = 50;
-
-        // Apply button
-        new Button(this, {
-            x: cx, y: H - 170, width: btnWidth, height: btnHeight,
-            text: '✓ ПРИМЕНИТЬ', style: 'success', fontSize: FONT_SIZE.xl,
-            onClick: () => this.applySettings()
-        });
-
-        // Cancel button
-        new Button(this, {
-            x: cx, y: H - 110, width: btnWidth, height: btnHeight,
-            text: '✕ ОТМЕНА', style: 'danger', fontSize: FONT_SIZE.xl,
-            onClick: () => this.cancelSettings()
-        });
-
+    createResetButton(y, W, cx) {
         // Reset button with two-click confirmation
         this.resetConfirm = false;
         const resetBtn = new Button(this, {
-            x: cx, y: H - 50, width: btnWidth, height: btnHeight,
-            text: '🗑️ СБРОСИТЬ ПРОГРЕСС', style: 'default', fontSize: FONT_SIZE.lg,
+            x: cx, y: y + 25, width: W - 50, height: 50,
+            text: '🗑️ СБРОСИТЬ ПРОГРЕСС', style: 'default',
+            radius: RADIUS.lg, fontSize: FONT_SIZE.xl,
             onClick: () => {
                 if (this.resetConfirm) {
                     resetPlayerData();
@@ -163,6 +144,31 @@ export class SettingsScene extends Phaser.Scene {
                     });
                 }
             }
+        });
+    }
+
+    createBottomButtons(W, H, cx, padding) {
+        const btnWidth = W - padding * 2 - 20;
+        const btnHeight = 52;
+        const gap = 8;
+        // 15px padding from panel bottom (which is at H - 15)
+        const bottomBtnY = H - 15 - padding - btnHeight / 2;
+        const topBtnY = bottomBtnY - btnHeight - gap;
+
+        // Apply button
+        new Button(this, {
+            x: cx, y: topBtnY, width: btnWidth, height: btnHeight,
+            text: '✓ ПРИМЕНИТЬ', style: 'success',
+            radius: RADIUS.xl, fontSize: FONT_SIZE['2xl'],
+            onClick: () => this.applySettings()
+        });
+
+        // Back button
+        new Button(this, {
+            x: cx, y: bottomBtnY, width: btnWidth, height: btnHeight,
+            text: '← НАЗАД', style: 'secondary',
+            radius: RADIUS.xl, fontSize: FONT_SIZE['2xl'],
+            onClick: () => this.cancelSettings()
         });
     }
 
