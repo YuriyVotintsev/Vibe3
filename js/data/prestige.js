@@ -17,6 +17,22 @@ export function getColorCount() {
     return Math.max(3, 6 - PlayerData.prestigeColors);
 }
 
+// New prestige bonuses
+export function getStartingCapital() {
+    const amounts = [0, 100, 500, 2000];
+    return amounts[PlayerData.prestigeStartingCapital] || 0;
+}
+
+export function getCostReductionMultiplier() {
+    // 10% reduction per level: 1.0, 0.9, 0.8, 0.7
+    return 1 - PlayerData.prestigeCostReduction * 0.1;
+}
+
+export function getGrowthReductionAmount() {
+    // 0.01 reduction per level
+    return PlayerData.prestigeGrowthReduction * 0.01;
+}
+
 // === PRESTIGE BALANCE v4: High income economy ===
 // IMPORTANT: Currency resets to 0 after each prestige!
 // Coins are earned fresh each run, not cumulative.
@@ -70,6 +86,12 @@ export function performPrestige() {
         PlayerData[key] = getDefaultValue(key);
     }
 
+    // Apply starting capital bonus
+    const startingCapital = getStartingCapital();
+    if (startingCapital > 0) {
+        PlayerData.currency = startingCapital;
+    }
+
     savePlayerData();
     return true;
 }
@@ -95,6 +117,22 @@ const PRESTIGE_UPGRADE_CONFIGS = {
         property: 'prestigeArena',
         getCost: () => (PlayerData.prestigeArena + 1) * 3,
         maxLevel: 4
+    },
+    // New early-game upgrades
+    startingCapital: {
+        property: 'prestigeStartingCapital',
+        getCost: () => [2, 4, 6][PlayerData.prestigeStartingCapital] || null,
+        maxLevel: 3
+    },
+    costReduction: {
+        property: 'prestigeCostReduction',
+        getCost: () => [2, 5, 9][PlayerData.prestigeCostReduction] || null,
+        maxLevel: 3
+    },
+    growthReduction: {
+        property: 'prestigeGrowthReduction',
+        getCost: () => [3, 6, 10][PlayerData.prestigeGrowthReduction] || null,
+        maxLevel: 3
     }
 };
 
@@ -120,6 +158,14 @@ export const getPrestigeArenaCost = () => PRESTIGE_UPGRADE_CONFIGS.arena.getCost
 export const upgradePrestigeTiers = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.tiers);
 export const upgradePrestigeColors = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.colors);
 export const upgradePrestigeArena = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.arena);
+export const upgradeStartingCapital = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.startingCapital);
+export const upgradeCostReduction = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.costReduction);
+export const upgradeGrowthReduction = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.growthReduction);
+
+// Exported cost functions for new upgrades
+export const getStartingCapitalCost = () => PRESTIGE_UPGRADE_CONFIGS.startingCapital.getCost();
+export const getCostReductionCost = () => PRESTIGE_UPGRADE_CONFIGS.costReduction.getCost();
+export const getGrowthReductionCost = () => PRESTIGE_UPGRADE_CONFIGS.growthReduction.getCost();
 
 // ========== AUTO-BUY UNLOCKS ==========
 // v4: Higher costs (~2x) to match increased income

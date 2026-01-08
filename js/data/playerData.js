@@ -54,6 +54,9 @@ const DEFAULTS = {
     prestigeTiers: 0,
     prestigeColors: 0,
     prestigeArena: 0,
+    prestigeStartingCapital: 0,   // Starting currency after prestige
+    prestigeCostReduction: 0,     // % reduction on upgrade costs
+    prestigeGrowthReduction: 0,   // Reduction of price growth rate
 
     // Auto-buy flags
     autoBuyAutoMove: false,

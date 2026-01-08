@@ -3,6 +3,7 @@
 import { PlayerData, savePlayerData } from './playerData.js';
 import { GameSettings } from './gameSettings.js';
 import { ENHANCEMENT } from './enhancements.js';
+import { getCostReductionMultiplier, getGrowthReductionAmount } from './prestige.js';
 
 // ========== UPGRADE CONFIGURATIONS ==========
 
@@ -166,9 +167,24 @@ export { UPGRADE_CONFIGS };
 
 // ========== GENERIC UPGRADE FUNCTIONS ==========
 
+// Enhanced gem upgrade keys that get growth reduction
+const ENHANCED_GEM_KEYS = ['bronze', 'silver', 'gold', 'crystal', 'rainbow', 'prismatic', 'celestial'];
+
 function getUpgradeCost(config) {
     const level = config.getLevel();
-    return Math.floor(config.baseCost * Math.pow(config.growthRate, level) * GameSettings.priceMultiplier);
+
+    // Apply growth reduction to enhanced gem upgrades (min 1.05)
+    let growthRate = config.growthRate;
+    const configKey = Object.keys(UPGRADE_CONFIGS).find(k => UPGRADE_CONFIGS[k] === config);
+    if (ENHANCED_GEM_KEYS.includes(configKey)) {
+        const reduction = getGrowthReductionAmount();
+        growthRate = Math.max(1.05, growthRate - reduction);
+    }
+
+    // Apply cost reduction multiplier
+    const costReduction = getCostReductionMultiplier();
+
+    return Math.floor(config.baseCost * Math.pow(growthRate, level) * GameSettings.priceMultiplier * costReduction);
 }
 
 function isMaxed(config) {

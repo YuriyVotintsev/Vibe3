@@ -14,6 +14,15 @@ import {
     upgradePrestigeColors,
     getPrestigeArenaCost,
     upgradePrestigeArena,
+    getStartingCapital,
+    getStartingCapitalCost,
+    upgradeStartingCapital,
+    getCostReductionMultiplier,
+    getCostReductionCost,
+    upgradeCostReduction,
+    getGrowthReductionAmount,
+    getGrowthReductionCost,
+    upgradeGrowthReduction,
     getAutoBuyCost,
     buyAutoBuyAutoMove,
     buyAutoBuyBombChance,
@@ -56,8 +65,43 @@ export function getPrestigeUpgrades() {
     const prestigeCurrency = () => PlayerData.prestigeCurrency;
 
     return [
+        // New early-game upgrades first
         {
-            getName: () => 'Тиры гемов',
+            getName: () => 'Капитал',
+            getValue: () => `+${getStartingCapital()}`,
+            getLevel: () => `${PlayerData.prestigeStartingCapital}/3`,
+            getCost: () => getStartingCapitalCost(),
+            canAfford() {
+                const cost = this.getCost();
+                return cost !== null && prestigeCurrency() >= cost;
+            },
+            onBuy: () => upgradeStartingCapital()
+        },
+        {
+            getName: () => 'Скидка',
+            getValue: () => `-${Math.round((1 - getCostReductionMultiplier()) * 100)}%`,
+            getLevel: () => `${PlayerData.prestigeCostReduction}/3`,
+            getCost: () => getCostReductionCost(),
+            canAfford() {
+                const cost = this.getCost();
+                return cost !== null && prestigeCurrency() >= cost;
+            },
+            onBuy: () => upgradeCostReduction()
+        },
+        {
+            getName: () => 'Рост цен',
+            getValue: () => `-${(getGrowthReductionAmount() * 100).toFixed(0)}%`,
+            getLevel: () => `${PlayerData.prestigeGrowthReduction}/3`,
+            getCost: () => getGrowthReductionCost(),
+            canAfford() {
+                const cost = this.getCost();
+                return cost !== null && prestigeCurrency() >= cost;
+            },
+            onBuy: () => upgradeGrowthReduction()
+        },
+        // Original upgrades
+        {
+            getName: () => 'Тиры',
             getValue: () => `${getUnlockedTiers()}/7`,
             getLevel: () => `${PlayerData.prestigeTiers}/4`,
             getCost: () => PlayerData.prestigeTiers >= 4 ? null : getPrestigeTiersCost(),
@@ -79,7 +123,7 @@ export function getPrestigeUpgrades() {
             onBuy: () => upgradePrestigeColors()
         },
         {
-            getName: () => 'Размер поля',
+            getName: () => 'Поле',
             getValue: () => `${getBoardSize()}x${getBoardSize()}`,
             getLevel: () => `${PlayerData.prestigeArena}/4`,
             getCost: () => PlayerData.prestigeArena >= 4 ? null : getPrestigeArenaCost(),

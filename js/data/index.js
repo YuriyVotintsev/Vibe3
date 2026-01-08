@@ -55,6 +55,17 @@ export {
     upgradePrestigeTiers,
     upgradePrestigeColors,
     upgradePrestigeArena,
+    // New early-game prestige upgrades
+    getStartingCapital,
+    getStartingCapitalCost,
+    upgradeStartingCapital,
+    getCostReductionMultiplier,
+    getCostReductionCost,
+    upgradeCostReduction,
+    getGrowthReductionAmount,
+    getGrowthReductionCost,
+    upgradeGrowthReduction,
+    // Auto-buy
     getAutoBuyCost,
     AUTO_BUY_COSTS,
     buyAutoBuyAutoMove,
