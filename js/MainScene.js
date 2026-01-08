@@ -114,12 +114,11 @@ export class MainScene extends Phaser.Scene {
 
         this.fallManager.initSpawnTimers(boardSize);
 
-        // FPS counter for debugging
-        this.fpsText = this.add.text(10, 10, 'FPS: --', {
-            fontSize: '14px',
-            color: '#00ff00',
-            backgroundColor: '#000000'
-        }).setDepth(1000);
+        // FPS counter - subtle, bottom right
+        this.fpsText = this.add.text(this.layout.canvasWidth - 10, this.layout.canvasHeight - 10, '', {
+            fontSize: '12px',
+            color: '#666666'
+        }).setOrigin(1, 1).setDepth(1000);
 
         this.events.on('shutdown', this.shutdown, this);
         this.events.on('resume', this.onResume, this);
@@ -235,8 +234,8 @@ export class MainScene extends Phaser.Scene {
         this.checkAutoMove(time);
         processAutoBuys();
 
-        // Update FPS counter
-        this.fpsText.setText(`FPS: ${Math.round(this.game.loop.actualFps)}`);
+        // Update FPS counter (subtle)
+        this.fpsText.setText(Math.round(this.game.loop.actualFps));
     }
 
     checkLandedGems() {

@@ -58,44 +58,46 @@ export class UIManager {
     createHeader(layout) {
         const scene = this.scene;
         const cx = layout.centerX;
+        const W = layout.canvasWidth;
 
-        // Header panel background
+        // Header panel background - styled dark with colored border
         const headerBg = scene.add.graphics();
-        headerBg.fillStyle(COLORS.bgHeader, 0.95);
-        headerBg.fillRoundedRect(10, 8, layout.canvasWidth - 20, 100, 15);
-        headerBg.lineStyle(2, COLORS.secondary, 0.5);
-        headerBg.strokeRoundedRect(10, 8, layout.canvasWidth - 20, 100, 15);
+        headerBg.fillStyle(COLORS.bgPanel, 0.98);
+        headerBg.fillRoundedRect(15, 10, W - 30, 95, RADIUS['2xl']);
+        headerBg.lineStyle(2, COLORS.primary, 0.8);
+        headerBg.strokeRoundedRect(15, 10, W - 30, 95, RADIUS['2xl']);
 
-        // Title
-        scene.add.text(cx, 35, 'MATCH-3', {
-            fontSize: FONT_SIZE['5xl'],
+        // Title - prominent
+        scene.add.text(cx, 38, '💎 MATCH-3', {
+            fontSize: FONT_SIZE['4xl'],
             fontFamily: 'Arial Black',
             color: COLORS.text.white
-        }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
+        }).setOrigin(0.5);
 
-        // Currency stat card
-        const statY = 80;
-        const statWidth = 180;
-        scene.add.graphics()
-            .fillStyle(COLORS.warning, 0.25)
-            .fillRoundedRect(cx - statWidth / 2, statY - 22, statWidth, 44, RADIUS.lg);
+        // Currency card - styled like other scenes
+        const cardY = 70;
+        const cardWidth = W - 80;
+        const currencyCard = scene.add.graphics();
+        currencyCard.fillStyle(0x1a3a2a, 1); // dark green like UpgradesScene
+        currencyCard.fillRoundedRect(cx - cardWidth / 2, cardY - 5, cardWidth, 36, RADIUS.lg);
+        currencyCard.lineStyle(2, COLORS.success, 0.5);
+        currencyCard.strokeRoundedRect(cx - cardWidth / 2, cardY - 5, cardWidth, 36, RADIUS.lg);
 
-        scene.add.text(cx - 50, statY, '💰', { fontSize: FONT_SIZE['4xl'] }).setOrigin(0.5);
-
-        this.currencyText = scene.add.text(cx + 5, statY, formatNumber(PlayerData.currency), {
+        // Currency text - centered, bright gold
+        this.currencyText = scene.add.text(cx, cardY + 13, `💰 ${formatNumber(PlayerData.currency)}`, {
             fontSize: FONT_SIZE['3xl'],
-            color: COLORS.text.gold,
+            color: '#ffd700',
             fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
+        }).setOrigin(0.5);
 
         // Fullscreen toggle button (right side of header)
         this.fullscreenBtn = new Button(scene, {
-            x: layout.canvasWidth - 45,
-            y: 58,
+            x: W - 50,
+            y: 38,
             width: 44,
             height: 44,
             text: '⛶',
-            style: 'secondary',
+            style: 'default',
             fontSize: FONT_SIZE['2xl'],
             onClick: () => this.toggleFullscreen()
         });
@@ -131,20 +133,35 @@ export class UIManager {
     createButtons(layout) {
         const scene = this.scene;
         const cx = layout.centerX;
+        const W = layout.canvasWidth;
         const btnY = layout.buttonsY;
-        const btnWidth = 100;
-        const btnHeight = 48;
-        const btnSpacing = 110;
+
+        // Bottom panel background
+        const panelHeight = 70;
+        const panelY = btnY - panelHeight / 2 - 5;
+        const bottomPanel = scene.add.graphics();
+        bottomPanel.fillStyle(COLORS.bgPanel, 0.95);
+        bottomPanel.fillRoundedRect(15, panelY, W - 30, panelHeight, RADIUS['2xl']);
+        bottomPanel.lineStyle(2, COLORS.borderLight, 0.5);
+        bottomPanel.strokeRoundedRect(15, panelY, W - 30, panelHeight, RADIUS['2xl']);
+
+        // Button sizing - larger, touch-friendly
+        const gap = 10;
+        const totalWidth = W - 60;
+        const btnWidth = Math.floor((totalWidth - gap * 2) / 3);
+        const btnHeight = 52;
+        const startX = 30;
 
         // Upgrades button
         new Button(scene, {
-            x: cx - btnSpacing,
+            x: startX + btnWidth / 2,
             y: btnY,
             width: btnWidth,
             height: btnHeight,
             text: '⬆️ Апгрейд',
             style: 'primary',
-            fontSize: FONT_SIZE.base,
+            radius: RADIUS.xl,
+            fontSize: FONT_SIZE.xl,
             onClick: () => {
                 if (!scene.scene.isActive('UpgradesScene')) {
                     scene.scene.launch('UpgradesScene');
@@ -154,13 +171,14 @@ export class UIManager {
 
         // Prestige button
         const prestigeBtn = new Button(scene, {
-            x: cx,
+            x: startX + btnWidth + gap + btnWidth / 2,
             y: btnY,
             width: btnWidth,
             height: btnHeight,
             text: this.getPrestigeButtonText(),
             style: 'warning',
-            fontSize: FONT_SIZE.base,
+            radius: RADIUS.xl,
+            fontSize: FONT_SIZE.xl,
             onClick: () => {
                 if (!scene.scene.isActive('PrestigeScene')) {
                     scene.scene.launch('PrestigeScene');
@@ -171,13 +189,14 @@ export class UIManager {
 
         // Settings button
         new Button(scene, {
-            x: cx + btnSpacing,
+            x: startX + (btnWidth + gap) * 2 + btnWidth / 2,
             y: btnY,
             width: btnWidth,
             height: btnHeight,
             text: '⚙️ Опции',
             style: 'secondary',
-            fontSize: FONT_SIZE.base,
+            radius: RADIUS.xl,
+            fontSize: FONT_SIZE.xl,
             onClick: () => {
                 if (!scene.scene.isActive('SettingsScene')) {
                     scene.scene.launch('SettingsScene');
@@ -222,7 +241,7 @@ export class UIManager {
      * Update currency display
      */
     updateCurrency() {
-        this.currencyText.setText(formatNumber(PlayerData.currency));
+        this.currencyText.setText(`💰 ${formatNumber(PlayerData.currency)}`);
     }
 
     /**
