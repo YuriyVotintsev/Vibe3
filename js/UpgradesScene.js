@@ -176,6 +176,7 @@ export class UpgradesScene extends Phaser.Scene {
         // Value
         const valueText = this.add.text(x + width / 2, y + 44, upgrade.getValue(), {
             fontSize: FONT_SIZE['2xl'],
+            fontFamily: 'Arial',
             color: '#55efc4',
             fontStyle: 'bold'
         }).setOrigin(0.5);

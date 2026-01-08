@@ -75,20 +75,16 @@ export function getRegularUpgrades() {
 
 // Starting capital values by level
 const STARTING_CAPITAL_VALUES = [0, 100, 500, 2000];
-// Cost reduction percentages by level
-const COST_REDUCTION_VALUES = [0, 10, 20, 30];
 // Growth reduction values by level
-const GROWTH_REDUCTION_VALUES = [0, 1, 2, 3];
+const GROWTH_REDUCTION_VALUES = [0, 0.01, 0.02, 0.03];
 // Combo gain bonus by level
 const COMBO_GAIN_VALUES = [0, 0.5, 1.0, 1.5];
-// Combo effect multiplier by level
-const COMBO_EFFECT_VALUES = [1.0, 1.25, 1.5, 1.75];
-// Tiers unlocked by level
-const TIERS_VALUES = [1, 2, 3, 5, 7];
-// Colors by level
-const COLORS_VALUES = [5, 8, 12, 20];
-// Board size by level
-const BOARD_SIZE_VALUES = [6, 7, 8, 9, 10];
+// Tiers unlocked by level (3 + level, max 7)
+const TIERS_VALUES = [3, 4, 5, 6, 7];
+// Colors by level (6 -> 5 -> 4 -> 3)
+const COLORS_VALUES = [6, 5, 4, 3];
+// Board size by level (5 -> 6 -> 7 -> 8 -> 9)
+const BOARD_SIZE_VALUES = [5, 6, 7, 8, 9];
 
 /**
  * Get prestige upgrades for PrestigeScene
@@ -121,12 +117,11 @@ export function getPrestigeUpgrades() {
             getName: () => 'Скидка на цены',
             getValue: () => {
                 const current = Math.round((1 - getCostReductionMultiplier()) * 100);
-                const level = PlayerData.prestigeCostReduction;
-                if (level >= 3) return `-${current}%`;
-                const next = COST_REDUCTION_VALUES[level + 1];
+                const nextMult = Math.pow(0.9, PlayerData.prestigeCostReduction + 1);
+                const next = Math.round((1 - nextMult) * 100);
                 return `-${current}% (→${next}%)`;
             },
-            getLevel: () => `${PlayerData.prestigeCostReduction}/3`,
+            getLevel: () => `${PlayerData.prestigeCostReduction}/∞`,
             getCost: () => getCostReductionCost(),
             canAfford() {
                 const cost = this.getCost();
@@ -135,13 +130,13 @@ export function getPrestigeUpgrades() {
             onBuy: () => upgradeCostReduction()
         },
         {
-            getName: () => 'Рост цен↓',
+            getName: () => 'Рост на шанс гемов',
             getValue: () => {
-                const current = (getGrowthReductionAmount() * 100).toFixed(0);
+                const current = getGrowthReductionAmount().toFixed(2);
                 const level = PlayerData.prestigeGrowthReduction;
-                if (level >= 3) return `-${current}%`;
-                const next = GROWTH_REDUCTION_VALUES[level + 1];
-                return `-${current}% (→${next}%)`;
+                if (level >= 3) return `-${current}`;
+                const next = GROWTH_REDUCTION_VALUES[level + 1].toFixed(2);
+                return `-${current} (→-${next})`;
             },
             getLevel: () => `${PlayerData.prestigeGrowthReduction}/3`,
             getCost: () => getGrowthReductionCost(),
@@ -172,12 +167,11 @@ export function getPrestigeUpgrades() {
             getName: () => 'Сила комбо',
             getValue: () => {
                 const current = getComboEffectMultiplier().toFixed(2);
-                const level = PlayerData.prestigeComboEffect;
-                if (level >= 3) return `×${current}`;
-                const next = COMBO_EFFECT_VALUES[level + 1].toFixed(2);
+                const nextMult = Math.pow(1.1, PlayerData.prestigeComboEffect + 1);
+                const next = nextMult.toFixed(2);
                 return `×${current} (→×${next})`;
             },
-            getLevel: () => `${PlayerData.prestigeComboEffect}/3`,
+            getLevel: () => `${PlayerData.prestigeComboEffect}/∞`,
             getCost: () => getComboEffectCost(),
             canAfford() {
                 const cost = this.getCost();
@@ -192,9 +186,9 @@ export function getPrestigeUpgrades() {
             getValue: () => {
                 const current = getUnlockedTiers();
                 const level = PlayerData.prestigeTiers;
-                if (level >= 4) return `${current}/7`;
+                if (level >= 4) return `${current}`;
                 const next = TIERS_VALUES[level + 1];
-                return `${current}/7 (→${next}/7)`;
+                return `${current} (→${next})`;
             },
             getLevel: () => `${PlayerData.prestigeTiers}/4`,
             getCost: () => PlayerData.prestigeTiers >= 4 ? null : getPrestigeTiersCost(),
@@ -209,9 +203,9 @@ export function getPrestigeUpgrades() {
             getValue: () => {
                 const current = getColorCount();
                 const level = PlayerData.prestigeColors;
-                if (level >= 3) return `${current} шт`;
+                if (level >= 3) return `${current}`;
                 const next = COLORS_VALUES[level + 1];
-                return `${current} шт (→${next} шт)`;
+                return `${current} (→${next})`;
             },
             getLevel: () => `${PlayerData.prestigeColors}/3`,
             getCost: () => PlayerData.prestigeColors >= 3 ? null : getPrestigeColorsCost(),
@@ -227,7 +221,7 @@ export function getPrestigeUpgrades() {
                 const current = getBoardSize();
                 const level = PlayerData.prestigeArena;
                 if (level >= 4) return `${current}×${current}`;
-                const next = BOARD_SIZE_VALUES[level + 1];
+                const next = current + 1;
                 return `${current}×${current} (→${next}×${next})`;
             },
             getLevel: () => `${PlayerData.prestigeArena}/4`,

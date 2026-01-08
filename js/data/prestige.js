@@ -24,8 +24,8 @@ export function getStartingCapital() {
 }
 
 export function getCostReductionMultiplier() {
-    // 10% reduction per level: 1.0, 0.9, 0.8, 0.7
-    return 1 - PlayerData.prestigeCostReduction * 0.1;
+    // 10% multiplicative reduction per level: 1.0, 0.9, 0.81, 0.729...
+    return Math.pow(0.9, PlayerData.prestigeCostReduction);
 }
 
 export function getGrowthReductionAmount() {
@@ -40,8 +40,8 @@ export function getComboGainBonus() {
 }
 
 export function getComboEffectMultiplier() {
-    // +25% combo effect per level: 1.0, 1.25, 1.5, 1.75
-    return 1 + PlayerData.prestigeComboEffect * 0.25;
+    // 10% multiplicative increase per level: 1.0, 1.1, 1.21, 1.331...
+    return Math.pow(1.1, PlayerData.prestigeComboEffect);
 }
 
 // === PRESTIGE BALANCE v4: High income economy ===
@@ -137,8 +137,8 @@ const PRESTIGE_UPGRADE_CONFIGS = {
     },
     costReduction: {
         property: 'prestigeCostReduction',
-        getCost: () => [2, 5, 9][PlayerData.prestigeCostReduction] || null,
-        maxLevel: 3
+        getCost: () => Math.floor(2 * Math.pow(1.8, PlayerData.prestigeCostReduction)),
+        maxLevel: Infinity
     },
     growthReduction: {
         property: 'prestigeGrowthReduction',
@@ -153,16 +153,19 @@ const PRESTIGE_UPGRADE_CONFIGS = {
     },
     comboEffect: {
         property: 'prestigeComboEffect',
-        getCost: () => [4, 8, 12][PlayerData.prestigeComboEffect] || null,
-        maxLevel: 3
+        getCost: () => Math.floor(4 * Math.pow(1.8, PlayerData.prestigeComboEffect)),
+        maxLevel: Infinity
     }
 };
 
 function performPrestigeUpgrade(config) {
     const cost = config.getCost();
-    const currentLevel = PlayerData[config.property];
+    if (cost === null) return false; // maxed out
 
-    if (PlayerData.prestigeCurrency >= cost && currentLevel < config.maxLevel) {
+    const currentLevel = PlayerData[config.property];
+    const isInfinite = config.maxLevel === Infinity;
+
+    if (PlayerData.prestigeCurrency >= cost && (isInfinite || currentLevel < config.maxLevel)) {
         PlayerData.prestigeCurrency -= cost;
         PlayerData[config.property] += 1;
         savePlayerData();

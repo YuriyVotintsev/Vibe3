@@ -253,6 +253,7 @@ export class PrestigeScene extends Phaser.Scene {
         // Value - prominent, bright
         this.add.text(x + width / 2, y + 48, upgrade.getValue(), {
             fontSize: FONT_SIZE['3xl'],
+            fontFamily: 'Arial',
             color: '#55efc4', // bright cyan-green
             fontStyle: 'bold'
         }).setOrigin(0.5);
