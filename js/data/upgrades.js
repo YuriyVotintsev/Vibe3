@@ -16,24 +16,22 @@ import { getCostReductionMultiplier, getGrowthReductionAmount } from './prestige
 const UPGRADE_CONFIGS = {
     autoMove: {
         property: 'autoMoveDelay',
-        name: 'Скорость хода',
+        name: 'Скорость автохода',
         unit: 'с',
         enhancement: null,
         baseCost: 500,
-        growthRate: 1.236,  // 500 -> 1M over 37 levels
+        growthRate: 1.236,
         step: null,         // special: 10% reduction per level
-        min: 100,
+        min: 10,            // 0.01s minimum (practically infinite)
         max: 5000,
-        getValue: () => (PlayerData.autoMoveDelay / 1000).toFixed(1),
-        getNextValue: () => (Math.max(100, PlayerData.autoMoveDelay * 0.9) / 1000).toFixed(1),
+        getValue: () => (PlayerData.autoMoveDelay / 1000).toFixed(2),
+        getNextValue: () => (Math.max(10, PlayerData.autoMoveDelay * 0.9) / 1000).toFixed(2),
         getLevel: () => {
-            // Each level = 10% faster: delay = 5000 * 0.9^level
             const delay = PlayerData.autoMoveDelay;
             if (delay >= 5000) return 0;
-            if (delay <= 100) return 37;
             return Math.round(Math.log(5000 / delay) / Math.log(1 / 0.9));
         },
-        getMaxLevel: () => 37
+        getMaxLevel: () => '∞'
     },
     bombChance: {
         property: 'bombChance',
@@ -163,15 +161,23 @@ const UPGRADE_CONFIGS = {
     },
     comboDecay: {
         property: 'comboDecayReduction',
-        name: 'Стойкость комбо',
-        unit: '%',
+        name: 'Угасание комбо',
+        unit: '%/с',
         enhancement: null,  // Always visible
         baseCost: 100,
         growthRate: 1.5,
-        step: 10,           // 10% reduction per level
+        step: 10,           // 10% multiplicative reduction per level
         min: 0,
         max: Infinity,      // Infinite upgrade
-        getValue: () => PlayerData.comboDecayReduction,
+        getValue: () => {
+            // Base decay 25%/s * 0.9^level
+            const level = PlayerData.comboDecayReduction / 10;
+            return (25 * Math.pow(0.9, level)).toFixed(2);
+        },
+        getNextValue: () => {
+            const level = PlayerData.comboDecayReduction / 10;
+            return (25 * Math.pow(0.9, level + 1)).toFixed(2);
+        },
         getLevel: () => PlayerData.comboDecayReduction / 10,
         getMaxLevel: () => '∞'
     }
@@ -203,7 +209,9 @@ function getUpgradeCost(config) {
 }
 
 function isMaxed(config) {
-    // autoMove is special: decreases from max to min, so only check min
+    // Infinite upgrades never max out
+    if (config.max === Infinity) return false;
+    // autoMove is special: decreases from max to min
     if (config.property === 'autoMoveDelay') {
         return PlayerData.autoMoveDelay <= config.min;
     }
@@ -221,7 +229,7 @@ function performUpgrade(config) {
     // Special handling for autoMove (10% reduction per level)
     if (config.property === 'autoMoveDelay') {
         const newDelay = Math.round(PlayerData.autoMoveDelay * 0.9);
-        PlayerData.autoMoveDelay = Math.max(config.min, newDelay);
+        PlayerData.autoMoveDelay = Math.max(10, newDelay);
     } else {
         PlayerData[config.property] = Math.min(config.max, PlayerData[config.property] + config.step);
     }

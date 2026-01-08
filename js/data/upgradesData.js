@@ -227,25 +227,26 @@ export function getPrestigeUpgrades() {
 
 // Auto-buy item definitions with buy functions
 // 'separator' marks visual gap between groups
+// Names are taken from UPGRADE_CONFIGS to match regular upgrades
 const AUTO_BUY_ITEMS = [
-    { key: 'autoMove', name: 'Скорость', buy: buyAutoBuyAutoMove },
-    { key: 'comboDecay', name: 'Стойк. комбо', buy: buyAutoBuyComboDecay },
-    { key: 'bombChance', name: 'Шанс💣', buy: buyAutoBuyBombChance },
-    { key: 'bombRadius', name: 'Радиус💣', buy: buyAutoBuyBombRadius },
+    { key: 'autoMove', buy: buyAutoBuyAutoMove },
+    { key: 'comboDecay', buy: buyAutoBuyComboDecay },
+    { key: 'bombChance', buy: buyAutoBuyBombChance },
+    { key: 'bombRadius', buy: buyAutoBuyBombRadius },
     'separator',
-    { key: 'bronze', name: '→бронза', buy: buyAutoBuyBronze },
-    { key: 'silver', name: '→серебро', buy: buyAutoBuySilver },
-    { key: 'gold', name: '→золото', buy: buyAutoBuyGold },
-    { key: 'crystal', name: '→кристалл', buy: buyAutoBuyCrystal },
-    { key: 'rainbow', name: '→радуга', buy: buyAutoBuyRainbow },
-    { key: 'prismatic', name: '→призма', buy: buyAutoBuyPrismatic },
-    { key: 'celestial', name: '→небесный', buy: buyAutoBuyCelestial }
+    { key: 'bronze', buy: buyAutoBuyBronze },
+    { key: 'silver', buy: buyAutoBuySilver },
+    { key: 'gold', buy: buyAutoBuyGold },
+    { key: 'crystal', buy: buyAutoBuyCrystal },
+    { key: 'rainbow', buy: buyAutoBuyRainbow },
+    { key: 'prismatic', buy: buyAutoBuyPrismatic },
+    { key: 'celestial', buy: buyAutoBuyCelestial }
 ];
 
 /**
  * Get auto-buy items for PrestigeScene
  * Returns "Tell, Don't Ask" style objects and 'separator' strings
- * v3: Each auto-buy has different cost based on usefulness
+ * Names match regular upgrades from UPGRADE_CONFIGS
  */
 export function getAutoBuyItems() {
     const result = [];
@@ -256,9 +257,11 @@ export function getAutoBuyItems() {
         }
         const autoBuyKey = AUTO_BUY_KEYS[item.key];
         const cost = getAutoBuyCost(autoBuyKey);
+        // Get name from UPGRADE_CONFIGS to match regular upgrades
+        const name = UPGRADE_CONFIGS[item.key].name;
         result.push({
             key: item.key,
-            name: item.name,
+            name: name,
             cost: cost,
             isOwned: () => PlayerData[autoBuyKey],
             canAfford: () => !PlayerData[autoBuyKey] && PlayerData.prestigeCurrency >= cost,

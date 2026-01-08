@@ -191,12 +191,12 @@ export class PrestigeScene extends Phaser.Scene {
 
     createUpgradesTab(W, padding) {
         const startY = 302;
-        const gap = 12;
-        const separatorGap = 15; // Extra space for separator
-        const cols = 3;
+        const gap = 10;
+        const separatorGap = 20;
+        const cols = 2;
         const contentWidth = W - padding * 2 - 20;
         const btnWidth = Math.floor((contentWidth - gap * (cols - 1)) / cols);
-        const btnHeight = 95;
+        const btnHeight = 85;
 
         const upgrades = getPrestigeUpgrades();
 
@@ -206,7 +206,6 @@ export class PrestigeScene extends Phaser.Scene {
         for (let i = 0; i < upgrades.length; i++) {
             const item = upgrades[i];
 
-            // Handle separator
             if (item === 'separator') {
                 if (col !== 0) {
                     currentY += btnHeight + gap;
@@ -232,7 +231,7 @@ export class PrestigeScene extends Phaser.Scene {
         const isMaxed = cost === null;
         const canAfford = !isMaxed && upgrade.canAfford();
 
-        // Background
+        // Background - same as regular upgrades
         const bg = this.add.graphics();
         let bgColor = isMaxed ? COLORS.bgDisabled : (canAfford ? COLORS.success : COLORS.bgButton);
         bg.fillStyle(bgColor, 1);
@@ -243,30 +242,30 @@ export class PrestigeScene extends Phaser.Scene {
             bg.strokeRoundedRect(x, y, width, height, RADIUS.lg);
         }
 
-        // Name - larger
-        this.add.text(x + width / 2, y + 20, upgrade.getName(), {
+        // Name
+        this.add.text(x + width / 2, y + 18, upgrade.getName(), {
             fontSize: FONT_SIZE.xl,
             color: '#ffffff',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Value - prominent, bright
-        this.add.text(x + width / 2, y + 48, upgrade.getValue(), {
-            fontSize: FONT_SIZE['3xl'],
+        // Value
+        this.add.text(x + width / 2, y + 44, upgrade.getValue(), {
+            fontSize: FONT_SIZE['2xl'],
             fontFamily: 'Arial',
-            color: '#55efc4', // bright cyan-green
+            color: '#55efc4',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Cost - always bright gold
-        const costText = isMaxed ? 'MAX' : `${cost}👑`;
-        this.add.text(x + width / 2, y + 76, costText, {
-            fontSize: FONT_SIZE.xl,
+        // Cost
+        const costText = isMaxed ? 'MAX' : `${cost} 👑`;
+        this.add.text(x + width / 2, y + 68, costText, {
+            fontSize: FONT_SIZE.lg,
             color: isMaxed ? '#666666' : '#ffd700',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Level indicator - bottom right, white
+        // Level - bottom right
         this.add.text(x + width - 8, y + height - 8, upgrade.getLevel(), {
             fontSize: FONT_SIZE.base,
             color: '#ffffff'
@@ -287,11 +286,11 @@ export class PrestigeScene extends Phaser.Scene {
     createAutoBuyTab(W, padding) {
         const startY = 302;
         const gap = 10;
-        const separatorGap = 15; // Extra space for separator
+        const separatorGap = 20;
         const cols = 2;
         const contentWidth = W - padding * 2 - 20;
         const btnWidth = Math.floor((contentWidth - gap * (cols - 1)) / cols);
-        const btnHeight = 75;
+        const btnHeight = 85;
 
         const autoBuys = getAutoBuyItems();
 
@@ -301,7 +300,6 @@ export class PrestigeScene extends Phaser.Scene {
         for (let i = 0; i < autoBuys.length; i++) {
             const item = autoBuys[i];
 
-            // Handle separator
             if (item === 'separator') {
                 if (col !== 0) {
                     currentY += btnHeight + gap;
@@ -326,37 +324,43 @@ export class PrestigeScene extends Phaser.Scene {
         const isOwned = item.isOwned();
         const canAfford = item.canAfford();
 
-        // Background
+        // Background - same style as regular upgrades
         const bg = this.add.graphics();
-        let bgColor, alpha = 1;
-
+        let bgColor;
         if (isOwned) {
-            bgColor = COLORS.success;
-            alpha = 0.8;
+            bgColor = COLORS.bgDisabled;
         } else {
-            bgColor = canAfford ? COLORS.bgButton : COLORS.bgDisabledDark;
+            bgColor = canAfford ? COLORS.success : COLORS.bgButton;
         }
-
-        bg.fillStyle(bgColor, alpha);
+        bg.fillStyle(bgColor, 1);
         bg.fillRoundedRect(x, y, width, height, RADIUS.lg);
 
         if (!isOwned) {
-            bg.lineStyle(2, canAfford ? COLORS.successBright : COLORS.bgDisabled, 1);
+            bg.lineStyle(2, canAfford ? COLORS.successBright : COLORS.borderLight, 1);
             bg.strokeRoundedRect(x, y, width, height, RADIUS.lg);
         }
 
-        // Name - larger
-        this.add.text(x + width / 2, y + 25, item.name, {
-            fontSize: FONT_SIZE['2xl'],
-            color: isOwned ? '#55efc4' : '#ffffff',
+        // Name
+        this.add.text(x + width / 2, y + 18, item.name, {
+            fontSize: FONT_SIZE.xl,
+            color: '#ffffff',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Status - always bright gold for cost
-        const statusText = isOwned ? '✓ ВКЛ' : `${item.cost} 👑`;
-        this.add.text(x + width / 2, y + 52, statusText, {
-            fontSize: FONT_SIZE.xl,
-            color: isOwned ? '#55efc4' : '#ffd700',
+        // Status (shows "✓ ВКЛ" if owned, empty otherwise)
+        const valueText = isOwned ? '✓ ВКЛ' : '';
+        this.add.text(x + width / 2, y + 44, valueText, {
+            fontSize: FONT_SIZE['2xl'],
+            fontFamily: 'Arial',
+            color: '#55efc4',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        // Cost
+        const costText = isOwned ? 'MAX' : `${item.cost} 👑`;
+        this.add.text(x + width / 2, y + 68, costText, {
+            fontSize: FONT_SIZE.lg,
+            color: isOwned ? '#666666' : '#ffd700',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
