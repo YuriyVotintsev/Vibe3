@@ -150,10 +150,14 @@ export class SettingsScene extends Phaser.Scene {
     createBottomButtons(W, H, cx, padding) {
         const btnWidth = W - padding * 2 - 20;
         const btnHeight = 52;
+        const gap = 8;
+        // 15px padding from panel bottom (which is at H - 15)
+        const bottomBtnY = H - 15 - padding - btnHeight / 2;
+        const topBtnY = bottomBtnY - btnHeight - gap;
 
         // Apply button
         new Button(this, {
-            x: cx, y: H - 105, width: btnWidth, height: btnHeight,
+            x: cx, y: topBtnY, width: btnWidth, height: btnHeight,
             text: '✓ ПРИМЕНИТЬ', style: 'success',
             radius: RADIUS.xl, fontSize: FONT_SIZE['2xl'],
             onClick: () => this.applySettings()
@@ -161,7 +165,7 @@ export class SettingsScene extends Phaser.Scene {
 
         // Back button
         new Button(this, {
-            x: cx, y: H - 45, width: btnWidth, height: btnHeight,
+            x: cx, y: bottomBtnY, width: btnWidth, height: btnHeight,
             text: '← НАЗАД', style: 'secondary',
             radius: RADIUS.xl, fontSize: FONT_SIZE['2xl'],
             onClick: () => this.cancelSettings()

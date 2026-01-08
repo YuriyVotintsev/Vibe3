@@ -343,11 +343,13 @@ export class PrestigeScene extends Phaser.Scene {
     }
 
     createCloseButton(W, H, padding) {
+        // 15px padding from panel bottom (which is at H - 15)
+        const btnHeight = 52;
         new Button(this, {
             x: W / 2,
-            y: H - 45,
+            y: H - 15 - padding - btnHeight / 2,
             width: W - padding * 2 - 20,
-            height: 52,
+            height: btnHeight,
             text: '← НАЗАД',
             style: 'secondary',
             radius: RADIUS.xl,

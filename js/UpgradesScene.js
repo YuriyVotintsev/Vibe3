@@ -38,7 +38,7 @@ export class UpgradesScene extends Phaser.Scene {
 
         // === SCROLL AREA SETUP ===
         this.scrollTop = 150;
-        this.scrollBottom = H - 100;
+        this.scrollBottom = H - 95; // adjusted for new button position
         this.scrollHeight = this.scrollBottom - this.scrollTop;
 
         // Create scrollable container
@@ -62,12 +62,13 @@ export class UpgradesScene extends Phaser.Scene {
             this.createScrollIndicator(W);
         }
 
-        // === CLOSE BUTTON ===
+        // === CLOSE BUTTON === (15px padding from panel bottom)
+        const btnHeight = 52;
         new Button(this, {
             x: cx,
-            y: H - 45,
+            y: H - 15 - padding - btnHeight / 2,
             width: W - padding * 2 - 20,
-            height: 52,
+            height: btnHeight,
             text: '← НАЗАД',
             style: 'secondary',
             radius: RADIUS.xl,
