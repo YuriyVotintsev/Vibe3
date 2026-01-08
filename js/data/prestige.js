@@ -109,51 +109,57 @@ export function performPrestige() {
 
 // ========== PRESTIGE UPGRADES ==========
 
-// v5: Multiplier removed, now based on total earned coins
-// Тиры: 3, 6, 9, 12 (x3)
-// Цвета: 5, 10, 15 (x5)
-// Арена: 3, 6, 9, 12 (x3)
+// v6: MAJOR REBALANCE - prices scaled ~100-1000x
+// Player was earning 1,000,000 coins while all upgrades cost ~215 total
+// New total cost for all limited upgrades: ~290,000
+// Infinite upgrades scale faster to remain challenging
 const PRESTIGE_UPGRADE_CONFIGS = {
+    // Тиры: 50, 500, 5000, 50000 (x10 progression) - unlocks new gem types
     tiers: {
         property: 'prestigeTiers',
-        getCost: () => (PlayerData.prestigeTiers + 1) * 3,
+        getCost: () => 50 * Math.pow(10, PlayerData.prestigeTiers),
         maxLevel: 4
     },
+    // Цвета: 100, 1000, 10000 (x10 progression) - fewer colors = easier matches
     colors: {
         property: 'prestigeColors',
-        getCost: () => (PlayerData.prestigeColors + 1) * 5,
+        getCost: () => 100 * Math.pow(10, PlayerData.prestigeColors),
         maxLevel: 3
     },
+    // Арена: 200, 2000, 20000, 200000 (x10 progression) - biggest impact on income
     arena: {
         property: 'prestigeArena',
-        getCost: () => (PlayerData.prestigeArena + 1) * 3,
+        getCost: () => 200 * Math.pow(10, PlayerData.prestigeArena),
         maxLevel: 4
     },
-    // New early-game upgrades
+    // Starting capital: 10, 50, 200 - early QoL upgrade
     startingCapital: {
         property: 'prestigeStartingCapital',
-        getCost: () => [2, 4, 6][PlayerData.prestigeStartingCapital] || null,
+        getCost: () => [10, 50, 200][PlayerData.prestigeStartingCapital] || null,
         maxLevel: 3
     },
+    // Cost reduction: 30 * 2.2^level - powerful late-game infinite upgrade
     costReduction: {
         property: 'prestigeCostReduction',
-        getCost: () => Math.floor(2 * Math.pow(1.8, PlayerData.prestigeCostReduction)),
+        getCost: () => Math.floor(30 * Math.pow(2.2, PlayerData.prestigeCostReduction)),
         maxLevel: Infinity
     },
+    // Growth reduction: 30, 200, 1000 - moderate utility
     growthReduction: {
         property: 'prestigeGrowthReduction',
-        getCost: () => [3, 6, 10][PlayerData.prestigeGrowthReduction] || null,
+        getCost: () => [30, 200, 1000][PlayerData.prestigeGrowthReduction] || null,
         maxLevel: 3
     },
-    // Combo prestige upgrades
+    // Combo gain: 25, 150, 600 - early-mid game
     comboGain: {
         property: 'prestigeComboGain',
-        getCost: () => [3, 6, 10][PlayerData.prestigeComboGain] || null,
+        getCost: () => [25, 150, 600][PlayerData.prestigeComboGain] || null,
         maxLevel: 3
     },
+    // Combo effect: 50 * 2.0^level - powerful infinite upgrade
     comboEffect: {
         property: 'prestigeComboEffect',
-        getCost: () => Math.floor(4 * Math.pow(1.8, PlayerData.prestigeComboEffect)),
+        getCost: () => Math.floor(50 * Math.pow(2.0, PlayerData.prestigeComboEffect)),
         maxLevel: Infinity
     }
 };
@@ -199,23 +205,22 @@ export const upgradeComboGain = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CO
 export const upgradeComboEffect = () => performPrestigeUpgrade(PRESTIGE_UPGRADE_CONFIGS.comboEffect);
 
 // ========== AUTO-BUY UNLOCKS ==========
-// v4: Higher costs (~2x) to match increased income
-// Early game (Bronze/Silver): essential
-// Mid game (Gold/Crystal/Bombs): moderate
-// Late game (Rainbow/Prismatic/Celestial): luxury
+// v6: MAJOR REBALANCE - scaled ~10-5000x based on tier
+// Early autos are affordable, endgame autos are luxury purchases
+// Total cost: ~63,520 coins
 
 const AUTO_BUY_COSTS = {
-    autoBuyBronze: 4,       // Essential, buy early
-    autoBuySilver: 4,       // Essential, buy early
-    autoBuyGold: 6,         // Mid-game
-    autoBuyCrystal: 6,      // Mid-game
-    autoBuyBombChance: 6,   // Mid-game QoL
-    autoBuyBombRadius: 8,   // Late-mid, powerful
-    autoBuyRainbow: 8,      // Late game
-    autoBuyAutoMove: 8,     // Late game
-    autoBuyPrismatic: 10,   // Endgame luxury
-    autoBuyCelestial: 10,   // Endgame luxury
-    autoBuyComboDecay: 5    // Mid-game, helps with combo
+    autoBuyBronze: 30,        // Early essential
+    autoBuySilver: 60,        // Early essential
+    autoBuyGold: 200,         // Mid-game
+    autoBuyCrystal: 500,      // Mid-game
+    autoBuyBombChance: 150,   // Mid-game QoL
+    autoBuyBombRadius: 400,   // Mid-late game
+    autoBuyRainbow: 2000,     // Late game
+    autoBuyAutoMove: 100,     // Early QoL
+    autoBuyPrismatic: 10000,  // Endgame luxury
+    autoBuyCelestial: 50000,  // Endgame luxury
+    autoBuyComboDecay: 80     // Early-mid game
 };
 
 export function getAutoBuyCost(property) {
