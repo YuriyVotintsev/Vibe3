@@ -61,9 +61,9 @@ export class ComboManager {
     update(delta) {
         if (this.comboFloat <= 0) return;
 
-        // Calculate decay rate (reduced by upgrade)
-        const decayReduction = PlayerData.comboDecayReduction / 100;  // 0 to 0.5
-        const decayRate = BASE_DECAY_RATE * (1 - decayReduction);
+        // Calculate decay rate: base × 0.9^level (asymptotically approaches 0)
+        const level = PlayerData.comboDecayReduction / 10;
+        const decayRate = BASE_DECAY_RATE * Math.pow(0.9, level);
 
         // Decay per frame: rate * (delta / 1000)
         const decay = this.comboFloat * decayRate * (delta / 1000);
