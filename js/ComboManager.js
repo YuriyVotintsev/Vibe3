@@ -5,12 +5,15 @@ import { getComboGainBonus, getComboEffectMultiplier } from './data/prestige.js'
 
 // Base decay rate: 25% per second
 const BASE_DECAY_RATE = 0.25;
+// Base combo effect: +20% income per combo
+const BASE_COMBO_EFFECT = 0.2;
 
 /**
  * Manages combo system:
  * - Float value internally, integer for display/calculations
- * - Decays 25% per second (reduced by comboDecayReduction)
+ * - Decays 25% per second (reduced by comboDecayReduction upgrade)
  * - Match 3: +1, Match 4: +2, Match 5+: +3 (plus prestige bonus)
+ * - Each combo point gives +20% income (multiplied by prestige effect)
  */
 export class ComboManager {
     constructor() {
@@ -26,14 +29,14 @@ export class ComboManager {
 
     /**
      * Get the combo multiplier for income
-     * Formula: 1 + (combo * effect_multiplier * 0.1)
-     * At combo 10 with base effect: 1 + 10 * 1.0 * 0.1 = 2.0x
+     * Formula: 1 + (combo * effect_multiplier * BASE_COMBO_EFFECT)
+     * At combo 10 with base effect: 1 + 10 * 1.0 * 0.2 = 3.0x
      */
     getMultiplier() {
         const combo = this.getCombo();
         if (combo <= 0) return 1;
         const effectMult = getComboEffectMultiplier();
-        return 1 + combo * effectMult * 0.1;
+        return 1 + combo * effectMult * BASE_COMBO_EFFECT;
     }
 
     /**

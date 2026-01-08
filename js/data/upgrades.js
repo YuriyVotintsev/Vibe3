@@ -166,13 +166,13 @@ const UPGRADE_CONFIGS = {
         unit: '%',
         enhancement: null,  // Always visible
         baseCost: 100,
-        growthRate: 1.4,
-        step: 5,            // 5% reduction per level
+        growthRate: 1.5,
+        step: 10,           // 10% reduction per level
         min: 0,
-        max: 50,            // Max 50% decay reduction
+        max: Infinity,      // Infinite upgrade
         getValue: () => PlayerData.comboDecayReduction,
-        getLevel: () => PlayerData.comboDecayReduction / 5,
-        getMaxLevel: () => 50 / 5
+        getLevel: () => PlayerData.comboDecayReduction / 10,
+        getMaxLevel: () => '∞'
     }
 };
 
