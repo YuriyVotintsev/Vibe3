@@ -1,9 +1,9 @@
-// UpgradesScene.js - Upgrades menu scene
+// UpgradesScene.js - Upgrades menu scene (redesigned)
 
 import { PlayerData, formatNumber } from './config.js';
 import { getRegularUpgrades } from './data/upgradesData.js';
-import { COLORS, FONT_SIZE, RADIUS, SPACING } from './styles.js';
-import { Button, UpgradeButton } from './ui/Button.js';
+import { COLORS, FONT_SIZE, RADIUS } from './styles.js';
+import { Button } from './ui/Button.js';
 
 export class UpgradesScene extends Phaser.Scene {
     constructor() {
@@ -14,128 +14,178 @@ export class UpgradesScene extends Phaser.Scene {
         const W = this.cameras.main.width;
         const H = this.cameras.main.height;
         const cx = W / 2;
-
-        // Panel bounds
-        const panelTop = 20;
-        const panelBottom = H - 90;
-        const panelHeight = panelBottom - panelTop;
-
-        // Scroll area bounds
-        this.scrollTop = 150;
-        this.scrollBottom = panelBottom - 15;
-        this.scrollHeight = this.scrollBottom - this.scrollTop;
-
-        // Track last currency for live updates
-        this.lastCurrency = PlayerData.currency;
+        const padding = 15;
 
         // Dark overlay
-        this.add.rectangle(cx, H / 2, W, H, COLORS.bgOverlay, 0.85);
+        this.add.rectangle(cx, H / 2, W, H, COLORS.bgOverlay, 0.92);
 
-        // Panel background
+        // Main panel
         const panel = this.add.graphics();
         panel.fillStyle(COLORS.bgPanel, 1);
-        panel.fillRoundedRect(15, panelTop, W - 30, panelHeight, RADIUS['2xl']);
-        panel.lineStyle(3, COLORS.primary, 1);
-        panel.strokeRoundedRect(15, panelTop, W - 30, panelHeight, RADIUS['2xl']);
+        panel.fillRoundedRect(padding, 15, W - padding * 2, H - 30, RADIUS['2xl']);
+        panel.lineStyle(2, COLORS.primary, 0.8);
+        panel.strokeRoundedRect(padding, 15, W - padding * 2, H - 30, RADIUS['2xl']);
 
-        // Title
-        this.add.text(cx, 55, 'АПГРЕЙДЫ', {
-            fontSize: FONT_SIZE['4xl'],
+        // === HEADER ===
+        this.add.text(cx, 38, '⬆️ АПГРЕЙДЫ', {
+            fontSize: FONT_SIZE['3xl'],
             fontFamily: 'Arial Black',
-            color: COLORS.text.white
-        }).setOrigin(0.5).setShadow(2, 2, '#000000', 4);
+            color: '#ffffff'
+        }).setOrigin(0.5);
 
-        // Currency display
-        this.createCurrencyDisplay(cx);
+        // === CURRENCY CARD ===
+        this.createCurrencyCard(W, cx);
+
+        // === SCROLL AREA SETUP ===
+        this.scrollTop = 150;
+        this.scrollBottom = H - 100;
+        this.scrollHeight = this.scrollBottom - this.scrollTop;
 
         // Create scrollable container
         this.scrollContainer = this.add.container(0, 0);
 
-        // Create mask for scroll area
+        // Mask for scroll area
         const maskShape = this.make.graphics();
         maskShape.fillRect(20, this.scrollTop, W - 40, this.scrollHeight);
-        const mask = maskShape.createGeometryMask();
-        this.scrollContainer.setMask(mask);
+        this.scrollContainer.setMask(maskShape.createGeometryMask());
 
-        // Build upgrade grid inside container
-        this.contentHeight = this.createUpgradeGrid();
+        // Build upgrade grid
+        this.contentHeight = this.createUpgradeGrid(W, padding);
         this.scrollY = 0;
         this.maxScroll = Math.max(0, this.contentHeight - this.scrollHeight);
 
-        // Setup scroll input
+        // Scroll input
         this.setupScrollInput();
 
-        // Close button
-        this.createCloseButton();
-
         // Scroll indicator
-        this.createScrollIndicator();
-    }
-
-    createCurrencyDisplay(cx) {
-        const currencyBg = this.add.graphics();
-        currencyBg.fillStyle(COLORS.warning, 0.3);
-        currencyBg.fillRoundedRect(cx - 100, 85, 200, 50, RADIUS.xl);
-
-        this.add.text(cx - 60, 110, '💰', { fontSize: FONT_SIZE['4xl'] }).setOrigin(0.5);
-
-        this.currencyText = this.add.text(cx + 10, 110, formatNumber(PlayerData.currency), {
-            fontSize: FONT_SIZE['4xl'],
-            color: COLORS.text.gold,
-            fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-    }
-
-    update() {
-        if (PlayerData.currency !== this.lastCurrency) {
-            this.lastCurrency = PlayerData.currency;
-            this.currencyText.setText(formatNumber(PlayerData.currency));
-            this.refreshAllButtons();
+        if (this.maxScroll > 0) {
+            this.createScrollIndicator(W);
         }
+
+        // === CLOSE BUTTON ===
+        new Button(this, {
+            x: cx,
+            y: H - 45,
+            width: W - padding * 2 - 20,
+            height: 52,
+            text: '← НАЗАД',
+            style: 'secondary',
+            radius: RADIUS.xl,
+            fontSize: FONT_SIZE['2xl'],
+            onClick: () => this.scene.stop()
+        });
+
+        // Track currency
+        this.lastCurrency = PlayerData.currency;
     }
 
-    createUpgradeGrid() {
-        const W = this.cameras.main.width;
-        const y = this.scrollTop;
+    createCurrencyCard(W, cx) {
+        const y = 75;
 
+        // Card background
+        const cardBg = this.add.graphics();
+        cardBg.fillStyle(0x1a3a2a, 1); // dark green
+        cardBg.fillRoundedRect(25, y - 5, W - 50, 55, RADIUS.lg);
+        cardBg.lineStyle(2, COLORS.success, 0.6);
+        cardBg.strokeRoundedRect(25, y - 5, W - 50, 55, RADIUS.lg);
+
+        // Currency text centered
+        this.currencyText = this.add.text(cx, y + 20, `💰 ${formatNumber(PlayerData.currency)}`, {
+            fontSize: FONT_SIZE['4xl'],
+            color: '#ffd700',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+    }
+
+    createUpgradeGrid(W, padding) {
+        const startY = this.scrollTop;
+        const gap = 10;
+        const cols = 2;
+        const contentWidth = W - padding * 2 - 20;
+        const btnWidth = Math.floor((contentWidth - gap * (cols - 1)) / cols);
+        const btnHeight = 85;
+
+        const upgrades = getRegularUpgrades();
         this.upgradeButtons = [];
 
-        // Grid settings
-        const padding = SPACING['3xl'];
-        const gap = SPACING.md;
-        const cols = 3;
-        const btnWidth = Math.floor((W - padding * 2 - gap * (cols - 1)) / cols);
-        const btnHeight = 70;
-
-        // Get upgrades from data module
-        const upgrades = getRegularUpgrades();
-
-        // Create grid of buttons
         for (let i = 0; i < upgrades.length; i++) {
             const col = i % cols;
             const row = Math.floor(i / cols);
-            const x = padding + col * (btnWidth + gap);
-            const btnY = y + row * (btnHeight + gap);
+            const x = padding + 10 + col * (btnWidth + gap);
+            const y = startY + row * (btnHeight + gap);
 
-            const button = new UpgradeButton(this, {
-                x,
-                y: btnY,
-                width: btnWidth,
-                height: btnHeight,
-                upgrade: upgrades[i],
-                container: this.scrollContainer,
-                formatCost: (cost) => formatNumber(cost) + '💰',
-                onPurchase: () => {
-                    this.currencyText.setText(formatNumber(PlayerData.currency));
-                    this.refreshAllButtons();
-                }
-            });
-
-            this.upgradeButtons.push(button);
+            this.createUpgradeButton(x, y, btnWidth, btnHeight, upgrades[i]);
         }
 
         const rows = Math.ceil(upgrades.length / cols);
         return rows * (btnHeight + gap) + 20;
+    }
+
+    createUpgradeButton(x, y, width, height, upgrade) {
+        const cost = upgrade.getCost();
+        const isMaxed = cost === null;
+        const canAfford = !isMaxed && upgrade.canAfford();
+
+        // Background
+        const bg = this.add.graphics();
+        let bgColor = isMaxed ? COLORS.bgDisabled : (canAfford ? COLORS.success : COLORS.bgButton);
+        bg.fillStyle(bgColor, 1);
+        bg.fillRoundedRect(x, y, width, height, RADIUS.lg);
+
+        if (!isMaxed) {
+            bg.lineStyle(2, canAfford ? COLORS.successBright : COLORS.borderLight, 1);
+            bg.strokeRoundedRect(x, y, width, height, RADIUS.lg);
+        }
+
+        // Add to scroll container
+        this.scrollContainer.add(bg);
+
+        // Name
+        const nameText = this.add.text(x + width / 2, y + 18, upgrade.getName(), {
+            fontSize: FONT_SIZE.xl,
+            color: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        this.scrollContainer.add(nameText);
+
+        // Value
+        const valueText = this.add.text(x + width / 2, y + 44, upgrade.getValue(), {
+            fontSize: FONT_SIZE['2xl'],
+            color: '#55efc4',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        this.scrollContainer.add(valueText);
+
+        // Cost - always bright
+        const costText = isMaxed ? 'MAX' : `${formatNumber(cost)} 💰`;
+        const costLabel = this.add.text(x + width / 2, y + 68, costText, {
+            fontSize: FONT_SIZE.lg,
+            color: isMaxed ? '#666666' : '#ffd700',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        this.scrollContainer.add(costLabel);
+
+        // Level - bottom right
+        const levelText = this.add.text(x + width - 8, y + height - 8, upgrade.getLevel(), {
+            fontSize: FONT_SIZE.base,
+            color: '#ffffff'
+        }).setOrigin(1, 1);
+        this.scrollContainer.add(levelText);
+
+        // Hit area
+        if (!isMaxed) {
+            const hitArea = this.add.rectangle(x + width / 2, y + height / 2, width, height, 0x000000, 0)
+                .setInteractive({ useHandCursor: canAfford })
+                .on('pointerdown', () => {
+                    if (upgrade.canAfford() && upgrade.onBuy()) {
+                        this.scene.restart();
+                    }
+                });
+            this.scrollContainer.add(hitArea);
+        }
+
+        // Store for refresh
+        this.upgradeButtons.push({ bg, nameText, valueText, costLabel, levelText, upgrade });
     }
 
     setupScrollInput() {
@@ -143,8 +193,10 @@ export class UpgradesScene extends Phaser.Scene {
         this.lastPointerY = 0;
 
         this.input.on('pointerdown', (pointer) => {
-            this.isDragging = true;
-            this.lastPointerY = pointer.y;
+            if (pointer.y > this.scrollTop && pointer.y < this.scrollBottom) {
+                this.isDragging = true;
+                this.lastPointerY = pointer.y;
+            }
         });
 
         this.input.on('pointermove', (pointer) => {
@@ -159,8 +211,8 @@ export class UpgradesScene extends Phaser.Scene {
             this.isDragging = false;
         });
 
-        this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY) => {
-            this.scrollBy(deltaY * 0.5);
+        this.input.on('wheel', (pointer, go, dx, dy) => {
+            this.scrollBy(dy * 0.5);
         });
     }
 
@@ -170,10 +222,7 @@ export class UpgradesScene extends Phaser.Scene {
         this.updateScrollIndicator();
     }
 
-    createScrollIndicator() {
-        if (this.maxScroll <= 0) return;
-
-        const W = this.cameras.main.width;
+    createScrollIndicator(W) {
         const trackX = W - 25;
         const trackTop = this.scrollTop + 5;
         const trackHeight = this.scrollHeight - 10;
@@ -184,10 +233,10 @@ export class UpgradesScene extends Phaser.Scene {
 
         const thumbHeight = Math.max(30, (this.scrollHeight / this.contentHeight) * trackHeight);
         this.scrollThumb = this.add.graphics();
-        this.scrollThumbHeight = thumbHeight;
-        this.scrollTrackTop = trackTop;
-        this.scrollTrackHeight = trackHeight;
-        this.scrollTrackX = trackX;
+        this.thumbHeight = thumbHeight;
+        this.trackTop = trackTop;
+        this.trackHeight = trackHeight;
+        this.trackX = trackX;
 
         this.updateScrollIndicator();
     }
@@ -196,33 +245,17 @@ export class UpgradesScene extends Phaser.Scene {
         if (!this.scrollThumb || this.maxScroll <= 0) return;
 
         const progress = this.scrollY / this.maxScroll;
-        const thumbY = this.scrollTrackTop + progress * (this.scrollTrackHeight - this.scrollThumbHeight);
+        const thumbY = this.trackTop + progress * (this.trackHeight - this.thumbHeight);
 
         this.scrollThumb.clear();
         this.scrollThumb.fillStyle(COLORS.primary, 0.8);
-        this.scrollThumb.fillRoundedRect(this.scrollTrackX - 3, thumbY, 6, this.scrollThumbHeight, 3);
+        this.scrollThumb.fillRoundedRect(this.trackX - 3, thumbY, 6, this.thumbHeight, 3);
     }
 
-    refreshAllButtons() {
-        for (const button of this.upgradeButtons) {
-            button.refresh();
+    update() {
+        if (PlayerData.currency !== this.lastCurrency) {
+            this.lastCurrency = PlayerData.currency;
+            this.currencyText.setText(`💰 ${formatNumber(PlayerData.currency)}`);
         }
-    }
-
-    createCloseButton() {
-        const W = this.cameras.main.width;
-        const H = this.cameras.main.height;
-
-        new Button(this, {
-            x: W / 2,
-            y: H - 45,
-            width: W - 60,
-            height: 50,
-            text: '✕ ЗАКРЫТЬ',
-            style: 'danger',
-            radius: RADIUS.xl,
-            fontSize: FONT_SIZE.xl,
-            onClick: () => this.scene.stop()
-        });
     }
 }
