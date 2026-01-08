@@ -16,7 +16,7 @@ import { getCostReductionMultiplier, getGrowthReductionAmount } from './prestige
 const UPGRADE_CONFIGS = {
     autoMove: {
         property: 'autoMoveDelay',
-        name: 'Авто-ход',
+        name: 'Автоход',
         unit: 'с',
         enhancement: null,
         baseCost: 500,
@@ -37,7 +37,7 @@ const UPGRADE_CONFIGS = {
     },
     bombChance: {
         property: 'bombChance',
-        name: 'Шанс бомбы',
+        name: 'Шанс💣',
         unit: '%',
         enhancement: null,
         baseCost: 400,      // v4: ~2.5x increase
@@ -51,7 +51,7 @@ const UPGRADE_CONFIGS = {
     },
     bombRadius: {
         property: 'bombRadius',
-        name: 'Радиус',
+        name: 'Радиус💣',
         unit: '',
         enhancement: null,
         baseCost: 2000,     // v4: ~2.5x increase

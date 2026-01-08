@@ -192,6 +192,7 @@ export class PrestigeScene extends Phaser.Scene {
     createUpgradesTab(W, padding) {
         const startY = 302;
         const gap = 12;
+        const separatorGap = 15; // Extra space for separator
         const cols = 3;
         const contentWidth = W - padding * 2 - 20;
         const btnWidth = Math.floor((contentWidth - gap * (cols - 1)) / cols);
@@ -199,13 +200,30 @@ export class PrestigeScene extends Phaser.Scene {
 
         const upgrades = getPrestigeUpgrades();
 
-        for (let i = 0; i < upgrades.length; i++) {
-            const col = i % cols;
-            const row = Math.floor(i / cols);
-            const x = padding + 10 + col * (btnWidth + gap);
-            const y = startY + row * (btnHeight + gap);
+        let currentY = startY;
+        let col = 0;
 
-            this.createPrestigeUpgradeButton(x, y, btnWidth, btnHeight, upgrades[i]);
+        for (let i = 0; i < upgrades.length; i++) {
+            const item = upgrades[i];
+
+            // Handle separator
+            if (item === 'separator') {
+                if (col !== 0) {
+                    currentY += btnHeight + gap;
+                    col = 0;
+                }
+                currentY += separatorGap;
+                continue;
+            }
+
+            const x = padding + 10 + col * (btnWidth + gap);
+            this.createPrestigeUpgradeButton(x, currentY, btnWidth, btnHeight, item);
+
+            col++;
+            if (col >= cols) {
+                col = 0;
+                currentY += btnHeight + gap;
+            }
         }
     }
 
@@ -268,6 +286,7 @@ export class PrestigeScene extends Phaser.Scene {
     createAutoBuyTab(W, padding) {
         const startY = 302;
         const gap = 10;
+        const separatorGap = 15; // Extra space for separator
         const cols = 2;
         const contentWidth = W - padding * 2 - 20;
         const btnWidth = Math.floor((contentWidth - gap * (cols - 1)) / cols);
@@ -275,13 +294,30 @@ export class PrestigeScene extends Phaser.Scene {
 
         const autoBuys = getAutoBuyItems();
 
-        for (let i = 0; i < autoBuys.length; i++) {
-            const col = i % cols;
-            const row = Math.floor(i / cols);
-            const x = padding + 10 + col * (btnWidth + gap);
-            const y = startY + row * (btnHeight + gap);
+        let currentY = startY;
+        let col = 0;
 
-            this.createAutoBuyButton(x, y, btnWidth, btnHeight, autoBuys[i]);
+        for (let i = 0; i < autoBuys.length; i++) {
+            const item = autoBuys[i];
+
+            // Handle separator
+            if (item === 'separator') {
+                if (col !== 0) {
+                    currentY += btnHeight + gap;
+                    col = 0;
+                }
+                currentY += separatorGap;
+                continue;
+            }
+
+            const x = padding + 10 + col * (btnWidth + gap);
+            this.createAutoBuyButton(x, currentY, btnWidth, btnHeight, item);
+
+            col++;
+            if (col >= cols) {
+                col = 0;
+                currentY += btnHeight + gap;
+            }
         }
     }
 

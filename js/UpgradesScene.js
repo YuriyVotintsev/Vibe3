@@ -101,6 +101,7 @@ export class UpgradesScene extends Phaser.Scene {
     createUpgradeGrid(W, padding) {
         const startY = this.scrollTop;
         const gap = 10;
+        const separatorGap = 20; // Extra space for separator
         const cols = 2;
         const contentWidth = W - padding * 2 - 20;
         const btnWidth = Math.floor((contentWidth - gap * (cols - 1)) / cols);
@@ -109,17 +110,40 @@ export class UpgradesScene extends Phaser.Scene {
         const upgrades = getRegularUpgrades();
         this.upgradeButtons = [];
 
-        for (let i = 0; i < upgrades.length; i++) {
-            const col = i % cols;
-            const row = Math.floor(i / cols);
-            const x = padding + 10 + col * (btnWidth + gap);
-            const y = startY + row * (btnHeight + gap);
+        let currentY = startY;
+        let col = 0;
 
-            this.createUpgradeButton(x, y, btnWidth, btnHeight, upgrades[i]);
+        for (let i = 0; i < upgrades.length; i++) {
+            const item = upgrades[i];
+
+            // Handle separator
+            if (item === 'separator') {
+                // Move to next row if not at start of row
+                if (col !== 0) {
+                    currentY += btnHeight + gap;
+                    col = 0;
+                }
+                // Add extra gap
+                currentY += separatorGap;
+                continue;
+            }
+
+            const x = padding + 10 + col * (btnWidth + gap);
+            this.createUpgradeButton(x, currentY, btnWidth, btnHeight, item);
+
+            col++;
+            if (col >= cols) {
+                col = 0;
+                currentY += btnHeight + gap;
+            }
         }
 
-        const rows = Math.ceil(upgrades.length / cols);
-        return rows * (btnHeight + gap) + 20;
+        // Final row if incomplete
+        if (col !== 0) {
+            currentY += btnHeight + gap;
+        }
+
+        return currentY - startY + 20;
     }
 
     createUpgradeButton(x, y, width, height, upgrade) {
