@@ -94,7 +94,8 @@ export class MatchProcessor {
             if (gem) {
                 const enhancement = gem.getData('enhancement') || ENHANCEMENT.NONE;
                 const enhMultiplier = ENHANCEMENT_MULTIPLIERS[enhancement] || 1;
-                const gemCurrency = Math.floor(enhMultiplier * moneyMult * comboMult);
+                // No floor here - currency accumulates as float, rounded only for display
+                const gemCurrency = enhMultiplier * moneyMult * comboMult;
 
                 PlayerData.currency += gemCurrency;
                 PlayerData.totalEarned += gemCurrency;
